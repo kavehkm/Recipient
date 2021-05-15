@@ -2,6 +2,7 @@
 from src.ui.resources import icons
 # pyqt
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow
 
 
@@ -12,7 +13,14 @@ class UI(QMainWindow):
         # set windows title
         self.setWindowTitle('Recipient')
         # set windows icon
-        self.setWindowIcon(QIcon(':/icons/windowIcon.png'))
+        windowIcon = QIcon()
+        windowIcon.addFile(':/icons/windowIcon16.png', QSize(16, 16))
+        windowIcon.addFile(':/icons/windowIcon24.png', QSize(24, 24))
+        windowIcon.addFile(':/icons/windowIcon32.png', QSize(32, 32))
+        windowIcon.addFile(':/icons/windowIcon48.png', QSize(48, 48))
+        windowIcon.addFile(':/icons/windowIcon96.png', QSize(96, 96))
+        windowIcon.addFile(':/icons/windowIcon256.png', QSize(256, 256))
+        self.setWindowIcon(windowIcon)
         # set windows geometry
         self.setGeometry(100, 100, 809, 500)
         # set window min size
