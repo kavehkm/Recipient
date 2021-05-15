@@ -1,9 +1,10 @@
 # internal
 from src.ui.resources import icons
+from src.ui.widgets import MenuWidget, ContentsWidget
 # pyqt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout
 
 
 class UI(QMainWindow):
@@ -35,7 +36,16 @@ class UI(QMainWindow):
         self.connectSignals()
 
     def setupUI(self):
-        pass
+        # set central widget
+        self.centralWidget = QWidget(self)
+        self.setCentralWidget(self.centralWidget)
+        # set general layout
+        self.generalLayout = QHBoxLayout()
+        self.centralWidget.setLayout(self.generalLayout)
+        # set menu widget 30%
+        self.generalLayout.addWidget(MenuWidget(), 30)
+        # set content widget 70%
+        self.generalLayout.addWidget(ContentsWidget(), 70)
 
     def connectSignals(self):
         pass
