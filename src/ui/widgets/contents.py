@@ -1,5 +1,6 @@
 # pyqt
-from PyQt5.QtWidgets import QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
+                             QFormLayout, QLabel, QPushButton, QLineEdit, QComboBox)
 
 
 class BaseTab(QWidget):
@@ -119,9 +120,128 @@ class SettingsTab(BaseTab):
     """Settings Tab"""
     def setupTab(self):
         super().setupTab()
-        self.lbl = QLabel()
-        self.lbl.setText('<h3>Settings Tab</h3>')
-        self.generalLayout.addWidget(self.lbl)
+        # settings frame
+        self.settingsFrame = QFrame()
+        self.settingsFrame.setObjectName('SettingsFrame')
+        self.generalLayout.addWidget(self.settingsFrame)
+        # settings layout
+        self.settingsLayout = QVBoxLayout()
+        self.settingsFrame.setLayout(self.settingsLayout)
+        # form
+        self.form = QFormLayout()
+        self.form.setVerticalSpacing(8)
+        self.settingsLayout.addLayout(self.form)
+        # woocommerce settings
+        # header
+        wcHeader = QLabel('<h2>WooCommerce API</h2>')
+        wcHeader.setFixedHeight(60)
+        self.form.addRow(wcHeader)
+        # url
+        self.urlLabel = QLabel('<h4>URL</h4>')
+        self.url = QLineEdit()
+        self.form.addRow(self.urlLabel, self.url)
+        # consumer key
+        self.ckeyLabel = QLabel('<h4>Consumer Key</h4>')
+        self.ckey = QLineEdit()
+        self.form.addRow(self.ckeyLabel, self.ckey)
+        # secret key
+        self.skeyLabel = QLabel('<h4>Secret Key</h4>')
+        self.skey = QLineEdit()
+        self.form.addRow(self.skeyLabel, self.skey)
+        # version
+        self.versionLabel = QLabel('<h4>Version</h4>')
+        self.version = QComboBox()
+        self.version.setFixedWidth(200)
+        self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
+        self.form.addRow(self.versionLabel, self.version)
+        # moein db settings
+        # header
+        moeinHeader = QLabel('<h2>Moein DB</h2>')
+        moeinHeader.setFixedHeight(60)
+        self.form.addRow(moeinHeader)
+        # server
+        self.serverLabel = QLabel('<h4>Server</h4>')
+        self.server = QLineEdit()
+        self.form.addRow(self.serverLabel, self.server)
+        # username
+        self.usernameLabel = QLabel('<h4>Username</h4>')
+        self.username = QLineEdit()
+        self.form.addRow(self.usernameLabel, self.username)
+        # password
+        self.passwordLabel = QLabel('<h4>Password</h4>')
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.Password)
+        self.form.addRow(self.passwordLabel, self.password)
+        # database
+        self.databaseLabel = QLabel('<h4>DataBase</h4>')
+        self.database = QLineEdit()
+        self.form.addRow(self.databaseLabel, self.database)
+        # form buttons
+        btnLayout = QHBoxLayout()
+        self.btnClear = QPushButton('clear')
+        self.btnSave = QPushButton('save')
+        btnLayout.addStretch(1)
+        btnLayout.addWidget(self.btnSave)
+        btnLayout.addWidget(self.btnClear)
+        self.form.addRow(QLabel(), btnLayout)
+        # add stretch at the end
+        self.generalLayout.addStretch(1)
+
+    def setStyles(self):
+        self.setStyleSheet("""
+            #SettingsFrame{
+                border: 1px solid silver;
+            }
+            QLabel{
+                margin-right: 50px;
+            }
+            QPushButton{
+                height: 25px;
+                width: 80px;
+                margin-left: 5px;
+            }
+        """)
+
+    def get(self):
+        return {
+            'wc': {
+                'url': self.url.text(),
+                'ckey': self.ckey.text(),
+                'skey': self.skey.text(),
+                'version': self.version.currentText()
+            },
+            'moein': {
+                'server': self.server.text(),
+                'username': self.username.text(),
+                'password': self.password.text(),
+                'database': self.database.text()
+            }
+        }
+
+    def set(self, settings):
+        # woocommerce
+        wc = settings.get('wc')
+        self.url.setText(wc.get('url')),
+        self.ckey.setText(wc.get('ckey'))
+        self.skey.setText(wc.get('skey'))
+        self.version.setCurrentText(wc.get('version'))
+        # moein
+        moein = settings.get('moein')
+        self.server.setText(moein.get('server'))
+        self.username.setText(moein.get('username'))
+        self.password.setText(moein.get('password'))
+        self.database.setText(moein.get('database'))
+
+    def clear(self):
+        # woocommerce
+        self.url.clear()
+        self.ckey.clear()
+        self.skey.clear()
+        # moein
+        self.server.clear()
+        self.username.clear()
+        self.password.clear()
+        self.database.clear()
 
 
 class LogsTab(BaseTab):
