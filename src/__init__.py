@@ -19,6 +19,9 @@ class Controller(object):
         # contents: status tab
         self.ui.contents.status.serviceStart.clicked.connect(self.status_startbtn_handler)
         self.ui.contents.status.serviceStop.clicked.connect(self.status_stopbtn_handler)
+        # contents: settings tab
+        self.ui.contents.settings.btnSave.clicked.connect(self.settings_save_handler)
+        self.ui.contents.settings.btnClear.clicked.connect(self.settings_clear_handler)
 
     def status_handler(self):
         self.ui.contents.showTab(self.ui.contents.STATUS)
@@ -30,6 +33,21 @@ class Controller(object):
         self.ui.contents.showTab(self.ui.contents.UPDATE_WP)
 
     def settings_handler(self):
+        SETTINGS = {
+            'wc': {
+                'url': 'https://moeinsoft.com',
+                'ckey': 'ckeyval',
+                'skey': 'skeyval',
+                'version': 'wc/v2',
+            },
+            'moein': {
+                'server': '.\Moein',
+                'username': 'sa',
+                'password': 'arta0',
+                'database': 'Moein'
+            }
+        }
+        self.ui.contents.settings.set(SETTINGS)
         self.ui.contents.showTab(self.ui.contents.SETTINGS)
 
     def logs_handler(self):
@@ -46,3 +64,9 @@ class Controller(object):
 
     def status_stopbtn_handler(self):
         self.ui.contents.status.stop()
+
+    def settings_save_handler(self):
+        print(self.ui.contents.settings.get())
+
+    def settings_clear_handler(self):
+        self.ui.contents.settings.clear()
