@@ -16,6 +16,9 @@ class Controller(object):
         self.ui.menu.btnLogs.clicked.connect(self.logs_handler)
         self.ui.menu.btnHelp.clicked.connect(self.help_handler)
         self.ui.menu.btnAbout.clicked.connect(self.about_handler)
+        # contents: status tab
+        self.ui.contents.status.serviceStart.clicked.connect(self.status_startbtn_handler)
+        self.ui.contents.status.serviceStop.clicked.connect(self.status_stopbtn_handler)
 
     def status_handler(self):
         self.ui.contents.showTab(self.ui.contents.STATUS)
@@ -37,3 +40,9 @@ class Controller(object):
 
     def about_handler(self):
         self.ui.contents.showTab(self.ui.contents.ABOUT)
+
+    def status_startbtn_handler(self):
+        self.ui.contents.status.start()
+
+    def status_stopbtn_handler(self):
+        self.ui.contents.status.stop()
