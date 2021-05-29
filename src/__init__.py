@@ -17,14 +17,20 @@ class Controller(object):
         self.ui.menu.btnHelp.clicked.connect(self.help_handler)
         self.ui.menu.btnAbout.clicked.connect(self.about_handler)
         # contents: status tab
-        self.ui.contents.status.serviceStart.clicked.connect(self.status_startbtn_handler)
-        self.ui.contents.status.serviceStop.clicked.connect(self.status_stopbtn_handler)
+        self.ui.contents.status.btnStart.clicked.connect(self.status_btnStart_handler)
+        self.ui.contents.status.btnStop.clicked.connect(self.status_btnStop_handler)
         # contents: settings tab
         self.ui.contents.settings.btnSave.clicked.connect(self.settings_save_handler)
         self.ui.contents.settings.btnClear.clicked.connect(self.settings_clear_handler)
 
     def status_handler(self):
         self.ui.contents.showTab(self.ui.contents.STATUS)
+
+    def status_btnStart_handler(self):
+        self.ui.contents.status.start()
+
+    def status_btnStop_handler(self):
+        self.ui.contents.status.stop()
 
     def invoices_handler(self):
         self.ui.contents.showTab(self.ui.contents.INVOICES)
@@ -58,12 +64,6 @@ class Controller(object):
 
     def about_handler(self):
         self.ui.contents.showTab(self.ui.contents.ABOUT)
-
-    def status_startbtn_handler(self):
-        self.ui.contents.status.start()
-
-    def status_stopbtn_handler(self):
-        self.ui.contents.status.stop()
 
     def settings_save_handler(self):
         print(self.ui.contents.settings.get())

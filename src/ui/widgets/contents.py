@@ -50,10 +50,10 @@ class StatusTab(BaseTab):
         self.serviceLayout.addLayout(serviceStateLayout)
         # service control
         serviceControlLayout = QHBoxLayout()
-        self.serviceStart = QPushButton('start')
-        self.serviceStop = QPushButton('stop')
-        serviceControlLayout.addWidget(self.serviceStart)
-        serviceControlLayout.addWidget(self.serviceStop)
+        self.btnStart = QPushButton('start')
+        self.btnStop = QPushButton('stop')
+        serviceControlLayout.addWidget(self.btnStart)
+        serviceControlLayout.addWidget(self.btnStop)
         serviceControlLayout.addStretch(1)
         self.serviceLayout.addLayout(serviceControlLayout)
         # add stretch at the end
@@ -78,22 +78,22 @@ class StatusTab(BaseTab):
 
     def start(self):
         self.serviceStateVal.setText('running')
-        self.serviceStart.setDisabled(True)
-        self.serviceStop.setEnabled(True)
+        self.btnStart.setDisabled(True)
+        self.btnStop.setEnabled(True)
         self.serviceFrame.setProperty('state', 'start')
         self.serviceFrame.setStyleSheet(self.serviceFrame.styleSheet())
 
     def stop(self):
         self.serviceStateVal.setText('stopped')
-        self.serviceStart.setEnabled(True)
-        self.serviceStop.setDisabled(True)
+        self.btnStart.setEnabled(True)
+        self.btnStop.setDisabled(True)
         self.serviceFrame.setProperty('state', 'stop')
         self.serviceFrame.setStyleSheet(self.serviceFrame.styleSheet())
 
     def connecting(self):
         self.serviceStateVal.setText('connecting')
-        self.serviceStart.setDisabled(True)
-        self.serviceStop.setDisabled(True)
+        self.btnStart.setDisabled(True)
+        self.btnStop.setDisabled(True)
         self.serviceFrame.setProperty('state', 'connecting')
         self.serviceFrame.setStyleSheet(self.serviceFrame.styleSheet())
 
