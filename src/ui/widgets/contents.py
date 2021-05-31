@@ -1,6 +1,7 @@
 # pyqt
 from PyQt5.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
-                             QFormLayout, QLabel, QPushButton, QLineEdit, QComboBox)
+                             QFormLayout, QLabel, QPushButton, QLineEdit,
+                             QComboBox, QTabWidget, QTableWidget, QTableWidgetItem)
 
 
 class BaseTab(QWidget):
@@ -50,8 +51,8 @@ class StatusTab(BaseTab):
         self.serviceLayout.addLayout(serviceStateLayout)
         # service control
         serviceControlLayout = QHBoxLayout()
-        self.btnStart = QPushButton('start')
-        self.btnStop = QPushButton('stop')
+        self.btnStart = QPushButton('Start')
+        self.btnStop = QPushButton('Stop')
         serviceControlLayout.addWidget(self.btnStart)
         serviceControlLayout.addWidget(self.btnStop)
         serviceControlLayout.addStretch(1)
@@ -73,6 +74,9 @@ class StatusTab(BaseTab):
             }
             #ServiceFrame[state="connecting"]{
                 border-right-color: orange;
+            }
+            QPushButton{
+                height: 25px;
             }
         """)
 
@@ -111,9 +115,45 @@ class UpdateWPTab(BaseTab):
     """Update WP Tab"""
     def setupTab(self):
         super().setupTab()
-        self.lbl = QLabel()
-        self.lbl.setText('<h3>UpdateWP Tab</h3>')
-        self.generalLayout.addWidget(self.lbl)
+        # tabs
+        self.tabs = QTabWidget()
+        self.generalLayout.addWidget(self.tabs)
+        # controls
+        controlLayout = QHBoxLayout()
+        controlLayout.addStretch(1)
+        self.btnAdd = QPushButton('Add')
+        self.btnEdit = QPushButton('Edit')
+        self.btnRemove = QPushButton('Remove')
+        self.btnUpdateWP = QPushButton('Update WP')
+        controlLayout.addWidget(self.btnAdd)
+        controlLayout.addWidget(self.btnEdit)
+        controlLayout.addWidget(self.btnRemove)
+        controlLayout.addWidget(self.btnUpdateWP)
+        self.generalLayout.addLayout(controlLayout)
+        # tabs contents
+        self.setupRegisteredProducts()
+        self.setupRegisteredCategories()
+
+    def setupRegisteredProducts(self):
+        self.tabs.addTab(QTableWidget(), 'Products')
+
+    def setupRegisteredCategories(self):
+        self.tabs.addTab(QTableWidget(), 'Categories')
+
+    def setStyles(self):
+        self.setStyleSheet("""
+            QTabBar::tab{
+                min-height: 10ex;
+                min-width: 30ex;
+            }
+            QTableWidget{
+                border: none;
+            }
+            QPushButton{
+                height: 25px;
+                width: 80px;
+            }
+        """)
 
 
 class SettingsTab(BaseTab):
@@ -178,8 +218,8 @@ class SettingsTab(BaseTab):
         self.form.addRow(self.databaseLabel, self.database)
         # form buttons
         btnLayout = QHBoxLayout()
-        self.btnClear = QPushButton('clear')
-        self.btnSave = QPushButton('save')
+        self.btnClear = QPushButton('Clear')
+        self.btnSave = QPushButton('Save')
         btnLayout.addStretch(1)
         btnLayout.addWidget(self.btnSave)
         btnLayout.addWidget(self.btnClear)
@@ -196,7 +236,7 @@ class SettingsTab(BaseTab):
                 margin-right: 50px;
             }
             QPushButton{
-                height: 25px;
+                height: 30px;
                 width: 80px;
                 margin-left: 5px;
             }
