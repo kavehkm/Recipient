@@ -37,7 +37,7 @@ class StatusTab(BaseTab):
         self.serviceLayout = QVBoxLayout()
         self.serviceFrame.setLayout(self.serviceLayout)
         # service name
-        self.serviceName = QLabel('<h2>Recipient Engine</h2>')
+        self.serviceName = QLabel('<h3>Recipient Engine</h3>')
         self.serviceName.setFixedHeight(60)
         self.serviceLayout.addWidget(self.serviceName)
         # service state
@@ -173,47 +173,47 @@ class SettingsTab(BaseTab):
         self.settingsLayout.addLayout(self.form)
         # woocommerce settings
         # header
-        wcHeader = QLabel('<h2>WooCommerce API</h2>')
+        wcHeader = QLabel('<h3>WooCommerce API</h3>')
         wcHeader.setFixedHeight(60)
         self.form.addRow(wcHeader)
         # url
-        self.urlLabel = QLabel('<h4>URL</h4>')
+        self.urlLabel = QLabel('URL')
         self.url = QLineEdit()
         self.form.addRow(self.urlLabel, self.url)
         # consumer key
-        self.ckeyLabel = QLabel('<h4>Consumer Key</h4>')
+        self.ckeyLabel = QLabel('Consumer Key')
         self.ckey = QLineEdit()
         self.form.addRow(self.ckeyLabel, self.ckey)
         # secret key
-        self.skeyLabel = QLabel('<h4>Secret Key</h4>')
+        self.skeyLabel = QLabel('Secret Key')
         self.skey = QLineEdit()
         self.form.addRow(self.skeyLabel, self.skey)
         # version
-        self.versionLabel = QLabel('<h4>Version</h4>')
+        self.versionLabel = QLabel('Version')
         self.version = QComboBox()
         self.version.setFixedWidth(200)
         self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
         self.form.addRow(self.versionLabel, self.version)
         # moein db settings
         # header
-        moeinHeader = QLabel('<h2>Moein DB</h2>')
+        moeinHeader = QLabel('<h3>Moein DB</h3>')
         moeinHeader.setFixedHeight(60)
         self.form.addRow(moeinHeader)
         # server
-        self.serverLabel = QLabel('<h4>Server</h4>')
+        self.serverLabel = QLabel('Server')
         self.server = QLineEdit()
         self.form.addRow(self.serverLabel, self.server)
         # username
-        self.usernameLabel = QLabel('<h4>Username</h4>')
+        self.usernameLabel = QLabel('Username')
         self.username = QLineEdit()
         self.form.addRow(self.usernameLabel, self.username)
         # password
-        self.passwordLabel = QLabel('<h4>Password</h4>')
+        self.passwordLabel = QLabel('Password')
         self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.Password)
         self.form.addRow(self.passwordLabel, self.password)
         # database
-        self.databaseLabel = QLabel('<h4>DataBase</h4>')
+        self.databaseLabel = QLabel('DataBase')
         self.database = QLineEdit()
         self.form.addRow(self.databaseLabel, self.database)
         # form buttons
