@@ -26,6 +26,9 @@ class Controller(object):
         # contents: settings tab
         self.ui.contents.settings.btnSave.clicked.connect(self.settings_btnSave_handler)
         self.ui.contents.settings.btnClear.clicked.connect(self.settings_btnClear_handler)
+        # contents: updateWP tab
+        self.ui.contents.updateWP.tabs.currentChanged.connect(self.updateWP_tabs_handler)
+        self.ui.contents.updateWP.signalAction.connect(self.updateWP_action_dispatcher)
 
     ###################
     # status handlers #
@@ -49,7 +52,58 @@ class Controller(object):
     # updateWP handlers #
     #####################
     def updateWP_handler(self):
+        current_tab = self.ui.contents.updateWP.tabs.currentIndex()
+        self.updateWP_tabs_handler(current_tab)
         self.ui.contents.showTab(self.ui.contents.UPDATE_WP)
+
+    def updateWP_tabs_handler(self, index):
+        print(index)
+
+    def updateWP_action_dispatcher(self, tab, action):
+        # create alias
+        update_wp = self.ui.contents.updateWP
+        if tab == update_wp.CATEGORIES:
+            if action == update_wp.ADD:
+                self.updateWP_add_category()
+            elif action == update_wp.EDIT:
+                self.updateWP_edit_category()
+            elif action == update_wp.REMOVE:
+                self.updateWP_remove_category()
+            elif action == update_wp.UPDATE:
+                self.updateWP_update_categories()
+        elif tab == update_wp.PRODUCTS:
+            if action == update_wp.ADD:
+                self.updateWP_add_product()
+            elif action == update_wp.EDIT:
+                self.updateWP_edit_product()
+            elif action == update_wp.REMOVE:
+                self.updateWP_remove_product()
+            elif action == update_wp.UPDATE:
+                self.updateWP_update_products()
+
+    def updateWP_add_category(self):
+        print('add new category')
+
+    def updateWP_edit_category(self):
+        print('edit category')
+
+    def updateWP_remove_category(self):
+        print('remove category')
+
+    def updateWP_update_categories(self):
+        print('update categories on wordpress')
+
+    def updateWP_add_product(self):
+        print('add new product')
+
+    def updateWP_edit_product(self):
+        print('edit product')
+
+    def updateWP_remove_product(self):
+        print('remove product')
+
+    def updateWP_update_products(self):
+        print('update products on wordpress')
 
     #####################
     # settings handlers #

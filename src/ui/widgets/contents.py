@@ -1,4 +1,5 @@
 # pyqt
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QPushButton, QLineEdit,
                              QComboBox, QTabWidget, QTableWidget, QTableWidgetItem)
@@ -10,6 +11,7 @@ class BaseTab(QWidget):
         super().__init__(parent)
         self.setupTab()
         self.setStyles()
+        self.connectSignals()
 
     def setupTab(self):
         self.generalLayout = QVBoxLayout()
@@ -19,11 +21,14 @@ class BaseTab(QWidget):
     def setStyles(self):
         pass
 
+    def connectSignals(self):
+        pass
+
 
 class StatusTab(BaseTab):
     """Status Tab"""
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # default state: stopped
         self.stop()
 
@@ -113,6 +118,17 @@ class InvoicesTab(BaseTab):
 
 class UpdateWPTab(BaseTab):
     """Update WP Tab"""
+    # tabs
+    PRODUCTS = 0
+    CATEGORIES = 1
+    # controls
+    ADD = 0
+    EDIT = 1
+    REMOVE = 2
+    UPDATE = 3
+    # signals
+    signalAction = pyqtSignal(int, int)
+
     def setupTab(self):
         super().setupTab()
         # tabs
@@ -154,6 +170,24 @@ class UpdateWPTab(BaseTab):
                 width: 80px;
             }
         """)
+
+    def connectSignals(self):
+        self.btnAdd.clicked.connect(self._btnAddHandler)
+        self.btnEdit.clicked.connect(self._btnEditHandler)
+        self.btnRemove.clicked.connect(self._btnRemoveHandler)
+        self.btnUpdateWP.clicked.connect(self._btnUpdateWPHandler)
+
+    def _btnAddHandler(self):
+        self.signalAction.emit(self.tabs.currentIndex(), self.ADD)
+
+    def _btnEditHandler(self):
+        self.signalAction.emit(self.tabs.currentIndex(), self.EDIT)
+
+    def _btnRemoveHandler(self):
+        self.signalAction.emit(self.tabs.currentIndex(), self.REMOVE)
+
+    def _btnUpdateWPHandler(self):
+        self.signalAction.emit(self.tabs.currentIndex(), self.UPDATE)
 
 
 class SettingsTab(BaseTab):
