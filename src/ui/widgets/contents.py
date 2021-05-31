@@ -69,7 +69,7 @@ class StatusTab(BaseTab):
         self.setStyleSheet("""
             #ServiceFrame{
                 border: 1px solid silver;
-                border-right-width: 15px;
+                border-right-width: 2px;
             }
             #ServiceFrame[state="start"]{
                 border-right-color: #26d926;
