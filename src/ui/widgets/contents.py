@@ -1,10 +1,44 @@
 # pyqt
+from PyQt5 import Qt
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
                              QFormLayout, QLabel, QPushButton, QLineEdit,
-                             QComboBox, QTabWidget, QTableWidget, QTableWidgetItem)
+                             QComboBox, QTabWidget, QTableWidget, QTableWidgetItem,
+                             QHeaderView, QAbstractItemView)
 
 
+##############
+# Base Table #
+##############
+class BaseTable(QTableWidget):
+    """Base Table"""
+    def __init__(self, columns, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.columns = columns
+        self.columnsCount = len(columns)
+        self.setColumnCount(self.columnsCount)
+        self.setHorizontalHeaderLabels(columns)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setFocusPolicy(Qt.Qt.NoFocus)
+        # set stylesheet
+        self.setStyles()
+
+    def setStyles(self):
+        self.setStyleSheet("""
+            QTableWidget{
+                margin: 5px;
+                selection-background-color: #BCDCF4;
+            }
+        """)
+
+
+############
+# Base Tab #
+############
 class BaseTab(QWidget):
     """Base Tab"""
     def __init__(self, parent=None):
@@ -25,6 +59,9 @@ class BaseTab(QWidget):
         pass
 
 
+###############
+# Tab: Status #
+###############
 class StatusTab(BaseTab):
     """Status Tab"""
     def __init__(self, *args, **kwargs):
@@ -107,6 +144,9 @@ class StatusTab(BaseTab):
         self.serviceFrame.setStyleSheet(self.serviceFrame.styleSheet())
 
 
+#################
+# Tab: Invoices #
+#################
 class InvoicesTab(BaseTab):
     """Invoices Tab"""
     def setupTab(self):
@@ -116,6 +156,9 @@ class InvoicesTab(BaseTab):
         self.generalLayout.addWidget(self.lbl)
 
 
+#################
+# Tab: UpdateWP #
+#################
 class UpdateWPTab(BaseTab):
     """Update WP Tab"""
     # tabs
@@ -151,19 +194,18 @@ class UpdateWPTab(BaseTab):
         self.setupRegisteredCategories()
 
     def setupRegisteredProducts(self):
-        self.tabs.addTab(QTableWidget(), 'Products')
+        self.registeredProductsTable = BaseTable(['ID', 'Code', 'Name', 'WPID', 'LastUpdate'])
+        self.tabs.addTab(self.registeredProductsTable, 'Products')
 
     def setupRegisteredCategories(self):
-        self.tabs.addTab(QTableWidget(), 'Categories')
+        self.registeredCategoryTable = BaseTable(['ID', 'Name', 'WPID', 'LastUpdate'])
+        self.tabs.addTab(self.registeredCategoryTable, 'Categories')
 
     def setStyles(self):
         self.setStyleSheet("""
             QTabBar::tab{
                 min-height: 10ex;
                 min-width: 30ex;
-            }
-            QTableWidget{
-                border: none;
             }
             QPushButton{
                 height: 25px;
@@ -190,6 +232,9 @@ class UpdateWPTab(BaseTab):
         self.signalAction.emit(self.tabs.currentIndex(), self.UPDATE)
 
 
+#################
+# Tab: Settings #
+#################
 class SettingsTab(BaseTab):
     """Settings Tab"""
     def setupTab(self):
@@ -318,6 +363,9 @@ class SettingsTab(BaseTab):
         self.database.clear()
 
 
+#############
+# Tab: Logs #
+#############
 class LogsTab(BaseTab):
     """Logs Tab"""
     def setupTab(self):
@@ -327,6 +375,9 @@ class LogsTab(BaseTab):
         self.generalLayout.addWidget(self.lbl)
 
 
+#############
+# Tab: Help #
+#############
 class HelpTab(BaseTab):
     """Help Tab"""
     def setupTab(self):
@@ -336,6 +387,9 @@ class HelpTab(BaseTab):
         self.generalLayout.addWidget(self.lbl)
 
 
+##############
+# Tab: About #
+##############
 class AboutTab(BaseTab):
     """About Tab"""
     def setupTab(self):
@@ -345,6 +399,9 @@ class AboutTab(BaseTab):
         self.generalLayout.addWidget(self.lbl)
 
 
+############
+# Contents #
+############
 class ContentsWidget(QWidget):
     """Contents Widget"""
     STATUS =    0
