@@ -1,39 +1,9 @@
+# internal
+from src.ui.widgets.table import BaseTable
 # pyqt
-from PyQt5 import Qt
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
-                             QFormLayout, QLabel, QPushButton, QLineEdit,
-                             QComboBox, QTabWidget, QTableWidget, QTableWidgetItem,
-                             QHeaderView, QAbstractItemView)
-
-
-##############
-# Base Table #
-##############
-class BaseTable(QTableWidget):
-    """Base Table"""
-    def __init__(self, columns, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.columns = columns
-        self.columnsCount = len(columns)
-        self.setColumnCount(self.columnsCount)
-        self.setHorizontalHeaderLabels(columns)
-        self.horizontalHeader().setStretchLastSection(True)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.setFocusPolicy(Qt.Qt.NoFocus)
-        # set stylesheet
-        self.setStyles()
-
-    def setStyles(self):
-        self.setStyleSheet("""
-            QTableWidget{
-                margin: 5px;
-                selection-background-color: #BCDCF4;
-            }
-        """)
+from PyQt5.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout, QFormLayout,
+                             QLabel, QPushButton, QLineEdit, QComboBox, QTabWidget)
 
 
 ############
