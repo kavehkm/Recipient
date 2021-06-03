@@ -16,5 +16,11 @@
         <file alias="btnLogs.png">icons8-error-24.png</file>
         <file alias="btnHelp.png">icons8-lifebuoy-24.png</file>
         <file alias="btnAbout.png">icons8-about-24.png</file>
+        <!-- dialogs -->
+        <file alias="successDialog.png">icons8-checked-40.png</file>
+        <file alias="infoDialog.png">icons8-info-squared-40.png</file>
+        <file alias="warningDialog.png">icons8-error-40.png</file>
+        <file alias="errorDialog.png">icons8-cancel-40.png</file>
+
     </qresource>
 </RCC>
