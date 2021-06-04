@@ -6,8 +6,8 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 
 
-class BaseDialog(QDialog):
-    """Base Dialog"""
+class Message(QDialog):
+    """Message"""
     # levels
     SUCCESS =   0
     INFO =      1
@@ -65,23 +65,22 @@ class BaseDialog(QDialog):
         iconLayout.addStretch(1)
         contentsLayout.addLayout(iconLayout)
         # _ message and details
-        messagelayout = QVBoxLayout()
+        messageLayout = QVBoxLayout()
         self.lblMessage = QLabel(self.message)
         self.lblMessage.setObjectName('Message')
-        messagelayout.addWidget(self.lblMessage)
+        messageLayout.addWidget(self.lblMessage)
         if self.details:
             self.lblDetails = QLabel(self.details)
             self.lblDetails.setObjectName('Details')
-            messagelayout.addWidget(self.lblDetails)
-        contentsLayout.addLayout(messagelayout)
+            messageLayout.addWidget(self.lblDetails)
+        contentsLayout.addLayout(messageLayout)
 
     def setupControl(self):
         controlLayout = QHBoxLayout()
         self.generalLayout.addLayout(controlLayout)
-        controlLayout.addStretch(1)
         self.btnOk = QPushButton('Ok')
         controlLayout.addWidget(self.btnOk)
-        controlLayout.addStretch(1)
+        controlLayout.setAlignment(self.btnOk, Qt.AlignHCenter)
 
     def setStyles(self):
         self.setStyleSheet("""
@@ -100,12 +99,8 @@ class BaseDialog(QDialog):
         self.btnOk.clicked.connect(self.close)
 
 
-class Message(BaseDialog):
-    """Message Dialog"""
-
-
-class Confirm(BaseDialog):
-    """Confirm Dialog"""
+class Confirm(Message):
+    """Confirm"""
     def setupControl(self):
         super().setupControl()
 
