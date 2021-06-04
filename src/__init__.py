@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 # internal
 from src import settings as s
+from src.ui.widgets import Message
 
 
 class Controller(object):
@@ -131,6 +132,9 @@ class Controller(object):
             datetime.now().strftime('%Y/%m/%d')
         ]
         self.ui_updateWP.registeredCategoryTable.addRecord(new_category)
+        msg_txt = 'New Category Registered Successfully.'
+        msg = Message(self.ui_updateWP, Message.SUCCESS, msg_txt)
+        msg.show()
 
     def updateWP_edit_category(self):
         category_index = self.ui_updateWP.registeredCategoryTable.getCurrentRecordIndex()
@@ -138,11 +142,15 @@ class Controller(object):
             category = self.ui_updateWP.registeredCategoryTable.getRecord(category_index)
             category[1] = category[1] + '-edited'
             self.ui_updateWP.registeredCategoryTable.updateRecord(category_index, category)
+            msg = Message(self.ui_updateWP, Message.SUCCESS, 'Category Updated Successfully.')
+            msg.show()
 
     def updateWP_remove_category(self):
         category_index = self.ui_updateWP.registeredCategoryTable.getCurrentRecordIndex()
         if category_index is not None:
             self.ui_updateWP.registeredCategoryTable.removeRecord(category_index)
+            msg = Message(self.ui_updateWP, Message.SUCCESS, 'Category Removed Successfully.')
+            msg.show()
 
     def updateWP_update_categories(self):
         print('update categories on wordpress')
@@ -156,6 +164,9 @@ class Controller(object):
             datetime.now().strftime('%Y/%m/%d')
         ]
         self.ui_updateWP.registeredProductsTable.addRecord(new_product)
+        msg_txt = 'New Product Registered Successfully.'
+        msg = Message(self.ui_updateWP, Message.SUCCESS, msg_txt)
+        msg.show()
 
     def updateWP_edit_product(self):
         product_index = self.ui_updateWP.registeredProductsTable.getCurrentRecordIndex()
@@ -163,11 +174,15 @@ class Controller(object):
             product = self.ui_updateWP.registeredProductsTable.getRecord(product_index)
             product[2] = product[2] + '-edited'
             self.ui_updateWP.registeredProductsTable.updateRecord(product_index, product)
+            msg = Message(self.ui_updateWP, Message.SUCCESS, 'Product Updated Successfully.')
+            msg.show()
 
     def updateWP_remove_product(self):
         product_index = self.ui_updateWP.registeredProductsTable.getCurrentRecordIndex()
         if product_index is not None:
             self.ui_updateWP.registeredProductsTable.removeRecord(product_index)
+            msg = Message(self.ui_updateWP, Message.SUCCESS, 'Product Removed Successfully.')
+            msg.show()
 
     def updateWP_update_products(self):
         print('update products on wordpress')
@@ -183,10 +198,21 @@ class Controller(object):
         self.ui.contents.showTab(self.ui.contents.SETTINGS)
 
     def settings_btnSave_handler(self):
-        settings = self.ui_settings.get()
-        s.set('wc', settings.get('wc'))
-        s.set('moein', settings.get('moein'))
-        s.save()
+        try:
+            settings = self.ui_settings.get()
+            s.set('wc', settings.get('wc'))
+            s.set('moein', settings.get('moein'))
+            s.save()
+        except Exception as e:
+            lvl = Message.ERROR
+            msg_txt = 'Cannot Save Settings'
+            details = str(e)
+        else:
+            lvl = Message.SUCCESS
+            msg_txt = 'Settings Saved Successfully.'
+            details = None
+        msg = Message(self.ui_settings, lvl, msg_txt, details)
+        msg.show()
 
     def settings_btnClear_handler(self):
         self.ui_settings.clear()
