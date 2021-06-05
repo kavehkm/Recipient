@@ -134,19 +134,18 @@ class UpdateWPTab(BaseTab):
     # tabs
     PRODUCTS = 0
     CATEGORIES = 1
-    # controls
-    ADD = 0
-    EDIT = 1
-    REMOVE = 2
-    UPDATE = 3
-    # signals
-    signalAction = pyqtSignal(int, int)
 
     def setupTab(self):
         super().setupTab()
         # tabs
         self.tabs = QTabWidget()
         self.generalLayout.addWidget(self.tabs)
+        # _ products
+        self.productsTable = BaseTable(['ID', 'Code', 'Name', 'WPID', 'LastUpdate'])
+        self.tabs.addTab(self.productsTable, 'Products')
+        # _ categories
+        self.categoriesTable = BaseTable(['ID', 'Name', 'WPID', 'LastUpdate'])
+        self.tabs.addTab(self.categoriesTable, 'Categories')
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
@@ -159,17 +158,6 @@ class UpdateWPTab(BaseTab):
         controlLayout.addWidget(self.btnRemove)
         controlLayout.addWidget(self.btnUpdateWP)
         self.generalLayout.addLayout(controlLayout)
-        # tabs contents
-        self.setupRegisteredProducts()
-        self.setupRegisteredCategories()
-
-    def setupRegisteredProducts(self):
-        self.registeredProductsTable = BaseTable(['ID', 'Code', 'Name', 'WPID', 'LastUpdate'])
-        self.tabs.addTab(self.registeredProductsTable, 'Products')
-
-    def setupRegisteredCategories(self):
-        self.registeredCategoryTable = BaseTable(['ID', 'Name', 'WPID', 'LastUpdate'])
-        self.tabs.addTab(self.registeredCategoryTable, 'Categories')
 
     def setStyles(self):
         self.setStyleSheet("""
@@ -182,24 +170,6 @@ class UpdateWPTab(BaseTab):
                 width: 80px;
             }
         """)
-
-    def connectSignals(self):
-        self.btnAdd.clicked.connect(self._btnAddHandler)
-        self.btnEdit.clicked.connect(self._btnEditHandler)
-        self.btnRemove.clicked.connect(self._btnRemoveHandler)
-        self.btnUpdateWP.clicked.connect(self._btnUpdateWPHandler)
-
-    def _btnAddHandler(self):
-        self.signalAction.emit(self.tabs.currentIndex(), self.ADD)
-
-    def _btnEditHandler(self):
-        self.signalAction.emit(self.tabs.currentIndex(), self.EDIT)
-
-    def _btnRemoveHandler(self):
-        self.signalAction.emit(self.tabs.currentIndex(), self.REMOVE)
-
-    def _btnUpdateWPHandler(self):
-        self.signalAction.emit(self.tabs.currentIndex(), self.UPDATE)
 
 
 #################
