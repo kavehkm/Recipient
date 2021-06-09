@@ -6,7 +6,19 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 
 
-class Message(QDialog):
+class BaseDialog(QDialog):
+    """Base Dialog"""
+    def __init__(self, parent):
+        super().__init__(parent)
+        # set window modality
+        self.setWindowModality(Qt.ApplicationModal)
+
+    def setWindowTitle(self, a0: str) -> None:
+        title = 'Recipient-{}'.format(a0)
+        super().setWindowTitle(title)
+
+
+class Message(BaseDialog):
     """Message"""
     # levels
     SUCCESS =   0
@@ -35,11 +47,7 @@ class Message(QDialog):
         self.message = message
         self.details = details
         # set proper title
-        title = 'Recipient-{}'.format(self.TITLES.get(self.level, self.DEFAULT_LEVEL))
-        self.setWindowTitle(title)
-        # set window modality
-        self.setWindowModality(Qt.ApplicationModal)
-
+        self.setWindowTitle(self.TITLES.get(self.level, self.DEFAULT_LEVEL))
         # setup dialog contents
         self.setupDialog()
         # setup dialog control
@@ -76,11 +84,11 @@ class Message(QDialog):
         contentsLayout.addLayout(messageLayout)
 
     def setupControl(self):
-        controlLayout = QHBoxLayout()
-        self.generalLayout.addLayout(controlLayout)
+        self.controlLayout = QHBoxLayout()
+        self.generalLayout.addLayout(self.controlLayout)
         self.btnOk = QPushButton('Ok')
-        controlLayout.addWidget(self.btnOk)
-        controlLayout.setAlignment(self.btnOk, Qt.AlignHCenter)
+        self.controlLayout.addWidget(self.btnOk)
+        self.controlLayout.setAlignment(self.btnOk, Qt.AlignHCenter)
 
     def setStyles(self):
         self.setStyleSheet("""
@@ -103,6 +111,10 @@ class Confirm(Message):
     """Confirm"""
     def setupControl(self):
         super().setupControl()
+        self.btnCancel = QPushButton('Cancel')
+        self.controlLayout.addWidget(self.btnCancel)
+        self.controlLayout.setAlignment(self.btnCancel, Qt.AlignHCenter)
 
     def connectSignals(self):
         super().connectSignals()
+        self.btnCancel.clicked.connect(self.close)

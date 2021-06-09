@@ -3,8 +3,8 @@ import time
 import random
 from datetime import datetime
 # internal
-from src.ui.widgets import Message
 from src.worker import Worker
+from src.ui.widgets import Message, Confirm
 # pyqt
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtWidgets import QProgressDialog
@@ -56,9 +56,14 @@ class ProductView(object):
     def remove(self):
         product_index = self.table.getCurrentRecordIndex()
         if product_index is not None:
-            self.table.removeRecord(product_index)
-            msg = Message(self.tab, Message.SUCCESS, 'Product Removed Successfully.')
-            msg.show()
+            cfm = Confirm(self.tab, Confirm.WARNING, 'Are You Sure?')
+            cfm.btnOk.clicked.connect(lambda: self.confirm_remove(product_index))
+            cfm.show()
+
+    def confirm_remove(self, product_index):
+        self.table.removeRecord(product_index)
+        msg = Message(self.tab, Message.SUCCESS, 'Product Removed Successfully.')
+        msg.show()
 
     def update(self):
         # query database
@@ -76,7 +81,8 @@ class ProductView(object):
         # lock btnUpdateWP
         self.tab.btnUpdateWP.setDisabled(True)
 
-    def updater(self, products, progress_callback):
+    @staticmethod
+    def updater(products, progress_callback):
         for i, products in enumerate(products, 1):
             time.sleep(0.5)
             progress_callback.emit(i)
@@ -136,9 +142,14 @@ class CategoryView(object):
     def remove(self):
         category_index = self.table.getCurrentRecordIndex()
         if category_index is not None:
-            self.table.removeRecord(category_index)
-            msg = Message(self.tab, Message.SUCCESS, 'Category Removed Successfully.')
-            msg.show()
+            cfm = Confirm(self.tab, Confirm.WARNING, 'Are You Sure?')
+            cfm.btnOk.clicked.connect(lambda: self.confirm_remove(category_index))
+            cfm.show()
+
+    def confirm_remove(self, category_index):
+        self.table.removeRecord(category_index)
+        msg = Message(self.tab, Message.SUCCESS, 'Category Removed Successfully.')
+        msg.show()
 
     def update(self):
         # query database
@@ -156,7 +167,8 @@ class CategoryView(object):
         # lock btnUpdateWP
         self.tab.btnUpdateWP.setDisabled(True)
 
-    def updater(self, categories, progress_callback):
+    @staticmethod
+    def updater(categories, progress_callback):
         for i, category in enumerate(categories, 1):
             time.sleep(0.5)
             progress_callback.emit(i)
