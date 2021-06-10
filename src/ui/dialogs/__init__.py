@@ -3,7 +3,8 @@ from src.ui.resources import icons
 # pyqt
 from PyQt5.Qt import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QVBoxLayout,
+                             QLabel, QPushButton, QProgressBar)
 
 
 class BaseDialog(QDialog):
@@ -121,3 +122,43 @@ class Confirm(Message):
     def connectSignals(self):
         super().connectSignals()
         self.btnCancel.clicked.connect(self.close)
+
+
+class Progress(BaseDialog):
+    """Progress Dialog"""
+    def __init__(self, parent, title, minimum, maximum):
+        self.title = title
+        self.minimum = minimum
+        self.maximum = maximum
+        super().__init__(parent)
+
+    def setupDialog(self):
+        super().setupDialog()
+        # set title
+        self.setWindowTitle(self.title)
+        # set size
+        self.setMinimumSize(300, 100)
+        # title layout
+        titleLayout = QHBoxLayout()
+        self.generalLayout.addLayout(titleLayout)
+        self.lblTitle = QLabel(self.title)
+        titleLayout.addWidget(self.lblTitle, alignment=Qt.AlignHCenter)
+        # progress layout
+        progressLayout = QHBoxLayout()
+        self.generalLayout.addLayout(progressLayout)
+        self.progressBar = QProgressBar()
+        self.progressBar.setMinimum(self.minimum)
+        self.progressBar.setMaximum(self.maximum)
+        progressLayout.addWidget(self.progressBar)
+
+    def connectSignals(self):
+        self.progressBar.valueChanged.connect(self.onFinished)
+
+    def setValue(self, value):
+        if self.isHidden():
+            self.show()
+        self.progressBar.setValue(value)
+
+    def onFinished(self, value):
+        if value == self.progressBar.maximum():
+            self.close()

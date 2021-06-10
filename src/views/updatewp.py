@@ -4,10 +4,9 @@ import random
 from datetime import datetime
 # internal
 from src.worker import Worker
-from src.ui.dialogs import Message, Confirm
+from src.ui.dialogs import Message, Confirm, Progress
 # pyqt
 from PyQt5.QtCore import QThreadPool
-from PyQt5.QtWidgets import QProgressDialog
 
 
 class ProductView(object):
@@ -70,7 +69,7 @@ class ProductView(object):
         # query database
         products = [i for i in range(50)]
         # progress dialog
-        pd = QProgressDialog('Update Products...', 'Abort', 0, len(products), self.ui)
+        pd = Progress(self.ui, 'Update Products...', 0, len(products))
         # worker
         worker = Worker(self.updater, products)
         worker.signals.progress.connect(pd.setValue)
@@ -157,7 +156,7 @@ class CategoryView(object):
         # query database
         categories = [i for i in range(10)]
         # progress dialog
-        pd = QProgressDialog('Update Categories...', 'Abort', 0, len(categories), self.ui)
+        pd = Progress(self.ui, 'Update Categories...', 0, len(categories))
         # worker
         worker = Worker(self.updater, categories)
         worker.signals.progress.connect(pd.setValue)
