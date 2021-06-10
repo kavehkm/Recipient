@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 # internal
 from src.worker import Worker
-from src.ui.widgets import Message, Confirm
+from src.ui.dialogs import Message, Confirm
 # pyqt
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtWidgets import QProgressDialog
@@ -14,6 +14,7 @@ class ProductView(object):
     """Product View"""
     def __init__(self, parent):
         self.parent = parent
+        self.ui = parent.ui
         self.tab = parent.tab
         self.table = parent.tab.productsTable
 
@@ -41,7 +42,7 @@ class ProductView(object):
             datetime.now().strftime('%Y/%m/%d')
         ]
         self.table.addRecord(new_product)
-        msg = Message(self.tab, Message.SUCCESS, 'New Product Added Successfully.')
+        msg = Message(self.ui, Message.SUCCESS, 'New Product Added Successfully.')
         msg.show()
 
     def edit(self):
@@ -50,26 +51,26 @@ class ProductView(object):
             product = self.table.getRecord(product_index)
             product[2] = product[2] + '-edited'
             self.table.updateRecord(product_index, product)
-            msg = Message(self.tab, Message.SUCCESS, 'Product Edited Successfully.')
+            msg = Message(self.ui, Message.SUCCESS, 'Product Edited Successfully.')
             msg.show()
 
     def remove(self):
         product_index = self.table.getCurrentRecordIndex()
         if product_index is not None:
-            cfm = Confirm(self.tab, Confirm.WARNING, 'Are You Sure?')
+            cfm = Confirm(self.ui, Confirm.WARNING, 'Are You Sure?')
             cfm.btnOk.clicked.connect(lambda: self.confirm_remove(product_index))
             cfm.show()
 
     def confirm_remove(self, product_index):
         self.table.removeRecord(product_index)
-        msg = Message(self.tab, Message.SUCCESS, 'Product Removed Successfully.')
+        msg = Message(self.ui, Message.SUCCESS, 'Product Removed Successfully.')
         msg.show()
 
     def update(self):
         # query database
         products = [i for i in range(50)]
         # progress dialog
-        pd = QProgressDialog('Update Products...', 'Abort', 0, len(products), self.tab)
+        pd = QProgressDialog('Update Products...', 'Abort', 0, len(products), self.ui)
         # worker
         worker = Worker(self.updater, products)
         worker.signals.progress.connect(pd.setValue)
@@ -89,12 +90,12 @@ class ProductView(object):
 
     def update_error(self, e):
         self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.tab, Message.ERROR, 'Cannot Update Products.', str(e))
+        msg = Message(self.ui, Message.ERROR, 'Cannot Update Products.', str(e))
         msg.show()
 
     def update_done(self):
         self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.tab, Message.SUCCESS, 'Products Updated Successfully.')
+        msg = Message(self.ui, Message.SUCCESS, 'Products Updated Successfully.')
         msg.show()
 
 
@@ -102,6 +103,7 @@ class CategoryView(object):
     """Category View"""
     def __init__(self, parent):
         self.parent = parent
+        self.ui = parent.ui
         self.tab = parent.tab
         self.table = parent.tab.categoriesTable
 
@@ -127,7 +129,7 @@ class CategoryView(object):
             datetime.now().strftime('%Y/%m/%d')
         ]
         self.table.addRecord(new_category)
-        msg = Message(self.tab, Message.SUCCESS, 'New Category Added Successfully.')
+        msg = Message(self.ui, Message.SUCCESS, 'New Category Added Successfully.')
         msg.show()
 
     def edit(self):
@@ -136,26 +138,26 @@ class CategoryView(object):
             category = self.table.getRecord(category_index)
             category[1] = category[1] + '-edited'
             self.table.updateRecord(category_index, category)
-            msg = Message(self.tab, Message.SUCCESS, 'Category Edited Successfully.')
+            msg = Message(self.ui, Message.SUCCESS, 'Category Edited Successfully.')
             msg.show()
 
     def remove(self):
         category_index = self.table.getCurrentRecordIndex()
         if category_index is not None:
-            cfm = Confirm(self.tab, Confirm.WARNING, 'Are You Sure?')
+            cfm = Confirm(self.ui, Confirm.WARNING, 'Are You Sure?')
             cfm.btnOk.clicked.connect(lambda: self.confirm_remove(category_index))
             cfm.show()
 
     def confirm_remove(self, category_index):
         self.table.removeRecord(category_index)
-        msg = Message(self.tab, Message.SUCCESS, 'Category Removed Successfully.')
+        msg = Message(self.ui, Message.SUCCESS, 'Category Removed Successfully.')
         msg.show()
 
     def update(self):
         # query database
         categories = [i for i in range(10)]
         # progress dialog
-        pd = QProgressDialog('Update Categories...', 'Abort', 0, len(categories), self.tab)
+        pd = QProgressDialog('Update Categories...', 'Abort', 0, len(categories), self.ui)
         # worker
         worker = Worker(self.updater, categories)
         worker.signals.progress.connect(pd.setValue)
@@ -175,12 +177,12 @@ class CategoryView(object):
 
     def update_error(self, e):
         self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.tab, Message.ERROR, 'Cannot Update Categories.', str(e))
+        msg = Message(self.ui, Message.ERROR, 'Cannot Update Categories.', str(e))
         msg.show()
 
     def update_done(self):
         self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.tab, Message.SUCCESS, 'Categories Updated Successfully.')
+        msg = Message(self.ui, Message.SUCCESS, 'Categories Updated Successfully.')
         msg.show()
 
 

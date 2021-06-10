@@ -10,8 +10,22 @@ class BaseDialog(QDialog):
     """Base Dialog"""
     def __init__(self, parent):
         super().__init__(parent)
+        self.setupDialog()
+        self.setStyles()
+        self.connectSignals()
+
+    def setupDialog(self):
         # set window modality
         self.setWindowModality(Qt.ApplicationModal)
+        # general layout
+        self.generalLayout = QVBoxLayout()
+        self.setLayout(self.generalLayout)
+
+    def setStyles(self):
+        pass
+
+    def connectSignals(self):
+        pass
 
     def setWindowTitle(self, a0: str) -> None:
         title = 'Recipient-{}'.format(a0)
@@ -42,29 +56,19 @@ class Message(BaseDialog):
     }
 
     def __init__(self, parent, level, message, details=None):
-        super().__init__(parent)
         self.level = level
         self.message = message
         self.details = details
-        # set proper title
-        self.setWindowTitle(self.TITLES.get(self.level, self.DEFAULT_LEVEL))
-        # setup dialog contents
-        self.setupDialog()
-        # setup dialog control
-        self.setupControl()
-        # set style sheet
-        self.setStyles()
-        # connect signals
-        self.connectSignals()
+        super().__init__(parent)
 
     def setupDialog(self):
-        # general layout
-        self.generalLayout = QVBoxLayout()
-        self.setLayout(self.generalLayout)
+        super().setupDialog()
+        # set proper title
+        self.setWindowTitle(self.TITLES.get(self.level, self.DEFAULT_LEVEL))
         # contents layout
         contentsLayout = QHBoxLayout()
         self.generalLayout.addLayout(contentsLayout)
-        # _ icon
+        # - icon
         iconLayout = QVBoxLayout()
         icon = QLabel()
         pix = self.ICONS.get(self.level, self.DEFAULT_LEVEL)
@@ -72,7 +76,7 @@ class Message(BaseDialog):
         iconLayout.addWidget(icon)
         iconLayout.addStretch(1)
         contentsLayout.addLayout(iconLayout)
-        # _ message and details
+        # - message and details
         messageLayout = QVBoxLayout()
         self.lblMessage = QLabel(self.message)
         self.lblMessage.setObjectName('Message')
@@ -82,13 +86,13 @@ class Message(BaseDialog):
             self.lblDetails.setObjectName('Details')
             messageLayout.addWidget(self.lblDetails)
         contentsLayout.addLayout(messageLayout)
-
-    def setupControl(self):
+        contentsLayout.addStretch(1)
+        # control layout
         self.controlLayout = QHBoxLayout()
+        self.controlLayout.addStretch(1)
         self.generalLayout.addLayout(self.controlLayout)
-        self.btnOk = QPushButton('Ok')
+        self.btnOk = QPushButton('OK')
         self.controlLayout.addWidget(self.btnOk)
-        self.controlLayout.setAlignment(self.btnOk, Qt.AlignHCenter)
 
     def setStyles(self):
         self.setStyleSheet("""
@@ -109,11 +113,10 @@ class Message(BaseDialog):
 
 class Confirm(Message):
     """Confirm"""
-    def setupControl(self):
-        super().setupControl()
+    def setupDialog(self):
+        super().setupDialog()
         self.btnCancel = QPushButton('Cancel')
         self.controlLayout.addWidget(self.btnCancel)
-        self.controlLayout.setAlignment(self.btnCancel, Qt.AlignHCenter)
 
     def connectSignals(self):
         super().connectSignals()

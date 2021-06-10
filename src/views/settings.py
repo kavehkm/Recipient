@@ -1,6 +1,6 @@
 # internal
 from src import settings as s
-from src.ui.widgets import Message
+from src.ui.dialogs import Message
 
 
 class Settings(object):
@@ -34,7 +34,7 @@ class Settings(object):
             lvl = Message.SUCCESS
             msg_txt = 'Settings Saved Successfully.'
             details = None
-        msg = Message(self.tab, lvl, msg_txt, details)
+        msg = Message(self.ui, lvl, msg_txt, details)
         msg.show()
 
     def clear(self):
