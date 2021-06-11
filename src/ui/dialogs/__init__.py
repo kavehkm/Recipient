@@ -134,10 +134,8 @@ class Progress(BaseDialog):
 
     def setupDialog(self):
         super().setupDialog()
-        # set title
+        # set window title
         self.setWindowTitle(self.title)
-        # set size
-        self.setMinimumSize(300, 100)
         # title layout
         titleLayout = QHBoxLayout()
         self.generalLayout.addLayout(titleLayout)
