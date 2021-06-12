@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 # internal
 from src.worker import Worker
-from src.ui.dialogs import Message, Confirm, Progress
+from src.ui.components import Message, Confirm, Progress
 # pyqt
 from PyQt5.QtCore import QThreadPool
 
@@ -202,7 +202,7 @@ class UpdateWP(object):
     PRODUCTS_EDIT = PRODUCTS + EDIT
     PRODUCTS_REMOVE = PRODUCTS + REMOVE
     PRODUCTS_UPDATE = PRODUCTS + UPDATE
-    CATEG0RIES_INIT = CATEGORIES + INIT
+    CATEGORIES_INIT = CATEGORIES + INIT
     CATEGORIES_ADD = CATEGORIES + ADD
     CATEGORIES_EDIT = CATEGORIES + EDIT
     CATEGORIES_REMOVE = CATEGORIES + REMOVE
@@ -246,7 +246,7 @@ class UpdateWP(object):
             self.product.remove()
         elif operation == self.PRODUCTS_UPDATE:
             self.product.update()
-        elif operation == self.CATEG0RIES_INIT:
+        elif operation == self.CATEGORIES_INIT:
             self.category.get()
         elif operation == self.CATEGORIES_ADD:
             self.category.add()

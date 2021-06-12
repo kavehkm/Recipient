@@ -1,6 +1,6 @@
 # internal
 from src import settings as s
-from src.ui.dialogs import Message
+from src.ui.components import Message
 
 
 class Settings(object):

@@ -3,19 +3,19 @@ from PyQt5 import Qt
 from PyQt5.QtWidgets import QHeaderView, QAbstractItemView, QTableWidget, QTableWidgetItem
 
 
-class BaseTable(QTableWidget):
+class Table(QTableWidget):
     """Base Table"""
-    def __init__(self, columns, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, columns, parent=None):
+        super().__init__(parent)
         self.columns = columns
-        self.columnsCount = len(columns)
-        # set table
+        self.bootstrap()
+
+    def bootstrap(self):
         self.setupTable()
-        # set stylesheet
         self.setStyles()
 
     def setupTable(self):
-        self.setColumnCount(self.columnsCount)
+        self.setColumnCount(len(self.columns))
         self.setHorizontalHeaderLabels(self.columns)
         self.setAlternatingRowColors(True)
         self.horizontalHeader().setStretchLastSection(True)
@@ -40,7 +40,7 @@ class BaseTable(QTableWidget):
 
     def getRecord(self, recordIndex):
         record = []
-        for colIndex in range(self.columnsCount):
+        for colIndex in range(len(self.columns)):
             item = self.item(recordIndex, colIndex)
             record.append(item.text())
         return record
@@ -67,7 +67,3 @@ class BaseTable(QTableWidget):
         self.removeAllRecords()
         for record in records:
             self.addRecord(record)
-
-
-class Table(BaseTable):
-    """Table"""
