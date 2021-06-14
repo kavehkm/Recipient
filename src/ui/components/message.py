@@ -36,7 +36,6 @@ class Message(BaseDialog):
         super().__init__(parent)
 
     def setupDialog(self):
-        super().setupDialog()
         # set proper title
         self.setWindowTitle(self.TITLES.get(self.level, self.DEFAULT_LEVEL))
         # contents layout

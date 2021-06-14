@@ -417,8 +417,6 @@ class Main(QMainWindow):
         # general layout
         self.generalLayout = QHBoxLayout()
         self.centralWidget.setLayout(self.generalLayout)
-
-    def setupMain(self):
         # set windows title
         self.setWindowTitle('Recipient')
         # set windows geometry
@@ -432,6 +430,8 @@ class Main(QMainWindow):
             iconFile = ':/icons/windowIcon{}.png'.format(size)
             windowIcon.addFile(iconFile, QSize(size, size))
         self.setWindowIcon(windowIcon)
+
+    def setupMain(self):
         # set menu widget 30%
         self.menu = Menu(self)
         self.generalLayout.addWidget(self.menu, 30)

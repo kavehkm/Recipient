@@ -13,12 +13,12 @@ class TableListSignals(QObject):
 class TableList(BaseDialog):
     """Table List"""
     def __init__(self, parent, columns):
-        self.table = Table(columns)
+        self.columns = columns
         self.signals = TableListSignals()
         super().__init__(parent)
 
     def setupDialog(self):
-        super().setupDialog()
+        self.table = Table(self.columns)
         self.dialogLayout.addWidget(self.table)
 
     def connectSignals(self):

@@ -27,9 +27,11 @@ class BaseDialog(QDialog):
         self.controlLayout = QHBoxLayout()
         self.controlLayout.addStretch(1)
         self.generalLayout.addLayout(self.controlLayout)
+        # set window modality
+        self.setWindowModality(Qt.ApplicationModal)
 
     def setupDialog(self):
-        self.setWindowModality(Qt.ApplicationModal)
+        pass
 
     def setupControl(self):
         pass
