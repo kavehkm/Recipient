@@ -4,6 +4,7 @@ import random
 from datetime import datetime
 # internal
 from src.worker import Worker
+from src.ui.windows import AddEditForm, AddEditOptions
 from src.ui.components import Message, Confirm, Progress
 # pyqt
 from PyQt5.QtCore import QThreadPool
@@ -32,16 +33,61 @@ class ProductView(object):
         self.table.setRecords(products)
 
     def add(self):
-        random_int = random.randint(1, 10000)
-        new_product = [
-            random_int,
-            random_int + 1,
-            f'Product{random_int}',
-            random_int * 2,
-            datetime.now().strftime('%Y/%m/%d')
-        ]
-        self.table.addRecord(new_product)
-        msg = Message(self.ui, Message.SUCCESS, 'New Product Added Successfully.')
+        self.form = AddEditForm(self.ui)
+        self.form.setWindowTitle('Add New Product')
+        self.form.btnSave.clicked.connect(self.add_save)
+        self.form.signals.showOptions.connect(self.add_edit_show_options)
+        self.form.show()
+
+    def add_edit_show_options(self, subject):
+        if subject == self.form.ID:
+            title = 'Moein Products'
+            columns = ['ID', 'Name']
+            items = [
+                [i, f'Moein Product{i}']
+                for i in range(20)
+            ]
+        else:
+            title = 'WP Products'
+            columns = ['WPID', 'Name']
+            items = [
+                [i, f'WP Product{i}']
+                for i in range(10)
+            ]
+        self.table_list = AddEditOptions(self.form, columns)
+        self.table_list.setWindowTitle(title)
+        self.table_list.setList(items)
+        self.table_list.btnAddAll.clicked.connect(self.add_all)
+        self.table_list.signals.select.connect(lambda item: self.add_edit_select_option(subject, item))
+        self.table_list.show()
+
+    def add_all(self):
+        pass
+
+    def add_edit_select_option(self, subject, item):
+        if subject == self.form.ID:
+            self.form.setId(item[0])
+        else:
+            self.form.setWpid(item[0])
+        self.table_list.close()
+
+    def add_save(self):
+        try:
+            moein_id = int(self.form.getId())
+            wp_id = int(self.form.getWpid())
+            new_product = [
+                moein_id,
+                moein_id + 1,
+                f'Product{moein_id}',
+                wp_id,
+                datetime.now().strftime('%Y/%m/%d')
+            ]
+            self.table.addRecord(new_product)
+        except Exception as e:
+            msg = Message(self.form, Message.ERROR, 'Cannot Add New Product', str(e))
+        else:
+            self.form.close()
+            msg = Message(self.ui, Message.SUCCESS, 'New Product Added Successfully.')
         msg.show()
 
     def edit(self):
