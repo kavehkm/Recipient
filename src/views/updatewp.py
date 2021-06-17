@@ -42,9 +42,9 @@ class ProductView(object):
     def add_edit_show_options(self, subject):
         if subject == self.form.ID:
             title = 'Moein Products'
-            columns = ['ID', 'Name']
+            columns = ['ID', 'Code', 'Name']
             items = [
-                [i, f'Moein Product{i}']
+                [i, i + 1, f'Moein Product{i}']
                 for i in range(20)
             ]
         else:
@@ -57,12 +57,37 @@ class ProductView(object):
         self.table_list = AddEditOptions(self.form, columns)
         self.table_list.setWindowTitle(title)
         self.table_list.setList(items)
-        self.table_list.btnAddAll.clicked.connect(self.add_all)
+        self.table_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
         self.table_list.signals.select.connect(lambda item: self.add_edit_select_option(subject, item))
         self.table_list.show()
 
-    def add_all(self):
-        pass
+    def add_all(self, subject):
+        if subject == self.form.ID:
+            products = [i for i in range(100)]
+            pd = Progress(self.table_list, 'Add All Products', 0, len(products))
+            worker = Worker(self.adder, products)
+            worker.signals.progress.connect(pd.setValue)
+            worker.signals.error.connect(pd.close)
+            worker.signals.error.connect(self.add_all_error)
+            worker.signals.done.connect(self.add_all_done)
+            QThreadPool.globalInstance().start(worker)
+            self.table_list.btnAddAll.setDisabled(True)
+
+    @staticmethod
+    def adder(products, progress_callback):
+        for i, product in enumerate(products, 1):
+            time.sleep(0.1)
+            progress_callback.emit(i)
+
+    def add_all_error(self, e):
+        self.table_list.btnAddAll.setEnabled(True)
+        msg = Message(self.table_list, Message.ERROR, 'Cannot Add All Products.', str(e))
+        msg.show()
+
+    def add_all_done(self):
+        self.table_list.btnAddAll.setEnabled(True)
+        msg = Message(self.table_list, Message.SUCCESS, 'All Products Added Successfully.')
+        msg.show()
 
     def add_edit_select_option(self, subject, item):
         if subject == self.form.ID:
@@ -94,10 +119,28 @@ class ProductView(object):
         product_index = self.table.getCurrentRecordIndex()
         if product_index is not None:
             product = self.table.getRecord(product_index)
-            product[2] = product[2] + '-edited'
+            self.form = AddEditForm(self.ui)
+            self.form.setWindowTitle('Edit Product')
+            self.form.setId(product[0])
+            self.form.setWpid(product[3])
+            self.form.btnSave.clicked.connect(lambda: self.edit_save(product_index))
+            self.form.signals.showOptions.connect(self.add_edit_show_options)
+            self.form.show()
+
+    def edit_save(self, product_index):
+        try:
+            moein_id = int(self.form.getId())
+            wp_id = int(self.form.getWpid())
+            product = self.table.getRecord(product_index)
+            product[0] = moein_id
+            product[3] = wp_id
             self.table.updateRecord(product_index, product)
+        except Exception as e:
+            msg = Message(self.form, Message.ERROR, 'Cannot Edit Product.', str(e))
+        else:
+            self.form.close()
             msg = Message(self.ui, Message.SUCCESS, 'Product Edited Successfully.')
-            msg.show()
+        msg.show()
 
     def remove(self):
         product_index = self.table.getCurrentRecordIndex()
