@@ -37,8 +37,18 @@ class Model(metaclass=ModelBase):
     def _select(self):
         sql = 'SELECT '
         for name, column in self._columns.items():
-            sql += '{} AS {}, '.format(name, column.name)
+            sql += '{} AS {}, '.format(column.name, name)
         return sql.rstrip(', ')
+
+    def _where(self, kwargs):
+        parameters = []
+        sql = ' WHERE '
+        for column, value in kwargs.items():
+            c = self._columns.get(column)
+            if c:
+                sql += '{} = ? AND '.format(c.name)
+                parameters.append(value)
+        return sql.rstrip(' AND '), parameters
 
     @property
     def columns(self):
@@ -62,11 +72,9 @@ class Model(metaclass=ModelBase):
         sql = self._select()
         sql += ' FROM {}'.format(self.table)
         if kwargs:
-            sql += ' WHERE '
-            for column, value in kwargs.items():
-                sql += '{} = ? AND '.format(column)
-                parameters.append(value)
-            sql = sql.rstrip(' AND ')
+            s, p = self._where(kwargs)
+            sql += s
+            parameters = p
         return self._execute(sql, parameters, method='fetchall')
 
     def get(self, pk):
@@ -93,20 +101,16 @@ class Model(metaclass=ModelBase):
             parameters.append(value)
         sql = sql.rstrip(', ')
         if kwargs:
-            sql += ' WHERE '
-            for column, value in kwargs.items():
-                sql += '{} = ? AND '.format(column)
-                parameters.append(value)
-            sql = sql.rstrip(' AND ')
+            s, p = self._where(kwargs)
+            sql += s
+            parameters.extend(p)
         return self._execute(sql, parameters)
 
     def delete(self, **kwargs):
         parameters = []
         sql = 'DELETE FROM {}'.format(self.table)
         if kwargs:
-            sql += ' WHERE '
-            for column, value in kwargs.items():
-                sql += '{} = ? AND '.format(column)
-                parameters.append(value)
-            sql = sql.rstrip(' AND ')
+            s, p = self._where(kwargs)
+            sql += s
+            parameters = p
         return self._execute(sql, parameters)
