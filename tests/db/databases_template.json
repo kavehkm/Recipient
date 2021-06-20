@@ -1,0 +1,14 @@
+{
+    "valid": {
+        "server": "",
+        "username": "",
+        "password": "",
+        "database": ""
+    },
+    "invalid": {
+        "server": "",
+        "username": "",
+        "password": "",
+        "database": ""
+    }
+}

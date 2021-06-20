@@ -1,4 +1,5 @@
 # standard
+import os
 import unittest
 # internal
 from src import db, settings as s
@@ -8,24 +9,22 @@ import pyodbc
 
 class TestDB(unittest.TestCase):
     """Test DB module"""
+    def setUp(self):
+        self.dir = os.path.dirname(os.path.abspath(__file__))
+        self.databases_file = 'databases.json'
+        self.databases_file_path = os.path.join(self.dir, self.databases_file)
+        self.sa = s.SettingsAPI(self.databases_file_path)
+
     def test_connection(self):
-        server = '.\Moein1'
-        username = 'sa'
-        password = 'arta1'
-        database = 'Moein'
-        conn = db.connection(server, username, password, database)
+        conn = db.connection(**self.sa.get('valid'))
         self.assertIsInstance(conn, pyodbc.Connection)
         with conn.cursor() as c:
             c.execute("SELECT @@VERSION")
         conn.close()
 
     def test_invalid_connection(self):
-        server = '.\Moein666'
-        username = 'sa666'
-        password = '***'
-        database = 'Moein666'
         with self.assertRaises(Exception) as cm:
-            conn = db.connection(server, username, password, database)
+            conn = db.connection(**self.sa.get('invalid'))
         self.assertIsInstance(cm.exception, pyodbc.Error)
 
 
