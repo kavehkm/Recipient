@@ -53,6 +53,22 @@ class TestModel(unittest.TestCase):
                 cursor.execute(sql)
         self.connection.commit()
 
+    def test__2columns(self):
+        properties = {
+            'pid': 1,
+            'age': 10,
+            'first_name': 'a',
+            'last_name': 'aa'
+        }
+        result = self.model._2columns(properties)
+        expected_result = {
+            'id': 1,
+            'age': 10,
+            'fname': 'a',
+            'lname': 'aa'
+        }
+        self.assertDictEqual(result, expected_result)
+
     def test__select(self):
         result = self.model._select()
         expected_result = 'SELECT id AS pid, age AS age, ' \
@@ -62,7 +78,7 @@ class TestModel(unittest.TestCase):
     def test__where(self):
         kwargs = {
             'age': 26,
-            'first_name': 'a'
+            'fname': 'a'
         }
         result = self.model._where(kwargs)
         expected_result = (' WHERE age = ? AND fname = ?', [26, 'a'])

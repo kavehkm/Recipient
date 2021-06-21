@@ -26,30 +26,6 @@ class Model(metaclass=ModelBase):
         self.pk = self.__primary_key__
         self._conn = None
 
-    def _execute(self, sql, parameters=(), method=None):
-        results = None
-        with self._conn.cursor() as cursor:
-            cursor.execute(sql, parameters)
-            if method:
-                results = getattr(cursor, method)()
-        return results
-
-    def _select(self):
-        sql = 'SELECT '
-        for name, column in self._columns.items():
-            sql += '{} AS {}, '.format(column.name, name)
-        return sql.rstrip(', ')
-
-    def _where(self, kwargs):
-        parameters = []
-        sql = ' WHERE '
-        for column, value in kwargs.items():
-            c = self._columns.get(column)
-            if c:
-                sql += '{} = ? AND '.format(c.name)
-                parameters.append(value)
-        return sql.rstrip(' AND '), parameters
-
     @property
     def columns(self):
         return self._columns
@@ -62,17 +38,48 @@ class Model(metaclass=ModelBase):
     def connection(self, conn):
         self._conn = conn
 
+    def _2columns(self, properties):
+        columns = {}
+        for prop, value in properties.items():
+            c = self._columns.get(prop)
+            if c:
+                columns[c.name] = value
+        return columns
+
+    def _select(self):
+        sql = 'SELECT '
+        for name, column in self._columns.items():
+            sql += '{} AS {}, '.format(column.name, name)
+        return sql.rstrip(', ')
+
+    def _where(self, conditions):
+        parameters = []
+        sql = ' WHERE '
+        for column, value in conditions.items():
+            sql += '{} = ? AND '.format(column)
+            parameters.append(value)
+        return sql.rstrip(' AND '), parameters
+
+    def _execute(self, sql, parameters=(), method=None):
+        results = None
+        with self._conn.cursor() as cursor:
+            cursor.execute(sql, parameters)
+            if method:
+                results = getattr(cursor, method)()
+        return results
+
     def all(self):
         sql = self._select()
         sql += ' FROM {}'.format(self.table)
         return self._execute(sql, method='fetchall')
 
-    def filter(self, **kwargs):
+    def filter(self, **conditions):
         parameters = []
         sql = self._select()
         sql += ' FROM {}'.format(self.table)
-        if kwargs:
-            s, p = self._where(kwargs)
+        conditions = self._2columns(conditions)
+        if conditions:
+            s, p = self._where(conditions)
             sql += s
             parameters = p
         return self._execute(sql, parameters, method='fetchall')
@@ -85,36 +92,34 @@ class Model(metaclass=ModelBase):
     def create(self, fields):
         parameters = []
         sql = 'INSERT INTO {}('.format(self.table)
-        for column, value in fields.items():
-            c = self._columns.get(column)
-            if c:
-                sql += '{}, '.format(c.name)
-                parameters.append(value)
+        for column, value in self._2columns(fields).items():
+            sql += '{}, '.format(column)
+            parameters.append(value)
         sql = sql.rstrip(', ')
         sql += ') VALUES ('
         sql += ', '.join(['?' for _ in parameters]) + ')'
         return self._execute(sql, parameters)
 
-    def update(self, fields, **kwargs):
+    def update(self, fields, **conditions):
         parameters = []
         sql = 'UPDATE {} SET '.format(self.table)
-        for column, value in fields.items():
-            c = self._columns.get(column)
-            if c:
-                sql += '{} = ?, '.format(c.name)
-                parameters.append(value)
+        for column, value in self._2columns(fields).items():
+            sql += '{} = ?, '.format(column)
+            parameters.append(value)
         sql = sql.rstrip(', ')
-        if kwargs:
-            s, p = self._where(kwargs)
+        conditions = self._2columns(conditions)
+        if conditions:
+            s, p = self._where(conditions)
             sql += s
             parameters.extend(p)
         return self._execute(sql, parameters)
 
-    def delete(self, **kwargs):
+    def delete(self, **conditions):
         parameters = []
         sql = 'DELETE FROM {}'.format(self.table)
-        if kwargs:
-            s, p = self._where(kwargs)
+        conditions = self._2columns(conditions)
+        if conditions:
+            s, p = self._where(conditions)
             sql += s
             parameters = p
         return self._execute(sql, parameters)
