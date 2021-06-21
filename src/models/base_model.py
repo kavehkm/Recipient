@@ -86,8 +86,10 @@ class Model(metaclass=ModelBase):
         parameters = []
         sql = 'INSERT INTO {}('.format(self.table)
         for column, value in fields.items():
-            sql += '{}, '.format(column)
-            parameters.append(value)
+            c = self._columns.get(column)
+            if c:
+                sql += '{}, '.format(c.name)
+                parameters.append(value)
         sql = sql.rstrip(', ')
         sql += ') VALUES ('
         sql += ', '.join(['?' for _ in parameters]) + ')'
@@ -97,8 +99,10 @@ class Model(metaclass=ModelBase):
         parameters = []
         sql = 'UPDATE {} SET '.format(self.table)
         for column, value in fields.items():
-            sql += '{} = ?, '.format(column)
-            parameters.append(value)
+            c = self._columns.get(column)
+            if c:
+                sql += '{} = ?, '.format(c.name)
+                parameters.append(value)
         sql = sql.rstrip(', ')
         if kwargs:
             s, p = self._where(kwargs)

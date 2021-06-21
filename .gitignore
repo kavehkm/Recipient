@@ -133,9 +133,3 @@ dmypy.json
 
 # settings.json
 settings.json
-
-# tests/db/databases.json
-tests/db/databases.json
-
-# tests/models/database.json
-tests/models/database.json
