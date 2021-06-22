@@ -1,8 +1,8 @@
 class Column(object):
     """Model Column"""
-    def __init__(self, name, wp_name):
-        self.name = name
-        self.wp_name = wp_name
+    def __init__(self, t, wp=None):
+        self.type = t
+        self.wp = wp
 
 
 class ModelBase(type):
@@ -20,15 +20,14 @@ class Model(metaclass=ModelBase):
     """Model"""
     __table_name__ = None
     __primary_key__ = None
+    # aliases
+    ALIAS1 = 'A'
+    ALIAS2 = 'B'
 
     def __init__(self):
         self.table = self.__table_name__
         self.pk = self.__primary_key__
         self._conn = None
-
-    @property
-    def columns(self):
-        return self._columns
 
     @property
     def connection(self):
@@ -38,21 +37,25 @@ class Model(metaclass=ModelBase):
     def connection(self, conn):
         self._conn = conn
 
-    def _2columns(self, properties):
-        columns = {}
-        for prop, value in properties.items():
-            c = self._columns.get(prop)
-            if c:
-                columns[c.name] = value
-        return columns
-
-    def _select(self):
+    @staticmethod
+    def _select(alias1=None, columns1=(), alias2=None, columns2=()):
         sql = 'SELECT '
-        for name, column in self._columns.items():
-            sql += '{} AS {}, '.format(column.name, name)
+        c = alias1 + '.{}, ' if alias1 else '{}, '
+        if columns1:
+            for column in columns1:
+                sql += c.format(column)
+        else:
+            sql += c.format('*')
+        if alias2:
+            if columns2:
+                for column in columns2:
+                    sql += '{}.{}, '.format(alias2, column)
+            else:
+                sql += '{}.*'.format(alias2)
         return sql.rstrip(', ')
 
-    def _where(self, conditions):
+    @staticmethod
+    def _where(conditions):
         parameters = []
         sql = ' WHERE '
         for column, value in conditions.items():
@@ -68,31 +71,30 @@ class Model(metaclass=ModelBase):
                 results = getattr(cursor, method)()
         return results
 
-    def all(self):
-        sql = self._select()
+    def all(self, *columns):
+        sql = self._select(columns1=columns)
         sql += ' FROM {}'.format(self.table)
         return self._execute(sql, method='fetchall')
 
-    def filter(self, **conditions):
+    def filter(self, *columns, **conditions):
         parameters = []
-        sql = self._select()
+        sql = self._select(columns1=columns)
         sql += ' FROM {}'.format(self.table)
-        conditions = self._2columns(conditions)
         if conditions:
-            s, p = self._where(conditions)
-            sql += s
-            parameters = p
+            _sql, _parameters = self._where(conditions)
+            sql += _sql
+            parameters = _parameters
         return self._execute(sql, parameters, method='fetchall')
 
-    def get(self, pk):
-        sql = self._select()
+    def get(self, pk, *columns):
+        sql = self._select(columns1=columns)
         sql += ' FROM {} WHERE {} = ?'.format(self.table, self.pk)
         return self._execute(sql, [pk], method='fetchone')
 
     def create(self, fields):
         parameters = []
         sql = 'INSERT INTO {}('.format(self.table)
-        for column, value in self._2columns(fields).items():
+        for column, value in fields.items():
             sql += '{}, '.format(column)
             parameters.append(value)
         sql = sql.rstrip(', ')
@@ -103,23 +105,39 @@ class Model(metaclass=ModelBase):
     def update(self, fields, **conditions):
         parameters = []
         sql = 'UPDATE {} SET '.format(self.table)
-        for column, value in self._2columns(fields).items():
+        for column, value in fields.items():
             sql += '{} = ?, '.format(column)
             parameters.append(value)
         sql = sql.rstrip(', ')
-        conditions = self._2columns(conditions)
         if conditions:
-            s, p = self._where(conditions)
-            sql += s
-            parameters.extend(p)
+            _sql, _parameters = self._where(conditions)
+            sql += _sql
+            parameters.extend(_parameters)
         return self._execute(sql, parameters)
 
     def delete(self, **conditions):
         parameters = []
         sql = 'DELETE FROM {}'.format(self.table)
-        conditions = self._2columns(conditions)
         if conditions:
-            s, p = self._where(conditions)
-            sql += s
-            parameters = p
+            _sql, _parameters = self._where(conditions)
+            sql += _sql
+            parameters = _parameters
         return self._execute(sql, parameters)
+
+    def inner_join(self, model, on1, on2, columns1, columns2):
+        sql = self._select(self.ALIAS1, columns1, self.ALIAS2, columns2)
+        sql += ' FROM {} AS {} INNER JOIN {} AS {}'.format(self.table, self.ALIAS1, model.table, self.ALIAS2)
+        sql += ' ON {}.{} = {}.{}'.format(self.ALIAS1, on1, self.ALIAS2, on2)
+        return self._execute(sql, method='fetchall')
+
+    def left_outer_join(self, model, on1, on2, columns):
+        sql = self._select(self.ALIAS1, columns)
+        sql += ' FROM {} AS {} LEFT JOIN {} AS {}'.format(self.table, self.ALIAS1, model.table, self.ALIAS2)
+        sql += ' ON {}.{} = {}.{} WHERE {}.{} IS NULL'.format(self.ALIAS1, on1, self.ALIAS2, on2, self.ALIAS2, on2)
+        return self._execute(sql, method='fetchall')
+
+    def right_outer_join(self, model, on1, on2, columns):
+        sql = self._select(self.ALIAS2, columns)
+        sql += ' FROM {} AS {} RIGHT JOIN {} AS {}'.format(self.table, self.ALIAS1, model.table, self.ALIAS2)
+        sql += ' ON {}.{} = {}.{} WHERE {}.{} IS NULL'.format(self.ALIAS1, on1, self.ALIAS2, on2, self.ALIAS1, on1)
+        return self._execute(sql, method='fetchall')

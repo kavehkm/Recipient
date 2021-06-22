@@ -8,16 +8,35 @@ from src.models import Column, Model
 import pyodbc
 
 
-class PersonModel(Model):
-    """Person Model"""
-    # db table info
-    __table_name__ = 'Person'
+class Order(Model):
+    """Order Model"""
+    __table_name__ = 'Orders'
     __primary_key__ = 'id'
     # columns
-    pid = Column('id', 'wpid')
-    age = Column('age', 'wpage')
-    last_name = Column('lname', 'wplname')
-    first_name = Column('fname', 'wpfname')
+    id = Column(int, 'wpid')
+    fname = Column(str, 'wpfname')
+    lname = Column(str, 'wplname')
+    address = Column(str, 'wpaddress')
+
+
+class Item(Model):
+    """Item Model"""
+    __table_name__ = 'Items'
+    __primary_key__ = 'id'
+    # columns
+    id = Column(int, 'wpid')
+    name = Column(str, 'wpname')
+    price = Column(float, 'wpprice')
+
+
+class OrderItem(Model):
+    """Order-Item Model"""
+    __table_name__ = 'OrderItem'
+    __primary_key__ = 'oid'
+    # columns
+    oid = Column(int)
+    iid = Column(int)
+    quantity = Column(int)
 
 
 class TestModel(unittest.TestCase):
@@ -26,150 +45,204 @@ class TestModel(unittest.TestCase):
     def setUp(self):
         # create database connection
         self.connection = db.connection(**settings.get('moein'))
-        # create instance from PersonModel
-        self.model = PersonModel()
-        # set instance connection
-        self.model.connection = self.connection
-        # set number of records in Person table
-        self.records_count = 4
-        # create Person table with sample records
-        sql_table = """
-            CREATE TABLE Person(
-                id      INT PRIMARY  KEY IDENTITY ,
-                fname   VARCHAR(255) NOT NULL,
-                lname   VARCHAR(255) NOT NULL,
-                age     INT NOT NULL,
+        # create instances from models
+        self.order = Order()
+        self.item = Item()
+        self.order_item = OrderItem()
+        # set db connection for models
+        self.order.connection = self.item.connection = self.order_item.connection = self.connection
+        # create models tables
+        tables = [
+            """
+            CREATE TABLE Items(
+                id          INT             PRIMARY KEY,
+                name        VARCHAR(255)    NOT NULL,
+                price       FLOAT           NOT NULL          
+            );
+            """,
+            """
+            CREATE TABLE Orders(
+                id          INT             PRIMARY KEY,
+                fname       VARCHAR(255)    NOT NULL,
+                lname       VARCHAR(255)    NOT NULL,
+                address     VARCHAR(255)    NOT NULL
+            );
+            """,
+            """
+            CREATE TABLE OrderItem(
+                oid         INT             NOT NULL,
+                iid         INT             NOT NULL,
+                quantity    INT             NOT NULL
             )
-        """
-        sql_insert = """
-            INSERT INTO Person(fname, lname, age) VALUES
-            ('a', 'aa', 1),
-            ('b', 'bb', 2),
-            ('c', 'cc', 3),
-            ('d', 'dd', 4)
-        """
-        for sql in [sql_table, sql_insert]:
+            """
+        ]
+        for table in tables:
             with self.connection.cursor() as cursor:
-                cursor.execute(sql)
+                cursor.execute(table)
+        self.connection.commit()
+        # insert some test records to tables
+        self.items = [
+            [1, 'item1', 100],
+            [2, 'item2', 200],
+            [3, 'item3', 300],
+            [4, 'item4', 400],
+            [5, 'item5', 500]
+        ]
+        self.orders = [
+            [1, 'fname1', 'lname1', 'address1'],
+            [2, 'fname2', 'lname2', 'address2'],
+        ]
+        self.order_items = [
+            [1, 1, 2],
+            [1, 3, 1],
+            [1, 2, 10],
+            [2, 4, 5],
+            [2, 1, 3],
+            [2, 2, 4],
+            [2, 3, 10]
+        ]
+        inserts = {
+            "INSERT INTO Items(id, name, price) VALUES (?, ?, ?)":                  self.items,
+            "INSERT INTO Orders(id, fname, lname, address) VALUES (?, ?, ?, ?)":    self.orders,
+            "INSERT INTO OrderItem(oid, iid, quantity) VALUES (?, ?, ?)":           self.order_items
+        }
+        for sql, records in inserts.items():
+            with self.connection.cursor() as cursor:
+                cursor.executemany(sql, records)
         self.connection.commit()
 
-    def test__2columns(self):
-        properties = {
-            'pid': 1,
-            'age': 10,
-            'first_name': 'a',
-            'last_name': 'aa'
-        }
-        result = self.model._2columns(properties)
-        expected_result = {
-            'id': 1,
-            'age': 10,
-            'fname': 'a',
-            'lname': 'aa'
-        }
-        self.assertDictEqual(result, expected_result)
+    def test__select_empty(self):
+        expected_result = 'SELECT *'
+        result = self.item._select()
+        self.assertEqual(result, expected_result)
 
-    def test__select(self):
-        result = self.model._select()
-        expected_result = 'SELECT id AS pid, age AS age, ' \
-                          'lname AS last_name, fname AS first_name'
+    def test__select_signle_table(self):
+        cols = ['col1', 'col2', 'col3']
+        expected_result = 'SELECT ' + ', '.join(cols)
+        result = self.item._select(columns1=cols)
+        self.assertEqual(result, expected_result)
+
+    def test__select_joined_table(self):
+        alias1 = 'X'
+        cols1 = ['cola', 'colb', 'colc']
+        alias2 = 'Y'
+        cols2 = ['cold', 'cole', 'colf', 'colg']
+        expected_result = 'SELECT X.cola, X.colb, X.colc, ' \
+                          'Y.cold, Y.cole, Y.colf, Y.colg'
+        result = self.item._select(alias1, cols1, alias2, cols2)
         self.assertEqual(result, expected_result)
 
     def test__where(self):
         kwargs = {
-            'age': 26,
-            'fname': 'a'
+            'id': 1,
+            'fname': 'a',
+            'lname': 'aa',
+            'address': 'aaa'
         }
-        result = self.model._where(kwargs)
-        expected_result = (' WHERE age = ? AND fname = ?', [26, 'a'])
+        expected_result = (' WHERE id = ? AND fname = ? AND lname = ? AND address = ?', [1, 'a', 'aa', 'aaa'])
+        result = self.order._where(kwargs)
         self.assertTupleEqual(result, expected_result)
 
     def test_all(self):
-        results = self.model.all()
+        results = self.item.all()
         # check results data type
         self.assertIsInstance(results, list)
         # check count
-        self.assertEqual(len(results), self.records_count)
+        self.assertEqual(len(results), len(self.items))
 
     def test_filter(self):
-        results = self.model.filter()
+        results = self.order.filter()
         # check results data type
         self.assertIsInstance(results, list)
         # check count
-        self.assertEqual(len(results), self.records_count)
+        self.assertEqual(len(results), len(self.orders))
 
     def test_filter_with_kwargs(self):
         kwargs = {
-            'first_name': 'a',
-            'last_name': 'aa'
+            'oid': 1
         }
-        results = self.model.filter(**kwargs)
+        results = self.order_item.filter(**kwargs)
         # check results data type
         self.assertIsInstance(results, list)
         # check count
-        self.assertEqual(len(results), 1)
-        # check data
-        result = results[0]
-        self.assertEqual(result.age, 1)
+        self.assertEqual(len(results), 3)
 
     def test_get(self):
-        result = self.model.get(4)
-        result_list = [result.pid, result.first_name, result.last_name]
-        expected_list = [4, 'd', 'dd']
+        expected_list = self.orders[1]
+        result = self.order.get(2)
+        result_list = [result.id, result.fname, result.lname, result.address]
         self.assertListEqual(result_list, expected_list)
 
     def test_get_DoesNotExists(self):
-        result = self.model.get(666)
+        result = self.item.get(666)
         self.assertIsNone(result)
 
     def test_create(self):
         fields = {
-            'first_name': 'e',
-            'last_name': 'ee',
-            'age': 5
+            'id': 6,
+            'name': 'new product',
+            'price': 1000
         }
-        self.model.create(fields)
-        self.connection.commit()
-        results = self.model.all()
-        self.assertEqual(len(results), self.records_count + 1)
+        self.item.create(fields)
+        self.item.connection.commit()
+        results = self.item.all()
+        self.assertEqual(len(results), len(self.items) + 1)
 
     def test_update(self):
         fields = {
-            'first_name': 'x',
-            'last_name': 'xx',
-            'age': 666
+            'name': 'edited product'
         }
         kwargs = {
-            'pid': 1
+            'id': 1
         }
-        self.model.update(fields, **kwargs)
-        self.connection.commit()
-        result = self.model.get(1)
-        result_list = [result.pid, result.first_name, result.last_name, result.age]
-        expected_list = [1, fields['first_name'], fields['last_name'], fields['age']]
-        self.assertListEqual(result_list, expected_list)
+        self.item.update(fields, **kwargs)
+        self.item.connection.commit()
+        result = self.item.get(1, 'name')
+        self.assertEqual(result.name, fields['name'])
 
     def test_delete_all(self):
-        self.model.delete()
-        self.connection.commit()
-        results = self.model.all()
+        self.order.delete()
+        self.order.connection.commit()
+        results = self.order.all()
         self.assertEqual(len(results), 0)
 
     def test_delete_with_kwargs(self):
         kwargs = {
-            'first_name': 'a',
-            'last_name': 'aa'
+            'oid': 2
         }
-        self.model.delete(**kwargs)
-        self.connection.commit()
-        results = self.model.all()
+        self.order_item.delete(**kwargs)
+        self.order_item.connection.commit()
+        results = self.order_item.all()
         self.assertEqual(len(results), 3)
+
+    def test_inner_join(self):
+        results = self.order.inner_join(self.order_item, 'id', 'oid', ['id', 'fname', 'lname', 'address'], ['iid'])
+        # check results data type
+        self.assertIsInstance(results, list)
+        # check count
+        self.assertEqual(len(results), len(self.order_items))
+
+    def test_left_outer_join(self):
+        results = self.order.left_outer_join(self.order_item, 'id', 'oid', ['id', 'fname', 'lname', 'address'])
+        # check results data type
+        self.assertIsInstance(results, list)
+        # check count
+        self.assertEqual(len(results), 0)
+
+    def test_right_outer_join(self):
+        results = self.order_item.right_outer_join(self.item, 'iid', 'id', ['id', 'name'])
+        # check results data type
+        self.assertIsInstance(results, list)
+        # check count
+        self.assertEqual(len(results), 1)
 
     def tearDown(self):
         # delete person table
-        sql = "DROP TABLE Person"
-        with self.connection.cursor() as cursor:
-            cursor.execute(sql)
+        sql = "DROP TABLE {}"
+        tables = ['Items', 'Orders', 'OrderItem']
+        for table in tables:
+            with self.connection.cursor() as cursor:
+                cursor.execute(sql.format(table))
         self.connection.commit()
         self.connection.close()
 
