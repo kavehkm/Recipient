@@ -1,11 +1,8 @@
 # standard
-import os
 import unittest
 # internal
 from src import db, settings
 from src.models import Column, Model
-# pyodbc
-import pyodbc
 
 
 class Order(Model):
@@ -41,10 +38,9 @@ class OrderItem(Model):
 
 class TestModel(unittest.TestCase):
     """Test Model Class"""
-
     def setUp(self):
         # create database connection
-        self.connection = db.connection(**settings.get('moein'))
+        self.connection = db.connection(**settings.get('testdb'))
         # create instances from models
         self.order = Order()
         self.item = Item()
@@ -94,12 +90,10 @@ class TestModel(unittest.TestCase):
         ]
         self.order_items = [
             [1, 1, 2],
-            [1, 3, 1],
-            [1, 2, 10],
-            [2, 4, 5],
-            [2, 1, 3],
-            [2, 2, 4],
-            [2, 3, 10]
+            [1, 2, 5],
+            [1, 3, 3],
+            [2, 1, 1],
+            [2, 2, 5]
         ]
         inserts = {
             "INSERT INTO Items(id, name, price) VALUES (?, ?, ?)":                  self.items,
@@ -133,13 +127,13 @@ class TestModel(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
     def test__where(self):
+
         kwargs = {
             'id': 1,
-            'fname': 'a',
-            'lname': 'aa',
-            'address': 'aaa'
+            'name': 'a',
+            'price': 1000
         }
-        expected_result = (' WHERE id = ? AND fname = ? AND lname = ? AND address = ?', [1, 'a', 'aa', 'aaa'])
+        expected_result = (' WHERE id = ? AND name = ? AND price = ?', [1, 'a', 1000])
         result = self.order._where(kwargs)
         self.assertTupleEqual(result, expected_result)
 
@@ -151,11 +145,11 @@ class TestModel(unittest.TestCase):
         self.assertEqual(len(results), len(self.items))
 
     def test_filter(self):
-        results = self.order.filter()
+        results = self.item.filter()
         # check results data type
         self.assertIsInstance(results, list)
         # check count
-        self.assertEqual(len(results), len(self.orders))
+        self.assertEqual(len(results), len(self.items))
 
     def test_filter_with_kwargs(self):
         kwargs = {
@@ -168,9 +162,9 @@ class TestModel(unittest.TestCase):
         self.assertEqual(len(results), 3)
 
     def test_get(self):
-        expected_list = self.orders[1]
-        result = self.order.get(2)
-        result_list = [result.id, result.fname, result.lname, result.address]
+        expected_list = self.items[1]
+        result = self.item.get(2)
+        result_list = [result.id, result.name, result.price]
         self.assertListEqual(result_list, expected_list)
 
     def test_get_DoesNotExists(self):
@@ -179,7 +173,7 @@ class TestModel(unittest.TestCase):
 
     def test_create(self):
         fields = {
-            'id': 6,
+            'id': len(self.items) + 1,
             'name': 'new product',
             'price': 1000
         }
@@ -208,12 +202,12 @@ class TestModel(unittest.TestCase):
 
     def test_delete_with_kwargs(self):
         kwargs = {
-            'oid': 2
+            'id': 1
         }
-        self.order_item.delete(**kwargs)
-        self.order_item.connection.commit()
-        results = self.order_item.all()
-        self.assertEqual(len(results), 3)
+        self.item.delete(**kwargs)
+        self.item.connection.commit()
+        results = self.item.all()
+        self.assertEqual(len(results), len(self.items) - 1)
 
     def test_inner_join(self):
         results = self.order.inner_join(self.order_item, 'id', 'oid', ['id', 'fname', 'lname', 'address'], ['iid'])
@@ -223,18 +217,18 @@ class TestModel(unittest.TestCase):
         self.assertEqual(len(results), len(self.order_items))
 
     def test_left_outer_join(self):
-        results = self.order.left_outer_join(self.order_item, 'id', 'oid', ['id', 'fname', 'lname', 'address'])
+        results = self.item.left_outer_join(self.order_item, 'id', 'iid', ['id', 'name', 'price'])
         # check results data type
         self.assertIsInstance(results, list)
         # check count
-        self.assertEqual(len(results), 0)
+        self.assertEqual(len(results), 2)
 
     def test_right_outer_join(self):
         results = self.order_item.right_outer_join(self.item, 'iid', 'id', ['id', 'name'])
         # check results data type
         self.assertIsInstance(results, list)
         # check count
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2)
 
     def tearDown(self):
         # delete person table
