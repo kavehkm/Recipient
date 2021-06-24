@@ -172,7 +172,7 @@ class UpdateWPTab(BaseTab):
         self.tabs = QTabWidget()
         self.generalLayout.addWidget(self.tabs)
         # - products
-        self.productsTable = Table(['ID', 'Code', 'Name', 'WPID', 'LastUpdate'])
+        self.productsTable = Table(['ID', 'Name', 'WPID', 'LastUpdate'])
         self.tabs.addTab(self.productsTable, 'Products')
         # - categories
         self.categoriesTable = Table(['ID', 'Name', 'WPID', 'LastUpdate'])
