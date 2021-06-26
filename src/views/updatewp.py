@@ -1,6 +1,5 @@
 # standard
 import time
-import random
 from datetime import datetime
 # internal
 from src import db
@@ -13,34 +12,61 @@ from src.models import Product, ProductMap, Category, CategoryMap
 from PyQt5.QtCore import QThreadPool
 
 
-class ProductView(object):
-    """Product View"""
-    def __init__(self, parent):
+class ObjectView(object):
+    """Object View"""
+    # object related model and map
+    MAP = None
+    MODEL = None
+    # object model columns
+    MODEL_ID = 'id'
+    MODEL_NAME = 'name'
+    # object names
+    OBJECT_NAME = 'Object'
+    OBJECT_NAME_PLURAL = 'Objects'
+
+    def __init__(self, parent, ui, tab, table):
         self.parent = parent
-        self.ui = parent.ui
-        self.tab = parent.tab
-        self.table = parent.tab.productsTable
+        self.ui = ui
+        self.tab = tab
+        self.table = table
+        self._messages = None
+
+    @property
+    def messages(self):
+        if self._messages is None:
+            self._messages = {
+                'get_fail':                 f'Cannot Load Registered {self.OBJECT_NAME_PLURAL} From Database.',
+                'add_form_title':           f'Add New {self.OBJECT_NAME}',
+                'add_load_options_fail':    'Cannot Load Options.',
+                'add_all_pd_title':         f'Add All {self.OBJECT_NAME_PLURAL}',
+                'add_all_done':             f'All {self.OBJECT_NAME_PLURAL} Added Successfully.',
+                'add_save_object_404':      f'{self.OBJECT_NAME} Not Found.',
+                'add_save_fail':            f'Cannot Save New {self.OBJECT_NAME}.',
+                'add_save_success':         f'New {self.OBJECT_NAME} Added Successfully.',
+                'edit_form_title':          f'Edit {self.OBJECT_NAME}',
+                'edit_save_fail':           f'Cannot Edit {self.OBJECT_NAME}.',
+                'edit_save_success':        f'{self.OBJECT_NAME} Edited Successfully.',
+                'update_pd_title':          f'Update {self.OBJECT_NAME_PLURAL}...',
+                'update_fail':              f'Cannot Update {self.OBJECT_NAME_PLURAL}.',
+                'update_success':           f'{self.OBJECT_NAME_PLURAL} Updated Successfully.',
+                'remove_confirm':           'Are You Sure?',
+                'remove_fail':              f'Cannot Remove {self.OBJECT_NAME} From Map Table.',
+                'remove_success':           f'{self.OBJECT_NAME} Removed Successfully.'
+            }
+        return self._messages
 
     def get(self):
         try:
-            # create connection to database
-            conn = db.connection()
-            # create needed models
-            p, pm = Product(), ProductMap()
-            # set connection for query
-            p.connection = conn
-            # get registered products by inner join on ProductMap
-            registered_products = p.inner_join(pm, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
-            conn.close()
+            objects = self._get_registered_objects()
         except Exception as e:
-            msg = Message(self.ui, Message.ERROR, 'Cannot Load Registered Products From Database.', str(e))
+            msg = Message(self.ui, Message.ERROR, self.messages['get_fail'], str(e))
             msg.show()
         else:
-            self.table.setRecords(registered_products)
+            self.table.setRecords(objects)
 
     def add(self):
         self.form = AddEditForm(self.ui)
-        self.form.setWindowTitle('Add New Product')
+        self.form.setWindowTitle(self.messages['add_form_title'])
         self.form.btnSave.clicked.connect(self.add_save)
         self.form.signals.showOptions.connect(self.add_edit_show_options)
         self.form.show()
@@ -48,382 +74,290 @@ class ProductView(object):
     def add_edit_show_options(self, subject):
         try:
             if subject == self.form.ID:
-                conn = db.connection()
-                p, pm = Product(), ProductMap()
-                p.connection = conn
-                items = p.left_outer_join(pm, 'id', 'id', ['id', 'name'])
-                title = 'Moein Products'
                 columns = ['ID', 'Name']
-                conn.close()
+                title = 'Moein {}'.format(self.OBJECT_NAME_PLURAL)
+                options = self._get_unregistered_moein_objects()
             else:
-                items = [
-                    [i, f'WP Product{i}']
-                    for i in range(10)
-                ]
-                title = 'WP Products'
                 columns = ['WPID', 'Name']
+                title = 'WP {}'.format(self.OBJECT_NAME_PLURAL)
+                options = self._get_unregistered_wp_objects()
         except Exception as e:
-            msg = Message(self.form, Message.ERROR, 'Cannot Load Options', str(e))
+            msg = Message(self.form, Message.ERROR, self.messages['add_load_options_fail'], str(e))
             msg.show()
         else:
             self.table_list = AddEditOptions(self.form, columns)
             self.table_list.setWindowTitle(title)
-            self.table_list.setList(items)
+            self.table_list.setList(options)
             self.table_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
             self.table_list.signals.select.connect(lambda item: self.add_edit_select_option(subject, item))
             self.table_list.show()
 
     def add_all(self, subject):
         if subject == self.form.ID:
-            products = [i for i in range(100)]
-            pd = Progress(self.table_list, 'Add All Products', 0, len(products))
-            worker = Worker(self.adder, products)
+            objects = self._get_unregistered_moein_objects()
+            if objects:
+                pd = Progress(self.table_list, self.messages['add_all_pd_title'], 0, len(objects))
+                pd.show()
+                worker = Worker(self._adder, objects)
+                worker.signals.progress.connect(pd.setValue)
+                worker.signals.error.connect(pd.close)
+                worker.signals.error.connect(self.add_all_error)
+                worker.signals.done.connect(self.add_all_done)
+                QThreadPool.globalInstance().start(worker)
+                self.table_list.btnAddAll.setDisabled(True)
+        else:
+            pass
+
+    def add_all_error(self, error):
+        self.table_list.btnAddAll.setEnabled(True)
+        msg = Message(self.table_list, Message.ERROR, self.messages['add_all_error'], str(error))
+        msg.show()
+
+    def add_all_done(self):
+        self.table_list.btnAddAll.setEnabled(True)
+        msg = Message(self.table_list, Message.SUCCESS, self.messages['add_all_done'])
+        msg.show()
+
+    def add_edit_select_option(self, subject, item):
+        if subject == self.form.ID:
+            self.form.setId(item[0])
+        else:
+            self.form.setWpid(item[0])
+        self.table_list.close()
+
+    def add_save(self):
+        try:
+            # get ids from form
+            moein_id = int(self.form.getId())
+            wp_id = int(self.form.getWpid())
+            # create database connection
+            connection = db.connection()
+            # set model connection
+            self.MODEL.connection = self.MAP.connection = connection
+            # get object from database by given moein_id
+            obj = self.MODEL.get(moein_id, self.MODEL_ID, self.MODEL_NAME)
+            if obj is None:
+                raise Exception(self.messages['add_all_object_404'])
+            #
+            # get wp_object from store by given wp_id
+            #
+            current_datetime = datetime.now()
+            self.MAP.create({'id': moein_id, 'wpid': wp_id, 'last_update': current_datetime})
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            msg = Message(self.form, Message.ERROR, self.messages['add_save_fail'], str(e))
+            msg.show()
+        else:
+            self.table.addRecord([moein_id, obj[1], wp_id, current_datetime])
+            self.form.close()
+            msg = Message(self.ui, Message.SUCCESS, self.messages['add_save_success'])
+            msg.show()
+
+    def edit(self):
+        obj_index = self.table.getCurrentRecordIndex()
+        if obj_index is not None:
+            obj = self.table.getRecord(obj_index)
+            self.form = AddEditForm(self.ui)
+            self.form.setWindowTitle(self.messages['edit_form_title'])
+            self.form.setId(obj[0])
+            self.form.setWpid(obj[2])
+            self.form.btnSave.clicked.connect(lambda: self.edit_save(obj_index))
+            self.form.signals.showOptions.connect(self.add_edit_show_options)
+            self.form.show()
+
+    def edit_save(self, obj_index):
+        try:
+            moein_id = int(self.form.getId())
+            wp_id = int(self.form.getWpid())
+            obj_record = self.table.getRecord(obj_index)
+            connection = db.connection()
+            self.MAP.connection = connection
+            self.MAP.update({'id': moein_id, 'wpid': wp_id}, id=obj_record[0], wpid=obj_record[2])
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            msg = Message(self.form, Message.ERROR, self.messages['edit_save_fail'], str(e))
+            msg.show()
+        else:
+            obj_record[0] = moein_id
+            obj_record[2] = wp_id
+            self.table.updateRecord(obj_index, obj_record)
+            self.form.close()
+            msg = Message(self.ui, Message.SUCCESS, self.messages['edit_save_success'])
+            msg.show()
+
+    def update(self):
+        objects = self._get_registered_objects()
+        if objects:
+            pd = Progress(self.ui, self.messages['update_pd_title'], 0, len(objects))
+            pd.show()
+            worker = Worker(self._updater, objects)
             worker.signals.progress.connect(pd.setValue)
             worker.signals.error.connect(pd.close)
-            worker.signals.error.connect(self.add_all_error)
-            worker.signals.done.connect(self.add_all_done)
+            worker.signals.error.connect(self.update_error)
+            worker.signals.done.connect(self.update_done)
             QThreadPool.globalInstance().start(worker)
-            self.table_list.btnAddAll.setDisabled(True)
+            self.tab.btnUpdateWP.setDisabled(True)
+
+    def update_error(self, error):
+        self.tab.btnUpdateWP.setEnabled(True)
+        msg = Message(self.ui, Message.ERROR, self.messages['update_fail'], str(error))
+        msg.show()
+
+    def update_done(self):
+        self.tab.btnUpdateWP.setEnabled(True)
+        msg = Message(self.ui, Message.SUCCESS, self.messages['update_success'])
+        msg.show()
+
+    def remove(self):
+        obj_index = self.table.getCurrentRecordIndex()
+        if obj_index is not None:
+            cfm = Confirm(self.ui, Confirm.WARNING, self.messages['remove_confirm'])
+            cfm.btnOk.clicked.connect(lambda: self.remove_confirm(obj_index))
+            cfm.show()
+
+    def remove_confirm(self, obj_index):
+        try:
+            # get object id
+            moein_id = int(self.table.getRecord(obj_index)[0])
+            # create connection to database
+            connection = db.connection()
+            # set connection
+            self.MAP.connection = connection
+            # delete registered object from map table
+            self.MAP.delete(id=moein_id)
+            connection.commit()
+            connection.close()
+        except Exception as e:
+            msg = Message(self.ui, Message.ERROR, self.messages['remove_fail'], str(e))
+            msg.show()
+        else:
+            self.table.removeRecord(obj_index)
+            msg = Message(self.ui, Message.SUCCESS, self.messages['remove_success'])
+            msg.show()
+
+    ##########################
+    # overwrite this methods #
+    ##########################
+    def _get_registered_objects(self):
+        """
+        Get all moein-objects that inner joined with map table
+
+        :return: registered moein-objects
+        :rtype: list
+        """
+        return []
+
+    def _get_unregistered_moein_objects(self):
+        """
+        Get all moein-objects that right outer joined with map table
+
+        :return: unregistered moein-objects
+        :rtype: list
+        """
+        return []
+
+    def _get_unregistered_wp_objects(self):
+        """
+        Get all wp-objects that not registered in map table
+
+        :return: unregistered wp-objects
+        :rtype: list
+        """
+        return []
 
     @staticmethod
-    def adder(products, progress_callback):
+    def _adder(objects, progress_callback):
+        """
+        Register objects in map table and also add them to wp store
+
+        :param list objects: unregistered moein-objects
+        :param pyqtSignal progress_callback: progress reporting signal
+        """
+
+    @staticmethod
+    def _updater(objects, progress_callback):
+        """
+        Update all registered objects on wp store from map table
+
+        :param list objects: registered moein-objects
+        :param pyqtSignal progress_callback: progress reporting signal
+        """
+
+
+class ProductView(ObjectView):
+    """Product View"""
+    MAP = ProductMap()
+    MODEL = Product()
+    OBJECT_NAME = 'Product'
+    OBJECT_NAME_PLURAL = 'Products'
+
+    def _get_registered_objects(self):
+        connection = db.connection()
+        self.MODEL.connection = connection
+        registered_products = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
+        connection.close()
+        return registered_products
+
+    def _get_unregistered_moein_objects(self):
+        connection = db.connection()
+        self.MODEL.connection = connection
+        unregistered_products = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
+        connection.close()
+        return unregistered_products
+
+    def _get_unregistered_wp_objects(self):
+        return [[i, f'WP Product{i}'] for i in range(10)]
+
+    @staticmethod
+    def _adder(products, progress_callback):
         for i, product in enumerate(products, 1):
             time.sleep(0.1)
             progress_callback.emit(i)
 
-    def add_all_error(self, e):
-        self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.ERROR, 'Cannot Add All Products.', str(e))
-        msg.show()
-
-    def add_all_done(self):
-        self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.SUCCESS, 'All Products Added Successfully.')
-        msg.show()
-
-    def add_edit_select_option(self, subject, item):
-        if subject == self.form.ID:
-            self.form.setId(item[0])
-        else:
-            self.form.setWpid(item[0])
-        self.table_list.close()
-
-    def add_save(self):
-        try:
-            # get ids from form and convert into integer
-            moein_id = int(self.form.getId())
-            wp_id = int(self.form.getWpid())
-            # create connection to database
-            conn = db.connection()
-            # create needed models
-            p, pm = Product(), ProductMap()
-            # set connection
-            p.connection = pm.connection = conn
-            # get product from database by id
-            product = p.get(moein_id, 'id', 'name')
-            # check: if product does not exists raise Exception
-            if product is None:
-                raise Exception('Product Not Found.')
-            # get wp product from woocommerce
-            # ...
-            # register product with wp product into map table
-            current_datetime = datetime.now()
-            pm.create({'id': product.id, 'wpid': wp_id, 'last_update': current_datetime})
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, 'Cannot Add New Product', str(e))
-        else:
-            self.table.addRecord([product.id, product.name, wp_id, current_datetime])
-            self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, 'New Product Added Successfully.')
-        msg.show()
-
-    def edit(self):
-        product_index = self.table.getCurrentRecordIndex()
-        if product_index is not None:
-            product = self.table.getRecord(product_index)
-            self.form = AddEditForm(self.ui)
-            self.form.setWindowTitle('Edit Product')
-            self.form.setId(product[0])
-            self.form.setWpid(product[2])
-            self.form.btnSave.clicked.connect(lambda: self.edit_save(product_index))
-            self.form.signals.showOptions.connect(self.add_edit_show_options)
-            self.form.show()
-
-    def edit_save(self, product_index):
-        try:
-            moein_id = int(self.form.getId())
-            wp_id = int(self.form.getWpid())
-            product = self.table.getRecord(product_index)
-            product[0] = moein_id
-            product[2] = wp_id
-            self.table.updateRecord(product_index, product)
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, 'Cannot Edit Product.', str(e))
-        else:
-            self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, 'Product Edited Successfully.')
-        msg.show()
-
-    def remove(self):
-        product_index = self.table.getCurrentRecordIndex()
-        if product_index is not None:
-            cfm = Confirm(self.ui, Confirm.WARNING, 'Are You Sure?')
-            cfm.btnOk.clicked.connect(lambda: self.confirm_remove(product_index))
-            cfm.show()
-
-    def confirm_remove(self, product_index):
-        try:
-            # get product id
-            moein_id = int(self.table.getRecord(product_index)[0])
-            # create connection to database
-            conn = db.connection()
-            # create needed model
-            pm = ProductMap()
-            # set connection
-            pm.connection = conn
-            # delete registered product from map table
-            pm.delete(id=moein_id)
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            msg = Message(self.ui, Message.ERROR, 'Cannot Remove Product From Map Table.', str(e))
-        else:
-            self.table.removeRecord(product_index)
-            msg = Message(self.ui, Message.SUCCESS, 'Product Removed Successfully.')
-        msg.show()
-
-    def update(self):
-        # query database
-        products = [i for i in range(50)]
-        # progress dialog
-        pd = Progress(self.ui, 'Update Products...', 0, len(products))
-        # worker
-        worker = Worker(self.updater, products)
-        worker.signals.progress.connect(pd.setValue)
-        worker.signals.error.connect(pd.close)
-        worker.signals.error.connect(self.update_error)
-        worker.signals.done.connect(self.update_done)
-        # move worker to global threadpool and start progress
-        QThreadPool.globalInstance().start(worker)
-        # lock btnUpdateWP
-        self.tab.btnUpdateWP.setDisabled(True)
-
     @staticmethod
-    def updater(products, progress_callback):
+    def _updater(products, progress_callback):
         for i, products in enumerate(products, 1):
             time.sleep(0.5)
             progress_callback.emit(i)
 
-    def update_error(self, e):
-        self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.ui, Message.ERROR, 'Cannot Update Products.', str(e))
-        msg.show()
 
-    def update_done(self):
-        self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.ui, Message.SUCCESS, 'Products Updated Successfully.')
-        msg.show()
-
-
-class CategoryView(object):
+class CategoryView(ObjectView):
     """Category View"""
-    def __init__(self, parent):
-        self.parent = parent
-        self.ui = parent.ui
-        self.tab = parent.tab
-        self.table = parent.tab.categoriesTable
+    MAP = CategoryMap()
+    MODEL = Category()
+    OBJECT_NAME = 'Category'
+    OBJECT_NAME_PLURAL = 'Categories'
 
-    def get(self):
-        try:
-            # create connection to database
-            conn = db.connection()
-            # create needed models
-            c, cm = Category(), CategoryMap()
-            # set connection for query
-            c.connection = conn
-            # get registered categories by inner join on CategoryMap
-            registered_categories = c.inner_join(cm, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
-            conn.close()
-            self.table.setRecords(registered_categories)
-        except Exception as e:
-            msg = Message(self.ui, Message.ERROR, 'Cannot Load Registered Categories From Database', str(e))
-            msg.show()
+    def _get_registered_objects(self):
+        connection = db.connection()
+        self.MODEL.connection = connection
+        registered_categories = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
+        connection.close()
+        return registered_categories
 
-    def add(self):
-        self.form = AddEditForm(self.ui)
-        self.form.setWindowTitle('Add New Category')
-        self.form.btnSave.clicked.connect(self.add_save)
-        self.form.signals.showOptions.connect(self.add_edit_show_options)
-        self.form.show()
+    def _get_unregistered_moein_objects(self):
+        connection = db.connection()
+        self.MODEL.connection = connection
+        unregistered_categories = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
+        connection.close()
+        return unregistered_categories
 
-    def add_edit_show_options(self, subject):
-        try:
-            if subject == self.form.ID:
-                conn = db.connection()
-                c, cm = Category(), CategoryMap()
-                c.connection = conn
-                items = c.left_outer_join(cm, 'id', 'id', ['id', 'name'])
-                title = 'Moein Categories'
-                columns = ['ID', 'Name']
-                conn.close()
-            else:
-                items = [
-                    [i, f'WP Category{i}']
-                    for i in range(5)
-                ]
-                title = 'WP Categories'
-                columns = ['WPID', 'Name']
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, 'Cannot Load Options', str(e))
-            msg.show()
-        else:
-            self.table_list = AddEditOptions(self.form, columns)
-            self.table_list.setWindowTitle(title)
-            self.table_list.setList(items)
-            self.table_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
-            self.table_list.signals.select.connect(lambda item: self.add_edit_select_option(subject, item))
-            self.table_list.show()
-
-    def add_all(self, subject):
-        if subject == self.form.ID:
-            categories = [i for i in range(100)]
-            pd = Progress(self.table_list, 'Add All Categories', 0, len(categories))
-            worker = Worker(self.adder, categories)
-            worker.signals.progress.connect(pd.setValue)
-            worker.signals.error.connect(pd.close)
-            worker.signals.error.connect(self.add_all_error)
-            worker.signals.done.connect(self.add_all_done)
-            QThreadPool.globalInstance().start(worker)
-            self.table_list.btnAddAll.setDisabled(True)
+    def _get_unregistered_wp_objects(self):
+        return [[i, f'WP Category{i}'] for i in range(5)]
 
     @staticmethod
-    def adder(categories, progress_callback):
+    def _adder(categories, progress_callback):
         for i, category in enumerate(categories, 1):
-            time.sleep(0.1)
+            time.sleep(2)
             progress_callback.emit(i)
-
-    def add_all_error(self):
-        self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.ERROR, 'Cannot Add All Categories', str(e))
-        msg.show()
-
-    def add_all_done(self):
-        self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.SUCCESS, 'All Categories Added Successfully.')
-        msg.show()
-
-    def add_edit_select_option(self, subject, item):
-        if subject == self.form.ID:
-            self.form.setId(item[0])
-        else:
-            self.form.setWpid(item[0])
-        self.table_list.close()
-
-    def add_save(self):
-        try:
-            moein_id = int(self.form.getId())
-            wp_id = int(self.form.getWpid())
-            conn = db.connection()
-            c, cm = Category(), CategoryMap()
-            c.connection = cm.connection = conn
-            category = c.get(moein_id, 'id', 'name')
-            if category is None:
-                raise Exception('Category Not Found.')
-            current_datetime = datetime.now()
-            cm.create({'id': category.id, 'wpid': wp_id, 'last_update': current_datetime})
-            conn.commit()
-            conn.close()
-            self.table.addRecord([category.id, category.name, wp_id, current_datetime])
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, 'Cannot Add New Category')
-        else:
-            self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, 'New Category Added Successfully.')
-        msg.show()
-
-    def edit(self):
-        category_index = self.table.getCurrentRecordIndex()
-        if category_index is not None:
-            category = self.table.getRecord(category_index)
-            self.form = AddEditForm(self.ui)
-            self.form.setWindowTitle('Edit Category')
-            self.form.setId(category[0])
-            self.form.setWpid(category[2])
-            self.form.btnSave.clicked.connect(lambda: self.edit_save(category_index))
-            self.form.signals.showOptions.connect(self.add_edit_show_options)
-            self.form.show()
-
-    def edit_save(self, category_index):
-        try:
-            moein_id = int(self.form.getId())
-            wp_id = int(self.form.getWpid())
-            category = self.table.getRecord(category_index)
-            category[0] = moein_id
-            category[2] = wp_id
-            self.table.updateRecord(category_index, category)
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, 'Cannot Edit Category.', str(e))
-        else:
-            self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, 'Category Edited Success')
-        msg.show()
-
-    def remove(self):
-        category_index = self.table.getCurrentRecordIndex()
-        if category_index is not None:
-            cfm = Confirm(self.ui, Confirm.WARNING, 'Are You Sure?')
-            cfm.btnOk.clicked.connect(lambda: self.confirm_remove(category_index))
-            cfm.show()
-
-    def confirm_remove(self, category_index):
-        try:
-            moein_id = int(self.table.getRecord(category_index)[0])
-            conn = db.connection()
-            cm = CategoryMap()
-            cm.connection = conn
-            cm.delete(id=moein_id)
-            conn.commit()
-            conn.close()
-            self.table.removeRecord(category_index)
-        except Exception as e:
-            msg = Message(self.ui, Message.ERROR, 'Cannot Remove Category From Map Table.', str(e))
-        else:
-            msg = Message(self.ui, Message.SUCCESS, 'Product Removed Successfully.')
-        msg.show()
-
-    def update(self):
-        # query database
-        categories = [i for i in range(10)]
-        # progress dialog
-        pd = Progress(self.ui, 'Update Categories...', 0, len(categories))
-        # worker
-        worker = Worker(self.updater, categories)
-        worker.signals.progress.connect(pd.setValue)
-        worker.signals.error.connect(pd.close)
-        worker.signals.error.connect(self.update_error)
-        worker.signals.done.connect(self.update_done)
-        # move worker to global threadpool and start progress
-        QThreadPool.globalInstance().start(worker)
-        # lock btnUpdateWP
-        self.tab.btnUpdateWP.setDisabled(True)
 
     @staticmethod
-    def updater(categories, progress_callback):
+    def _updater(categories, progress_callback):
         for i, category in enumerate(categories, 1):
-            time.sleep(0.5)
+            time.sleep(2)
             progress_callback.emit(i)
-
-    def update_error(self, e):
-        self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.ui, Message.ERROR, 'Cannot Update Categories.', str(e))
-        msg.show()
-
-    def update_done(self):
-        self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.ui, Message.SUCCESS, 'Categories Updated Successfully.')
-        msg.show()
 
 
 class UpdateWP(object):
@@ -453,8 +387,8 @@ class UpdateWP(object):
         self.ui = ui
         self.tab = ui.contents.updateWP
         # attach views
-        self.product = ProductView(self)
-        self.category = CategoryView(self)
+        self.product = ProductView(self, self.ui, self.tab, self.tab.productsTable)
+        self.category = CategoryView(self, self.ui, self.tab, self.tab.categoriesTable)
         # connect signals
         self.ui.menu.btnUpdateWP.clicked.connect(self.tab_handler)
         self.tab.tabs.currentChanged.connect(lambda: self.dispatcher(self.INIT))
