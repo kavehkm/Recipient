@@ -35,9 +35,10 @@ class ObjectView(object):
     def messages(self):
         if self._messages is None:
             self._messages = {
-                'get_fail':                 f'Cannot Load Registered {self.OBJECT_NAME_PLURAL} From Database.',
+                'get_fail':                 f'Cannot Load Registered {self.OBJECT_NAME_PLURAL}.',
                 'add_form_title':           f'Add New {self.OBJECT_NAME}',
                 'add_load_options_fail':    'Cannot Load Options.',
+                'add_all_load_fail':        f'Cannot Load Unregistered {self.OBJECT_NAME_PLURAL}.',
                 'add_all_pd_title':         f'Add All {self.OBJECT_NAME_PLURAL}',
                 'add_all_done':             f'All {self.OBJECT_NAME_PLURAL} Added Successfully.',
                 'add_save_object_404':      f'{self.OBJECT_NAME} Not Found.',
@@ -47,6 +48,7 @@ class ObjectView(object):
                 'edit_save_fail':           f'Cannot Edit {self.OBJECT_NAME}.',
                 'edit_save_success':        f'{self.OBJECT_NAME} Edited Successfully.',
                 'update_pd_title':          f'Update {self.OBJECT_NAME_PLURAL}...',
+                'update_load_fail':         f'Cannot Load Registered {self.OBJECT_NAME_PLURAL}.',
                 'update_fail':              f'Cannot Update {self.OBJECT_NAME_PLURAL}.',
                 'update_success':           f'{self.OBJECT_NAME_PLURAL} Updated Successfully.',
                 'remove_confirm':           'Are You Sure?',
@@ -94,17 +96,22 @@ class ObjectView(object):
 
     def add_all(self, subject):
         if subject == self.form.ID:
-            objects = self._get_unregistered_moein_objects()
-            if objects:
-                pd = Progress(self.table_list, self.messages['add_all_pd_title'], 0, len(objects))
-                pd.show()
-                worker = Worker(self._adder, objects)
-                worker.signals.progress.connect(pd.setValue)
-                worker.signals.error.connect(pd.close)
-                worker.signals.error.connect(self.add_all_error)
-                worker.signals.done.connect(self.add_all_done)
-                QThreadPool.globalInstance().start(worker)
-                self.table_list.btnAddAll.setDisabled(True)
+            try:
+                objects = self._get_unregistered_moein_objects()
+            except Exception as e:
+                msg = Message(self.table_list, Message.ERROR, self.messages['add_all_load_fail'], str(e))
+                msg.show()
+            else:
+                if objects:
+                    pd = Progress(self.table_list, self.messages['add_all_pd_title'], 0, len(objects))
+                    pd.show()
+                    worker = Worker(self._adder, objects)
+                    worker.signals.progress.connect(pd.setValue)
+                    worker.signals.error.connect(pd.close)
+                    worker.signals.error.connect(self.add_all_error)
+                    worker.signals.done.connect(self.add_all_done)
+                    QThreadPool.globalInstance().start(worker)
+                    self.table_list.btnAddAll.setDisabled(True)
         else:
             pass
 
@@ -135,7 +142,7 @@ class ObjectView(object):
             # set model connection
             self.MODEL.connection = self.MAP.connection = connection
             # get object from database by given moein_id
-            obj = self.MODEL.get(moein_id, self.MODEL_ID, self.MODEL_NAME)
+            obj = self.MODEL.get(moein_id, self.MODEL_NAME)
             if obj is None:
                 raise Exception(self.messages['add_all_object_404'])
             #
@@ -149,8 +156,8 @@ class ObjectView(object):
             msg = Message(self.form, Message.ERROR, self.messages['add_save_fail'], str(e))
             msg.show()
         else:
-            self.table.addRecord([moein_id, obj[1], wp_id, current_datetime])
             self.form.close()
+            self.table.addRecord([moein_id, getattr(obj, self.MODEL_NAME), wp_id, current_datetime])
             msg = Message(self.ui, Message.SUCCESS, self.messages['add_save_success'])
             msg.show()
 
@@ -172,7 +179,10 @@ class ObjectView(object):
             wp_id = int(self.form.getWpid())
             obj_record = self.table.getRecord(obj_index)
             connection = db.connection()
-            self.MAP.connection = connection
+            self.MODEL.connection = self.MAP.connection = connection
+            obj = self.MODEL.get(moein_id, self.MODEL_NAME)
+            if obj is None:
+                raise Exception(self.messages['add_save_object_404'])
             self.MAP.update({'id': moein_id, 'wpid': wp_id}, id=obj_record[0], wpid=obj_record[2])
             connection.commit()
             connection.close()
@@ -181,6 +191,7 @@ class ObjectView(object):
             msg.show()
         else:
             obj_record[0] = moein_id
+            obj_record[1] = getattr(obj, self.MODEL_NAME)
             obj_record[2] = wp_id
             self.table.updateRecord(obj_index, obj_record)
             self.form.close()
@@ -188,17 +199,22 @@ class ObjectView(object):
             msg.show()
 
     def update(self):
-        objects = self._get_registered_objects()
-        if objects:
-            pd = Progress(self.ui, self.messages['update_pd_title'], 0, len(objects))
-            pd.show()
-            worker = Worker(self._updater, objects)
-            worker.signals.progress.connect(pd.setValue)
-            worker.signals.error.connect(pd.close)
-            worker.signals.error.connect(self.update_error)
-            worker.signals.done.connect(self.update_done)
-            QThreadPool.globalInstance().start(worker)
-            self.tab.btnUpdateWP.setDisabled(True)
+        try:
+            objects = self._get_registered_objects()
+        except Exception as e:
+            msg = Message(self.ui, Message.ERROR, self.messages['update_load_fail'], str(e))
+            msg.show()
+        else:
+            if objects:
+                pd = Progress(self.ui, self.messages['update_pd_title'], 0, len(objects))
+                pd.show()
+                worker = Worker(self._updater, objects)
+                worker.signals.progress.connect(pd.setValue)
+                worker.signals.error.connect(pd.close)
+                worker.signals.error.connect(self.update_error)
+                worker.signals.done.connect(self.update_done)
+                QThreadPool.globalInstance().start(worker)
+                self.tab.btnUpdateWP.setDisabled(True)
 
     def update_error(self, error):
         self.tab.btnUpdateWP.setEnabled(True)
