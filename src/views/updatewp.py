@@ -35,22 +35,30 @@ class ObjectView(object):
     def messages(self):
         if self._messages is None:
             self._messages = {
-                'get_fail':                 f'Cannot Load Registered {self.OBJECT_NAME_PLURAL} From Database.',
-                'add_form_title':           f'Add New {self.OBJECT_NAME}',
-                'add_load_options_fail':    'Cannot Load Options.',
-                'add_all_pd_title':         f'Add All {self.OBJECT_NAME_PLURAL}',
-                'add_all_done':             f'All {self.OBJECT_NAME_PLURAL} Added Successfully.',
-                'add_save_object_404':      f'{self.OBJECT_NAME} Not Found.',
-                'add_save_fail':            f'Cannot Save New {self.OBJECT_NAME}.',
-                'add_save_success':         f'New {self.OBJECT_NAME} Added Successfully.',
+                # not found
+                'object_notfound':          f'{self.OBJECT_NAME} Not Found.',
+                # get
+                'get_options_fail':         'Cannot Load Options.',
+                'get_registered_fail':      f'Cannot Load Registered {self.OBJECT_NAME_PLURAL}.',
+                'get_unregistered_fail':    f'Cannot Load Unregistered {self.OBJECT_NAME_PLURAL}.',
+                # form title
                 'edit_form_title':          f'Edit {self.OBJECT_NAME}',
-                'edit_save_fail':           f'Cannot Edit {self.OBJECT_NAME}.',
-                'edit_save_success':        f'{self.OBJECT_NAME} Edited Successfully.',
-                'update_pd_title':          f'Update {self.OBJECT_NAME_PLURAL}...',
-                'update_fail':              f'Cannot Update {self.OBJECT_NAME_PLURAL}.',
-                'update_success':           f'{self.OBJECT_NAME_PLURAL} Updated Successfully.',
+                'add_form_title':           f'Add New {self.OBJECT_NAME}',
+                # progress dialog
+                'add_all_pd_title':         f'Add All {self.OBJECT_NAME_PLURAL}...',
+                'update_pd_title':          f'Update All {self.OBJECT_NAME_PLURAL}...',
+                # add all
+                'add_all_fail':             f'Cannot Add All {self.OBJECT_NAME_PLURAL}.',
+                'add_all_success':          f'All {self.OBJECT_NAME_PLURAL} Added Successfully.',
+                # update
+                'update_fail':              f'Cannot Update All {self.OBJECT_NAME_PLURAL}.',
+                'update_success':           f'All {self.OBJECT_NAME_PLURAL} Updated Successfully.',
+                # save
+                'save_fail':                f'Cannot Save {self.OBJECT_NAME}.',
+                'save_success':             f'{self.OBJECT_NAME} Saved Successfully.',
+                # remove
                 'remove_confirm':           'Are You Sure?',
-                'remove_fail':              f'Cannot Remove {self.OBJECT_NAME} From Map Table.',
+                'remove_fail':              f'Cannot Remove {self.OBJECT_NAME}.',
                 'remove_success':           f'{self.OBJECT_NAME} Removed Successfully.'
             }
         return self._messages
@@ -59,7 +67,7 @@ class ObjectView(object):
         try:
             objects = self._get_registered_objects()
         except Exception as e:
-            msg = Message(self.ui, Message.ERROR, self.messages['get_fail'], str(e))
+            msg = Message(self.ui, Message.ERROR, self.messages['get_registered_fail'], str(e))
             msg.show()
         else:
             self.table.setRecords(objects)
@@ -82,7 +90,7 @@ class ObjectView(object):
                 title = 'WP {}'.format(self.OBJECT_NAME_PLURAL)
                 options = self._get_unregistered_wp_objects()
         except Exception as e:
-            msg = Message(self.form, Message.ERROR, self.messages['add_load_options_fail'], str(e))
+            msg = Message(self.form, Message.ERROR, self.messages['get_options_fail'], str(e))
             msg.show()
         else:
             self.table_list = AddEditOptions(self.form, columns)
@@ -93,29 +101,36 @@ class ObjectView(object):
             self.table_list.show()
 
     def add_all(self, subject):
-        if subject == self.form.ID:
-            objects = self._get_unregistered_moein_objects()
+        try:
+            if subject == self.form.ID:
+                objects = self._get_unregistered_moein_objects()
+                adder = self._adder
+            else:
+                objects = self._get_unregistered_wp_objects()
+                adder = self._adder
+        except Exception as e:
+            msg = Message(self.table_list, Message.ERROR, self.messages['get_unregistered_fail'], str(e))
+            msg.show()
+        else:
             if objects:
                 pd = Progress(self.table_list, self.messages['add_all_pd_title'], 0, len(objects))
                 pd.show()
-                worker = Worker(self._adder, objects)
+                worker = Worker(adder, objects)
                 worker.signals.progress.connect(pd.setValue)
                 worker.signals.error.connect(pd.close)
                 worker.signals.error.connect(self.add_all_error)
                 worker.signals.done.connect(self.add_all_done)
                 QThreadPool.globalInstance().start(worker)
                 self.table_list.btnAddAll.setDisabled(True)
-        else:
-            pass
 
     def add_all_error(self, error):
         self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.ERROR, self.messages['add_all_error'], str(error))
+        msg = Message(self.table_list, Message.ERROR, self.messages['add_all_fail'], str(error))
         msg.show()
 
     def add_all_done(self):
         self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.SUCCESS, self.messages['add_all_done'])
+        msg = Message(self.table_list, Message.SUCCESS, self.messages['add_all_success'])
         msg.show()
 
     def add_edit_select_option(self, subject, item):
@@ -135,9 +150,9 @@ class ObjectView(object):
             # set model connection
             self.MODEL.connection = self.MAP.connection = connection
             # get object from database by given moein_id
-            obj = self.MODEL.get(moein_id, self.MODEL_ID, self.MODEL_NAME)
+            obj = self.MODEL.get(moein_id, self.MODEL_NAME)
             if obj is None:
-                raise Exception(self.messages['add_all_object_404'])
+                raise Exception(self.messages['object_notfound'])
             #
             # get wp_object from store by given wp_id
             #
@@ -146,12 +161,12 @@ class ObjectView(object):
             connection.commit()
             connection.close()
         except Exception as e:
-            msg = Message(self.form, Message.ERROR, self.messages['add_save_fail'], str(e))
+            msg = Message(self.form, Message.ERROR, self.messages['save_fail'], str(e))
             msg.show()
         else:
-            self.table.addRecord([moein_id, obj[1], wp_id, current_datetime])
             self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, self.messages['add_save_success'])
+            self.table.addRecord([moein_id, getattr(obj, self.MODEL_NAME), wp_id, current_datetime])
+            msg = Message(self.ui, Message.SUCCESS, self.messages['save_success'])
             msg.show()
 
     def edit(self):
@@ -172,33 +187,42 @@ class ObjectView(object):
             wp_id = int(self.form.getWpid())
             obj_record = self.table.getRecord(obj_index)
             connection = db.connection()
-            self.MAP.connection = connection
+            self.MODEL.connection = self.MAP.connection = connection
+            obj = self.MODEL.get(moein_id, self.MODEL_NAME)
+            if obj is None:
+                raise Exception(self.messages['object_notfound'])
             self.MAP.update({'id': moein_id, 'wpid': wp_id}, id=obj_record[0], wpid=obj_record[2])
             connection.commit()
             connection.close()
         except Exception as e:
-            msg = Message(self.form, Message.ERROR, self.messages['edit_save_fail'], str(e))
+            msg = Message(self.form, Message.ERROR, self.messages['save_fail'], str(e))
             msg.show()
         else:
             obj_record[0] = moein_id
+            obj_record[1] = getattr(obj, self.MODEL_NAME)
             obj_record[2] = wp_id
             self.table.updateRecord(obj_index, obj_record)
             self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, self.messages['edit_save_success'])
+            msg = Message(self.ui, Message.SUCCESS, self.messages['save_success'])
             msg.show()
 
     def update(self):
-        objects = self._get_registered_objects()
-        if objects:
-            pd = Progress(self.ui, self.messages['update_pd_title'], 0, len(objects))
-            pd.show()
-            worker = Worker(self._updater, objects)
-            worker.signals.progress.connect(pd.setValue)
-            worker.signals.error.connect(pd.close)
-            worker.signals.error.connect(self.update_error)
-            worker.signals.done.connect(self.update_done)
-            QThreadPool.globalInstance().start(worker)
-            self.tab.btnUpdateWP.setDisabled(True)
+        try:
+            objects = self._get_registered_objects()
+        except Exception as e:
+            msg = Message(self.ui, Message.ERROR, self.messages['get_registered_fail'], str(e))
+            msg.show()
+        else:
+            if objects:
+                pd = Progress(self.ui, self.messages['update_pd_title'], 0, len(objects))
+                pd.show()
+                worker = Worker(self._updater, objects)
+                worker.signals.progress.connect(pd.setValue)
+                worker.signals.error.connect(pd.close)
+                worker.signals.error.connect(self.update_error)
+                worker.signals.done.connect(self.update_done)
+                QThreadPool.globalInstance().start(worker)
+                self.tab.btnUpdateWP.setDisabled(True)
 
     def update_error(self, error):
         self.tab.btnUpdateWP.setEnabled(True)
