@@ -146,20 +146,19 @@ class ObjectView(object):
             moein_id = int(self.form.getId())
             wp_id = int(self.form.getWpid())
             # create database connection
-            connection = db.connection()
-            # set model connection
-            self.MODEL.connection = self.MAP.connection = connection
-            # get object from database by given moein_id
-            obj = self.MODEL.get(moein_id, self.MODEL_NAME)
-            if obj is None:
-                raise Exception(self.messages['object_notfound'])
-            #
-            # get wp_object from store by given wp_id
-            #
-            current_datetime = datetime.now()
-            self.MAP.create({'id': moein_id, 'wpid': wp_id, 'last_update': current_datetime})
-            connection.commit()
-            connection.close()
+            with db.connection() as conn:
+                # set model connection
+                self.MODEL.connection = self.MAP.connection = conn
+                # get object from database by given moein_id
+                obj = self.MODEL.get(moein_id, self.MODEL_NAME)
+                if obj is None:
+                    raise Exception(self.messages['object_notfound'])
+                #
+                # get wp_object from store by given wp_id
+                #
+                current_datetime = datetime.now()
+                self.MAP.create({'id': moein_id, 'wpid': wp_id, 'last_update': current_datetime})
+                conn.commit()
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages['save_fail'], str(e))
             msg.show()
@@ -186,14 +185,13 @@ class ObjectView(object):
             moein_id = int(self.form.getId())
             wp_id = int(self.form.getWpid())
             obj_record = self.table.getRecord(obj_index)
-            connection = db.connection()
-            self.MODEL.connection = self.MAP.connection = connection
-            obj = self.MODEL.get(moein_id, self.MODEL_NAME)
-            if obj is None:
-                raise Exception(self.messages['object_notfound'])
-            self.MAP.update({'id': moein_id, 'wpid': wp_id}, id=obj_record[0], wpid=obj_record[2])
-            connection.commit()
-            connection.close()
+            with db.connection() as conn:
+                self.MODEL.connection = self.MAP.connection = conn
+                obj = self.MODEL.get(moein_id, self.MODEL_NAME)
+                if obj is None:
+                    raise Exception(self.messages['object_notfound'])
+                self.MAP.update({'id': moein_id, 'wpid': wp_id}, id=obj_record[0], wpid=obj_record[2])
+                conn.commit()
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages['save_fail'], str(e))
             msg.show()
@@ -246,13 +244,12 @@ class ObjectView(object):
             # get object id
             moein_id = int(self.table.getRecord(obj_index)[0])
             # create connection to database
-            connection = db.connection()
-            # set connection
-            self.MAP.connection = connection
-            # delete registered object from map table
-            self.MAP.delete(id=moein_id)
-            connection.commit()
-            connection.close()
+            with db.connection() as conn:
+                # set connection
+                self.MAP.connection = conn
+                # delete registered object from map table
+                self.MAP.delete(id=moein_id)
+                conn.commit()
         except Exception as e:
             msg = Message(self.ui, Message.ERROR, self.messages['remove_fail'], str(e))
             msg.show()
@@ -318,17 +315,15 @@ class ProductView(ObjectView):
     OBJECT_NAME_PLURAL = 'Products'
 
     def _get_registered_objects(self):
-        connection = db.connection()
-        self.MODEL.connection = connection
-        registered_products = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
-        connection.close()
+        with db.connection() as conn:
+            self.MODEL.connection = conn
+            registered_products = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
         return registered_products
 
     def _get_unregistered_moein_objects(self):
-        connection = db.connection()
-        self.MODEL.connection = connection
-        unregistered_products = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
-        connection.close()
+        with db.connection() as conn:
+            self.MODEL.connection = conn
+            unregistered_products = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
         return unregistered_products
 
     def _get_unregistered_wp_objects(self):
@@ -355,17 +350,15 @@ class CategoryView(ObjectView):
     OBJECT_NAME_PLURAL = 'Categories'
 
     def _get_registered_objects(self):
-        connection = db.connection()
-        self.MODEL.connection = connection
-        registered_categories = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
-        connection.close()
+        with db.connection() as conn:
+            self.MODEL.connection = conn
+            registered_categories = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
         return registered_categories
 
     def _get_unregistered_moein_objects(self):
-        connection = db.connection()
-        self.MODEL.connection = connection
-        unregistered_categories = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
-        connection.close()
+        with db.connection() as conn:
+            self.MODEL.connection = conn
+            unregistered_categories = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
         return unregistered_categories
 
     def _get_unregistered_wp_objects(self):
