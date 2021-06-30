@@ -25,7 +25,7 @@ class TestAPI(unittest.TestCase):
 
     def test_invalid_connection(self):
         invalid_api = {
-            'url': 'http://localhost/Store',
+            'url': settings.get('wc')['url'],
             'ckey': 'ck_nul1sbjblc9oc4lt8izq26hkwcib9vhxtx88an6e',
             'skey': 'cs_hwf9fvtntbu5ek105oez1obg99v5zijb6q5kcfqd',
             'version': 'wc/v3'
