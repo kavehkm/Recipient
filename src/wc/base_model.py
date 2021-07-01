@@ -1,5 +1,6 @@
 # internal
 from src.wc import api
+from src.wc import errors
 
 
 class WCBaseModel(object):
@@ -22,9 +23,24 @@ class WCBaseModel(object):
         if data:
             parameters['data'] = data
         try:
-            return getattr(self.wcapi, method)(**parameters)
-        except Exception as e:
-            raise e
+            response = getattr(self.wcapi, method)(**parameters)
+        except Exception:
+            raise errors.ConnectionsError()
+        else:
+            status_code = response.status_code
+            if status_code == 200 or status_code == 201:
+                return response
+            elif status_code == 400:
+                e = errors.BadRequestError
+            elif status_code == 401:
+                e = errors.UnauthorizedError
+            elif status_code == 404:
+                e = errors.NotFoundError
+            elif status_code == 500:
+                e = errors.InternalServerError
+            else:
+                e = errors.WCBaseError
+            raise e(details=response.json().get('message'))
 
     def get(self, wcid):
         return self._request('get', self._endpoint(wcid), None)

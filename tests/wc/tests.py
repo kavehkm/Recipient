@@ -5,9 +5,18 @@ import unittest
 # internal
 from src import settings
 from src.wc import api
+from src.wc import errors
 from src.wc.base_model import WCBaseModel
 # woocommerce
 from woocommerce import API
+
+
+INVALID_CREDENTIALS = {
+    'url': settings.get('wc')['url'],
+    'ckey': 'ck_nul1sbjblc9oc4lt8izq26hkwcib9vhxtx88an6e',
+    'skey': 'cs_hwf9fvtntbu5ek105oez1obg99v5zijb6q5kcfqd',
+    'version': 'wc/v3'
+}
 
 
 def slugify(name):
@@ -35,13 +44,7 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, self.STATUS_CODES.Success)
 
     def test_invalid_connection(self):
-        invalid_api = {
-            'url': settings.get('wc')['url'],
-            'ckey': 'ck_nul1sbjblc9oc4lt8izq26hkwcib9vhxtx88an6e',
-            'skey': 'cs_hwf9fvtntbu5ek105oez1obg99v5zijb6q5kcfqd',
-            'version': 'wc/v3'
-        }
-        wcapi = api.get(**invalid_api)
+        wcapi = api.get(**INVALID_CREDENTIALS)
         response = wcapi.get("")
         self.assertEqual(response.status_code, self.STATUS_CODES.Unauthorized)
 
@@ -86,14 +89,22 @@ class TestWCBaseModel(unittest.TestCase):
         expected = self.endpoint + '/' + str(wcid)
         self.assertEqual(result, expected)
 
+    def test_unauthorized_request(self):
+        wcapi = api.get(**INVALID_CREDENTIALS)
+        product_model = WCBaseModel(wcapi)
+        with self.assertRaises(Exception) as cm:
+            product_model.all()
+        self.assertIsInstance(cm.exception, errors.UnauthorizedError)
+
     def test_get(self):
         for pid in self.product_ids:
             result = self.product_model.get(pid)
             self.assertEqual(result.status_code, self.STATUS_CODES.Success)
 
     def test_get_with_invalid_id(self):
-        result = self.product_model.get(666)
-        self.assertEqual(result.status_code, self.STATUS_CODES.NotFound)
+        with self.assertRaises(Exception) as cm:
+            result = self.product_model.get(666)
+        self.assertIsInstance(cm.exception, errors.NotFoundError)
 
     def test_all(self):
         result = self.product_model.all()
