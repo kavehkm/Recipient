@@ -7,16 +7,19 @@ from src.worker import Worker
 from src.ui.windows import AddEditForm, AddEditOptions
 from src.ui.components import Message, Confirm, Progress
 # models
-from src.models import Product, ProductMap, Category, CategoryMap
+from src import models
+# wc
+from src import wc
 # pyqt
 from PyQt5.QtCore import QThreadPool
 
 
 class ObjectView(object):
     """Object View"""
-    # object related model and map
+    # object related models and map
     MAP = None
     MODEL = None
+    WPMODEL = None
     # object model columns
     MODEL_ID = 'id'
     MODEL_NAME = 'name'
@@ -309,8 +312,9 @@ class ObjectView(object):
 
 class ProductView(ObjectView):
     """Product View"""
-    MAP = ProductMap()
-    MODEL = Product()
+    MAP = models.ProductMap()
+    MODEL = models.Product()
+    WPMODEL = wc.Product()
     OBJECT_NAME = 'Product'
     OBJECT_NAME_PLURAL = 'Products'
 
@@ -344,8 +348,9 @@ class ProductView(ObjectView):
 
 class CategoryView(ObjectView):
     """Category View"""
-    MAP = CategoryMap()
-    MODEL = Category()
+    MAP = models.CategoryMap()
+    MODEL = models.Category()
+    WPMODEL = wc.Category()
     OBJECT_NAME = 'Category'
     OBJECT_NAME_PLURAL = 'Categories'
 
