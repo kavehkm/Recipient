@@ -71,6 +71,10 @@ class Model(metaclass=ModelBase):
                 results = getattr(cursor, method)()
         return results
 
+    def get_max_pk(self):
+        sql = 'SELECT MAX({}) FROM {}'.format(self.pk, self.table)
+        return self._execute(sql, method='fetchval')
+
     def all(self, *columns):
         sql = self._select(columns1=columns)
         sql += ' FROM {}'.format(self.table)

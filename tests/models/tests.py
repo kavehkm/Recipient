@@ -137,6 +137,25 @@ class TestModel(unittest.TestCase):
         result = self.order._where(kwargs)
         self.assertTupleEqual(result, expected_result)
 
+    def test_get_max_pk(self):
+        result = self.item.get_max_pk()
+        expected_result = self.items[-1][0]
+        self.assertEqual(result, expected_result)
+
+    def test_get_max_pk_against_commit(self):
+        next_id = self.item.get_max_pk() + 1
+        fields = {
+            'id': next_id,
+            'name': 'next item',
+            'price': 1000
+        }
+        self.item.create(fields)
+        result = self.item.get_max_pk()
+        self.assertEqual(result, next_id)
+        self.item.connection.commit()
+        result = self.item.get_max_pk()
+        self.assertEqual(result, next_id)
+
     def test_all(self):
         results = self.item.all()
         # check results data type
