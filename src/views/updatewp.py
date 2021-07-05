@@ -2,14 +2,10 @@
 import time
 from datetime import datetime
 # internal
-from src import db
 from src.worker import Worker
+from src import db, models, wc, messages
 from src.ui.windows import AddEditForm, AddEditOptions
 from src.ui.components import Message, Confirm, Progress
-# models
-from src import models
-# wc
-from src import wc
 # pyqt
 from PyQt5.QtCore import QThreadPool
 
@@ -23,100 +19,128 @@ class ObjectView(object):
     # object model columns
     MODEL_ID = 'id'
     MODEL_NAME = 'name'
-    # object names
-    OBJECT_NAME = 'Object'
-    OBJECT_NAME_PLURAL = 'Objects'
+    # object wpmodel columns
+    WPMODEL_ID = 'id'
+    WPMODEL_NAME = 'name'
+    # messages slice
+    MESSAGE_SLICE = slice(0, 0)
 
-    def __init__(self, parent, ui, tab, table):
+    def __init__(self, parent, table):
         self.parent = parent
-        self.ui = ui
-        self.tab = tab
         self.table = table
-        self._messages = None
-
-    @property
-    def messages(self):
-        if self._messages is None:
-            self._messages = {
-                # not found
-                'object_notfound':          f'{self.OBJECT_NAME} Not Found.',
-                # get
-                'get_options_fail':         'Cannot Load Options.',
-                'get_registered_fail':      f'Cannot Load Registered {self.OBJECT_NAME_PLURAL}.',
-                'get_unregistered_fail':    f'Cannot Load Unregistered {self.OBJECT_NAME_PLURAL}.',
-                # form title
-                'edit_form_title':          f'Edit {self.OBJECT_NAME}',
-                'add_form_title':           f'Add New {self.OBJECT_NAME}',
-                # progress dialog
-                'add_all_pd_title':         f'Add All {self.OBJECT_NAME_PLURAL}...',
-                'update_pd_title':          f'Update All {self.OBJECT_NAME_PLURAL}...',
-                # add all
-                'add_all_fail':             f'Cannot Add All {self.OBJECT_NAME_PLURAL}.',
-                'add_all_success':          f'All {self.OBJECT_NAME_PLURAL} Added Successfully.',
-                # update
-                'update_fail':              f'Cannot Update All {self.OBJECT_NAME_PLURAL}.',
-                'update_success':           f'All {self.OBJECT_NAME_PLURAL} Updated Successfully.',
-                # save
-                'save_fail':                f'Cannot Save {self.OBJECT_NAME}.',
-                'save_success':             f'{self.OBJECT_NAME} Saved Successfully.',
-                # remove
-                'remove_confirm':           'Are You Sure?',
-                'remove_fail':              f'Cannot Remove {self.OBJECT_NAME}.',
-                'remove_success':           f'{self.OBJECT_NAME} Removed Successfully.'
-            }
-        return self._messages
+        self.ui = self.parent.ui
+        self.tab = self.parent.tab
+        self.messages = messages.get(self.MESSAGE_SLICE)
 
     def get(self):
         try:
             objects = self._get_registered_objects()
         except Exception as e:
-            msg = Message(self.ui, Message.ERROR, self.messages['get_registered_fail'], str(e))
+            msg = Message(self.ui, Message.ERROR, self.messages[4], str(e))
             msg.show()
         else:
             self.table.setRecords(objects)
 
     def add(self):
         self.form = AddEditForm(self.ui)
-        self.form.setWindowTitle(self.messages['add_form_title'])
-        self.form.btnSave.clicked.connect(self.add_save)
-        self.form.signals.showOptions.connect(self.add_edit_show_options)
+        self.form.setWindowTitle(self.messages[7])
+        self.form.btnSave.clicked.connect(lambda: self.save())
+        self.form.signals.showOptions.connect(self.show_options)
         self.form.show()
 
-    def add_edit_show_options(self, subject):
+    def edit(self):
+        index = self.table.getCurrentRecordIndex()
+        if index is not None:
+            record = self.table.getRecord(index)
+            self.form = AddEditForm(self.ui)
+            self.form.setWindowTitle(self.messages[6])
+            self.form.setId(record[0])
+            self.form.setWpid(record[2])
+            self.form.btnSave.clicked.connect(lambda: self.save(index))
+            self.form.signals.showOptions.connect(self.show_options)
+            self.form.show()
+
+    def show_options(self, subject):
         try:
             if subject == self.form.ID:
                 columns = ['ID', 'Name']
-                title = 'Moein {}'.format(self.OBJECT_NAME_PLURAL)
-                options = self._get_unregistered_moein_objects()
+                title = self.messages[1]
+                options = self._get_moein_options()
             else:
                 columns = ['WPID', 'Name']
-                title = 'WP {}'.format(self.OBJECT_NAME_PLURAL)
-                options = self._get_unregistered_wp_objects()
+                title = self.messages[0]
+                options = self._get_wp_options()
         except Exception as e:
-            msg = Message(self.form, Message.ERROR, self.messages['get_options_fail'], str(e))
+            msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
             msg.show()
         else:
             self.table_list = AddEditOptions(self.form, columns)
             self.table_list.setWindowTitle(title)
             self.table_list.setList(options)
             self.table_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
-            self.table_list.signals.select.connect(lambda item: self.add_edit_select_option(subject, item))
+            self.table_list.signals.select.connect(lambda item: self.select_option(subject, item))
             self.table_list.show()
+
+    def select_option(self, subject, item):
+        if subject == self.form.ID:
+            self.form.setId(item[0])
+        else:
+            self.form.setWpid(item[0])
+        self.table_list.close()
+
+    def save(self, index=None):
+        try:
+            # get moeinid and wpid from form
+            moeinid = int(self.form.getId())
+            wpid = int(self.form.getWpid())
+            # check moeinid
+            with db.connection() as conn:
+                self.MODEL.connection = conn
+                moein_object = self.MODEL.get(moeinid, self.MODEL_NAME)
+                if moein_object is None:
+                    raise Exception(self.messages[2])
+            # check wpid
+            self.WPMODEL.get(wpid)
+            # everything is ok, lets register or update object
+            with db.connection() as conn:
+                self.MAP.connection = conn
+                if index is None:
+                    now = datetime.now()
+                    self.MAP.create({'id': moeinid, 'wpid': wpid, 'last_update': now})
+                else:
+                    record = self.table.getRecord(index)
+                    self.MAP.update({'id': moeinid, 'wpid': wpid}, id=record[0], wpid=record[2])
+                # commit changes
+                conn.commit()
+        except Exception as e:
+            msg = Message(self.form, Message.ERROR, self.messages[14], str(e))
+            msg.show()
+        else:
+            if index is None:
+                self.table.addRecord([moeinid, getattr(moein_object, self.MODEL_NAME), wpid, now])
+            else:
+                record[0] = moeinid
+                record[1] = getattr(moein_object, self.MODEL_NAME)
+                record[2] = wpid
+                self.table.updateRecord(index, record)
+            self.form.close()
+            msg = Message(self.ui, Message.SUCCESS, self.messages[15])
+            msg.show()
 
     def add_all(self, subject):
         try:
             if subject == self.form.ID:
-                objects = self._get_unregistered_moein_objects()
-                adder = self._adder
+                objects = self._get_moein_options()
+                adder = self._moein_adder
             else:
-                objects = self._get_unregistered_wp_objects()
-                adder = self._adder
+                objects = self._get_wp_options()
+                adder = self._wp_adder
         except Exception as e:
-            msg = Message(self.table_list, Message.ERROR, self.messages['get_unregistered_fail'], str(e))
+            msg = Message(self.table_list, Message.ERROR, self.messages[5], str(e))
             msg.show()
         else:
             if objects:
-                pd = Progress(self.table_list, self.messages['add_all_pd_title'], 0, len(objects))
+                pd = Progress(self.table_list, self.messages[8], 0, len(objects))
                 pd.show()
                 worker = Worker(adder, objects)
                 worker.signals.progress.connect(pd.setValue)
@@ -128,94 +152,23 @@ class ObjectView(object):
 
     def add_all_error(self, error):
         self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.ERROR, self.messages['add_all_fail'], str(error))
+        msg = Message(self.table_list, Message.ERROR, self.messages[10], str(error))
         msg.show()
 
     def add_all_done(self):
         self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.SUCCESS, self.messages['add_all_success'])
+        msg = Message(self.table_list, Message.SUCCESS, self.messages[11])
         msg.show()
-
-    def add_edit_select_option(self, subject, item):
-        if subject == self.form.ID:
-            self.form.setId(item[0])
-        else:
-            self.form.setWpid(item[0])
-        self.table_list.close()
-
-    def add_save(self):
-        try:
-            # get ids from form
-            moein_id = int(self.form.getId())
-            wp_id = int(self.form.getWpid())
-            # create database connection
-            with db.connection() as conn:
-                # set model connection
-                self.MODEL.connection = self.MAP.connection = conn
-                # get object from database by given moein_id
-                obj = self.MODEL.get(moein_id, self.MODEL_NAME)
-                if obj is None:
-                    raise Exception(self.messages['object_notfound'])
-                #
-                # get wp_object from store by given wp_id
-                #
-                current_datetime = datetime.now()
-                self.MAP.create({'id': moein_id, 'wpid': wp_id, 'last_update': current_datetime})
-                conn.commit()
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, self.messages['save_fail'], str(e))
-            msg.show()
-        else:
-            self.form.close()
-            self.table.addRecord([moein_id, getattr(obj, self.MODEL_NAME), wp_id, current_datetime])
-            msg = Message(self.ui, Message.SUCCESS, self.messages['save_success'])
-            msg.show()
-
-    def edit(self):
-        obj_index = self.table.getCurrentRecordIndex()
-        if obj_index is not None:
-            obj = self.table.getRecord(obj_index)
-            self.form = AddEditForm(self.ui)
-            self.form.setWindowTitle(self.messages['edit_form_title'])
-            self.form.setId(obj[0])
-            self.form.setWpid(obj[2])
-            self.form.btnSave.clicked.connect(lambda: self.edit_save(obj_index))
-            self.form.signals.showOptions.connect(self.add_edit_show_options)
-            self.form.show()
-
-    def edit_save(self, obj_index):
-        try:
-            moein_id = int(self.form.getId())
-            wp_id = int(self.form.getWpid())
-            obj_record = self.table.getRecord(obj_index)
-            with db.connection() as conn:
-                self.MODEL.connection = self.MAP.connection = conn
-                obj = self.MODEL.get(moein_id, self.MODEL_NAME)
-                if obj is None:
-                    raise Exception(self.messages['object_notfound'])
-                self.MAP.update({'id': moein_id, 'wpid': wp_id}, id=obj_record[0], wpid=obj_record[2])
-                conn.commit()
-        except Exception as e:
-            msg = Message(self.form, Message.ERROR, self.messages['save_fail'], str(e))
-            msg.show()
-        else:
-            obj_record[0] = moein_id
-            obj_record[1] = getattr(obj, self.MODEL_NAME)
-            obj_record[2] = wp_id
-            self.table.updateRecord(obj_index, obj_record)
-            self.form.close()
-            msg = Message(self.ui, Message.SUCCESS, self.messages['save_success'])
-            msg.show()
 
     def update(self):
         try:
             objects = self._get_registered_objects()
         except Exception as e:
-            msg = Message(self.ui, Message.ERROR, self.messages['get_registered_fail'], str(e))
+            msg = Message(self.ui, Message.ERROR, self.messages[4], str(e))
             msg.show()
         else:
             if objects:
-                pd = Progress(self.ui, self.messages['update_pd_title'], 0, len(objects))
+                pd = Progress(self.ui, self.messages[9], 0, len(objects))
                 pd.show()
                 worker = Worker(self._updater, objects)
                 worker.signals.progress.connect(pd.setValue)
@@ -227,87 +180,79 @@ class ObjectView(object):
 
     def update_error(self, error):
         self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.ui, Message.ERROR, self.messages['update_fail'], str(error))
+        msg = Message(self.ui, Message.ERROR, self.messages[12], str(error))
         msg.show()
 
     def update_done(self):
         self.tab.btnUpdateWP.setEnabled(True)
-        msg = Message(self.ui, Message.SUCCESS, self.messages['update_success'])
+        msg = Message(self.ui, Message.SUCCESS, self.messages[13])
         msg.show()
 
     def remove(self):
-        obj_index = self.table.getCurrentRecordIndex()
-        if obj_index is not None:
-            cfm = Confirm(self.ui, Confirm.WARNING, self.messages['remove_confirm'])
-            cfm.btnOk.clicked.connect(lambda: self.remove_confirm(obj_index))
+        index = self.table.getCurrentRecordIndex()
+        if index is not None:
+            cfm = Confirm(self.ui, Confirm.WARNING, self.messages[16])
+            cfm.btnOk.clicked.connect(lambda: self.remove_confirm(index))
             cfm.show()
 
-    def remove_confirm(self, obj_index):
+    def remove_confirm(self, index):
         try:
-            # get object id
-            moein_id = int(self.table.getRecord(obj_index)[0])
-            # create connection to database
+            # get moeinid
+            moeinid = int(self.table.getRecord(index)[0])
             with db.connection() as conn:
-                # set connection
                 self.MAP.connection = conn
-                # delete registered object from map table
-                self.MAP.delete(id=moein_id)
+                self.MAP.delete(id=moeinid)
                 conn.commit()
         except Exception as e:
-            msg = Message(self.ui, Message.ERROR, self.messages['remove_fail'], str(e))
+            msg = Message(self.ui, Message.ERROR, self.messages[17], str(e))
             msg.show()
         else:
-            self.table.removeRecord(obj_index)
-            msg = Message(self.ui, Message.SUCCESS, self.messages['remove_success'])
+            self.table.removeRecord(index)
+            msg = Message(self.ui, Message.SUCCESS, self.messages[18])
             msg.show()
 
-    ##########################
-    # overwrite this methods #
-    ##########################
     def _get_registered_objects(self):
-        """
-        Get all moein-objects that inner joined with map table
+        with db.connection() as conn:
+            self.MODEL.connection = conn
+            registered_objects = self.MODEL.inner_join(
+                self.MAP,
+                self.MODEL_ID, 'id',
+                [self.MODEL_ID, self.MODEL_NAME], ['wpid', 'last_update']
+            )
+        return registered_objects
 
-        :return: registered moein-objects
-        :rtype: list
-        """
-        return []
+    def _get_moein_options(self):
+        with db.connection() as conn:
+            self.MODEL.connection = conn
+            moein_options = self.MODEL.left_outer_join(
+                self.MAP,
+                self.MODEL_ID, 'id',
+                [self.MODEL_ID, self.MODEL_NAME]
+            )
+        return moein_options
 
-    def _get_unregistered_moein_objects(self):
-        """
-        Get all moein-objects that right outer joined with map table
+    def _get_wp_options(self):
+        wp_objects = []
+        registered_objects_ids = []
+        with db.connection() as conn:
+            self.MAP.connection = conn
+            for registered_object in self.MAP.all('wpid'):
+                registered_objects_ids.append(registered_object.wpid)
+        for wp_object in self.WPMODEL.all(per_page=100).json():
+            if wp_object[self.WPMODEL_ID] not in registered_objects_ids:
+                wp_objects.append([wp_object[self.WPMODEL_ID], wp_object[self.WPMODEL_NAME]])
+        return wp_objects
 
-        :return: unregistered moein-objects
-        :rtype: list
-        """
-        return []
+    def _wp_adder(self, objects, progress_callback):
+        pass
 
-    def _get_unregistered_wp_objects(self):
-        """
-        Get all wp-objects that not registered in map table
+    def _moein_adder(self, objects, progress_callback):
+        pass
 
-        :return: unregistered wp-objects
-        :rtype: list
-        """
-        return []
-
-    @staticmethod
-    def _adder(objects, progress_callback):
-        """
-        Register objects in map table and also add them to wp store
-
-        :param list objects: unregistered moein-objects
-        :param pyqtSignal progress_callback: progress reporting signal
-        """
-
-    @staticmethod
-    def _updater(objects, progress_callback):
-        """
-        Update all registered objects on wp store from map table
-
-        :param list objects: registered moein-objects
-        :param pyqtSignal progress_callback: progress reporting signal
-        """
+    def _updater(self, objects, progress_callback):
+        for i, obj in enumerate(objects, 1):
+            time.sleep(1)
+            progress_callback.emit(i)
 
 
 class ProductView(ObjectView):
@@ -315,35 +260,36 @@ class ProductView(ObjectView):
     MAP = models.ProductMap()
     MODEL = models.Product()
     WPMODEL = wc.Product()
-    OBJECT_NAME = 'Product'
-    OBJECT_NAME_PLURAL = 'Products'
+    MESSAGE_SLICE = slice(0, 19)
 
-    def _get_registered_objects(self):
+    def _wp_adder(self, products, progress_callback):
         with db.connection() as conn:
-            self.MODEL.connection = conn
-            registered_products = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
-        return registered_products
+            category_map = models.CategoryMap()
+            self.MODEL.connection = self.MAP.connection = category_map.connection = conn
+            for i, p in enumerate(products, 1):
+                wp_product = self.WPMODEL.get(p[0]).json()
+                wp_category = wp_product['categories'][0]
+                try:
+                    moein_category = category_map.filter('id', wpid=wp_category['id'])[0]
+                except IndexError:
+                    raise Exception('Category `{}` does not exists in map table.'.format(wp_category['name']))
+                self.MODEL.create({
+                    'name': wp_product['name'],
+                    'price': wp_product['regular_price'],
+                    'category_id': moein_category.id
+                })
+                self.MAP.create({
+                    'id': self.MODEL.get_max_pk(),
+                    'wpid': wp_product['id'],
+                    'last_update': datetime.now()
+                })
+                # commit changes
+                conn.commit()
+                # report progress
+                progress_callback.emit(i)
 
-    def _get_unregistered_moein_objects(self):
-        with db.connection() as conn:
-            self.MODEL.connection = conn
-            unregistered_products = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
-        return unregistered_products
-
-    def _get_unregistered_wp_objects(self):
-        return [[i, f'WP Product{i}'] for i in range(10)]
-
-    @staticmethod
-    def _adder(products, progress_callback):
-        for i, product in enumerate(products, 1):
-            time.sleep(0.1)
-            progress_callback.emit(i)
-
-    @staticmethod
-    def _updater(products, progress_callback):
-        for i, products in enumerate(products, 1):
-            time.sleep(0.5)
-            progress_callback.emit(i)
+    def _moein_adder(self, products, progress_callback):
+        pass
 
 
 class CategoryView(ObjectView):
@@ -351,35 +297,28 @@ class CategoryView(ObjectView):
     MAP = models.CategoryMap()
     MODEL = models.Category()
     WPMODEL = wc.Category()
-    OBJECT_NAME = 'Category'
-    OBJECT_NAME_PLURAL = 'Categories'
+    MESSAGE_SLICE = slice(19, 38)
 
-    def _get_registered_objects(self):
+    def _wp_adder(self, categories, progress_callback):
         with db.connection() as conn:
-            self.MODEL.connection = conn
-            registered_categories = self.MODEL.inner_join(self.MAP, 'id', 'id', ['id', 'name'], ['wpid', 'last_update'])
-        return registered_categories
+            self.MODEL.connection = self.MAP.connection = conn
+            for i, c in enumerate(categories, 1):
+                wp_category = self.WPMODEL.get(c[0]).json()
+                self.MODEL.create({
+                    'name': wp_category['name']
+                })
+                self.MAP.create({
+                    'id': self.MODEL.get_max_pk(),
+                    'wpid': wp_category['id'],
+                    'last_update': datetime.now()
+                })
+                # commit changes
+                conn.commit()
+                # report progress status
+                progress_callback.emit(i)
 
-    def _get_unregistered_moein_objects(self):
-        with db.connection() as conn:
-            self.MODEL.connection = conn
-            unregistered_categories = self.MODEL.left_outer_join(self.MAP, 'id', 'id', ['id', 'name'])
-        return unregistered_categories
-
-    def _get_unregistered_wp_objects(self):
-        return [[i, f'WP Category{i}'] for i in range(5)]
-
-    @staticmethod
-    def _adder(categories, progress_callback):
-        for i, category in enumerate(categories, 1):
-            time.sleep(2)
-            progress_callback.emit(i)
-
-    @staticmethod
-    def _updater(categories, progress_callback):
-        for i, category in enumerate(categories, 1):
-            time.sleep(2)
-            progress_callback.emit(i)
+    def _moein_adder(self, categories, progress_callback):
+        pass
 
 
 class UpdateWP(object):
@@ -409,8 +348,8 @@ class UpdateWP(object):
         self.ui = ui
         self.tab = ui.contents.updateWP
         # attach views
-        self.product = ProductView(self, self.ui, self.tab, self.tab.productsTable)
-        self.category = CategoryView(self, self.ui, self.tab, self.tab.categoriesTable)
+        self.product = ProductView(self, self.tab.productsTable)
+        self.category = CategoryView(self, self.tab.categoriesTable)
         # connect signals
         self.ui.menu.btnUpdateWP.clicked.connect(self.tab_handler)
         self.tab.tabs.currentChanged.connect(lambda: self.dispatcher(self.INIT))
