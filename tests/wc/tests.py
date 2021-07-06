@@ -103,7 +103,7 @@ class TestWCBaseModel(unittest.TestCase):
 
     def test_get_with_invalid_id(self):
         with self.assertRaises(Exception) as cm:
-            result = self.product_model.get(666)
+            self.product_model.get(666)
         self.assertIsInstance(cm.exception, errors.NotFoundError)
 
     def test_all(self):

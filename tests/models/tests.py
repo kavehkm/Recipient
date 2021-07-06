@@ -3,6 +3,7 @@ import unittest
 # internal
 from src import db, settings
 from src.models import Column, Model
+from src.models.errors import DoesNotExistsError
 
 
 class Order(Model):
@@ -127,7 +128,6 @@ class TestModel(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
     def test__where(self):
-
         kwargs = {
             'id': 1,
             'name': 'a',
@@ -182,13 +182,20 @@ class TestModel(unittest.TestCase):
 
     def test_get(self):
         expected_list = self.items[1]
-        result = self.item.get(2)
+        result = self.item.get(id=2)
+        result_list = [result.id, result.name, result.price]
+        self.assertListEqual(result_list, expected_list)
+
+    def test_get_conditions(self):
+        expected_list = self.items[2]
+        result = self.item.get(name='item3')
         result_list = [result.id, result.name, result.price]
         self.assertListEqual(result_list, expected_list)
 
     def test_get_DoesNotExists(self):
-        result = self.item.get(666)
-        self.assertIsNone(result)
+        with self.assertRaises(Exception) as cm:
+            self.item.get(id=666)
+        self.assertIsInstance(cm.exception, DoesNotExistsError)
 
     def test_create(self):
         fields = {

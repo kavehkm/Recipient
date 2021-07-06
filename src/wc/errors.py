@@ -1,6 +1,6 @@
 class WCBaseError(Exception):
     """WooCommerce Base Error"""
-    MESSAGE = 'WooCommerce Base Error'
+    MESSAGE = 'WooCommerce base error'
     DETAILS = ''
 
     def __init__(self, *args, message='', details=''):
@@ -17,22 +17,22 @@ class WCBaseError(Exception):
 
 class ConnectionsError(WCBaseError):
     """WooCommerce Connections Error"""
-    MESSAGE = 'Connections Error'
+    MESSAGE = 'Connections error'
 
 
 class BadRequestError(WCBaseError):
     """WooCommerce 400 Bad Request Error"""
-    MESSAGE = 'Invalid Request'
+    MESSAGE = 'Invalid request'
 
 
 class UnauthorizedError(WCBaseError):
     """WooCommerce 401 Unauthorized Error"""
-    MESSAGE = 'Authentication Error'
+    MESSAGE = 'Authentication error'
 
 
 class InternalServerError(WCBaseError):
     """WooCommerce Internal Server Error"""
-    MESSAGE = 'Server Internal Error'
+    MESSAGE = 'Server internal error'
 
 
 class NotFoundError(WCBaseError):

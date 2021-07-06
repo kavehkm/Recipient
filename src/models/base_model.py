@@ -1,3 +1,7 @@
+# internal
+from src.models.errors import DoesNotExistsError
+
+
 class Column(object):
     """Model Column"""
     def __init__(self, t, wp=None):
@@ -85,15 +89,21 @@ class Model(metaclass=ModelBase):
         sql = self._select(columns1=columns)
         sql += ' FROM {}'.format(self.table)
         if conditions:
-            _sql, _parameters = self._where(conditions)
+            _sql, parameters = self._where(conditions)
             sql += _sql
-            parameters = _parameters
         return self._execute(sql, parameters, method='fetchall')
 
-    def get(self, pk, *columns):
+    def get(self, *columns, **conditions):
+        parameters = []
         sql = self._select(columns1=columns)
-        sql += ' FROM {} WHERE {} = ?'.format(self.table, self.pk)
-        return self._execute(sql, [pk], method='fetchone')
+        sql += ' FROM {}'.format(self.table)
+        if conditions:
+            _sql, parameters = self._where(conditions)
+            sql += _sql
+        obj = self._execute(sql, parameters, 'fetchone')
+        if obj is None:
+            raise DoesNotExistsError
+        return obj
 
     def create(self, fields):
         parameters = []
