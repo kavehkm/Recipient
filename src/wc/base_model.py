@@ -25,9 +25,10 @@ class WCBaseModel(object):
         try:
             response = getattr(self.wcapi, method)(**parameters)
         except Exception:
-            raise errors.ConnectionsError()
+            raise errors.ConnectionsError
         else:
             status_code = response.status_code
+            response = response.json()
             if status_code == 200 or status_code == 201:
                 return response
             elif status_code == 400:
@@ -40,13 +41,26 @@ class WCBaseModel(object):
                 e = errors.InternalServerError
             else:
                 e = errors.WCBaseError
-            raise e(details=response.json().get('message'))
+            raise e(details=response.get('message'))
 
     def get(self, wcid):
         return self._request('get', self._endpoint(wcid), None)
 
     def all(self, **params):
-        return self._request('get', self.ENDPOINT, None, params)
+        page = 1
+        results = []
+        excludes = params.pop('excludes', [])
+        while True:
+            params['page'] = page
+            objects = self._request('get', self.ENDPOINT, None, params)
+            if objects:
+                results.extend(objects)
+                page += 1
+            else:
+                break
+        if excludes:
+            results = list(filter(lambda obj: obj['id'] not in excludes, results))
+        return results
 
     def create(self, data):
         return self._request('post', self.ENDPOINT, data)

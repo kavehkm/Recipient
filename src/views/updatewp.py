@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 # internal
 from src.worker import Worker
-from src import db, models, wc, messages
+from src import db, wc, models, messages
 from src.ui.windows import AddEditForm, AddEditOptions
 from src.ui.components import Message, Confirm, Progress
 # pyqt
@@ -34,7 +34,10 @@ class ObjectView(object):
 
     def get(self):
         try:
-            objects = self._get_registered_objects()
+            objects = [
+                [getattr(obj, self.MODEL_ID), getattr(obj, self.MODEL_NAME), obj.wpid, obj.last_update]
+                for obj in self._get_registered_objects()
+            ]
         except Exception as e:
             msg = Message(self.ui, Message.ERROR, self.messages[4], str(e))
             msg.show()
@@ -65,11 +68,17 @@ class ObjectView(object):
             if subject == self.form.ID:
                 columns = ['ID', 'Name']
                 title = self.messages[1]
-                options = self._get_moein_options()
+                options = [
+                    [getattr(obj, self.MODEL_ID), getattr(obj, self.MODEL_NAME)]
+                    for obj in self._get_unregistered_moein_objects()
+                ]
             else:
                 columns = ['WPID', 'Name']
                 title = self.messages[0]
-                options = self._get_wp_options()
+                options = [
+                    [obj[self.WPMODEL_ID], obj[self.WPMODEL_NAME]]
+                    for obj in self._get_unregistered_wp_objects()
+                ]
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
             msg.show()
@@ -96,9 +105,7 @@ class ObjectView(object):
             # check moeinid
             with db.connection() as conn:
                 self.MODEL.connection = conn
-                moein_object = self.MODEL.get(moeinid, self.MODEL_NAME)
-                if moein_object is None:
-                    raise Exception(self.messages[2])
+                moein_object = self.MODEL.get(self.MODEL_NAME, **{self.MODEL_ID: moeinid})
             # check wpid
             self.WPMODEL.get(wpid)
             # everything is ok, lets register or update object
@@ -130,10 +137,10 @@ class ObjectView(object):
     def add_all(self, subject):
         try:
             if subject == self.form.ID:
-                objects = self._get_moein_options()
+                objects = self._get_unregistered_moein_objects()
                 adder = self._moein_adder
             else:
-                objects = self._get_wp_options()
+                objects = self._get_unregistered_wp_objects()
                 adder = self._wp_adder
         except Exception as e:
             msg = Message(self.table_list, Message.ERROR, self.messages[5], str(e))
@@ -217,31 +224,24 @@ class ObjectView(object):
             registered_objects = self.MODEL.inner_join(
                 self.MAP,
                 self.MODEL_ID, 'id',
-                [self.MODEL_ID, self.MODEL_NAME], ['wpid', 'last_update']
+                [], ['wpid', 'last_update', 'update_required']
             )
         return registered_objects
 
-    def _get_moein_options(self):
+    def _get_unregistered_moein_objects(self):
         with db.connection() as conn:
-            self.MODEL.connection = conn
-            moein_options = self.MODEL.left_outer_join(
+            unregistered_objects = self.MODEL.left_outer_join(
                 self.MAP,
                 self.MODEL_ID, 'id',
-                [self.MODEL_ID, self.MODEL_NAME]
+                []
             )
-        return moein_options
+        return unregistered_objects
 
-    def _get_wp_options(self):
-        wp_objects = []
-        registered_objects_ids = []
+    def _get_unregistered_wp_objects(self):
         with db.connection() as conn:
             self.MAP.connection = conn
-            for registered_object in self.MAP.all('wpid'):
-                registered_objects_ids.append(registered_object.wpid)
-        for wp_object in self.WPMODEL.all(per_page=100).json():
-            if wp_object[self.WPMODEL_ID] not in registered_objects_ids:
-                wp_objects.append([wp_object[self.WPMODEL_ID], wp_object[self.WPMODEL_NAME]])
-        return wp_objects
+            ids = [i.wpid for i in self.MAP.all('wpid')]
+        return self.WPMODEL.all(excludes=ids)
 
     def _wp_adder(self, objects, progress_callback):
         pass
@@ -262,34 +262,25 @@ class ProductView(ObjectView):
     WPMODEL = wc.Product()
     MESSAGE_SLICE = slice(0, 19)
 
-    def _wp_adder(self, products, progress_callback):
+    def _wp_adder(self, wp_products, progress_callback):
         with db.connection() as conn:
             category_map = models.CategoryMap()
             self.MODEL.connection = self.MAP.connection = category_map.connection = conn
-            for i, p in enumerate(products, 1):
-                wp_product = self.WPMODEL.get(p[0]).json()
+            for i, wp_product in enumerate(wp_products, 1):
                 wp_category = wp_product['categories'][0]
-                try:
-                    moein_category = category_map.filter('id', wpid=wp_category['id'])[0]
-                except IndexError:
-                    raise Exception('Category `{}` does not exists in map table.'.format(wp_category['name']))
+                category = category_map.get('id', wpid=wp_category['id'])
                 self.MODEL.create({
                     'name': wp_product['name'],
                     'price': wp_product['regular_price'],
-                    'category_id': moein_category.id
+                    'category_id': category.id
                 })
                 self.MAP.create({
                     'id': self.MODEL.get_max_pk(),
                     'wpid': wp_product['id'],
                     'last_update': datetime.now()
                 })
-                # commit changes
                 conn.commit()
-                # report progress
                 progress_callback.emit(i)
-
-    def _moein_adder(self, products, progress_callback):
-        pass
 
 
 class CategoryView(ObjectView):
@@ -299,11 +290,10 @@ class CategoryView(ObjectView):
     WPMODEL = wc.Category()
     MESSAGE_SLICE = slice(19, 38)
 
-    def _wp_adder(self, categories, progress_callback):
+    def _wp_adder(self, wp_categories, progress_callback):
         with db.connection() as conn:
             self.MODEL.connection = self.MAP.connection = conn
-            for i, c in enumerate(categories, 1):
-                wp_category = self.WPMODEL.get(c[0]).json()
+            for i, wp_category in enumerate(wp_categories, 1):
                 self.MODEL.create({
                     'name': wp_category['name']
                 })
@@ -312,13 +302,8 @@ class CategoryView(ObjectView):
                     'wpid': wp_category['id'],
                     'last_update': datetime.now()
                 })
-                # commit changes
                 conn.commit()
-                # report progress status
                 progress_callback.emit(i)
-
-    def _moein_adder(self, categories, progress_callback):
-        pass
 
 
 class UpdateWP(object):
