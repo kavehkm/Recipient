@@ -5,10 +5,9 @@ class Category(WCBaseModel):
     """WooCommerce Category Model"""
     ENDPOINT = 'products/categories'
 
-    def create(self, name, slug, parent=0):
+    def create(self, name, parent=0):
         data = {
             'name': name,
-            'slug': slug,
             'parent': parent
         }
         return super().create(data)
@@ -18,11 +17,12 @@ class Product(WCBaseModel):
     """WooCommerce Product Model"""
     ENDPOINT = 'products'
 
-    def create(self, name, slug, regular_price, parent_id=0):
+    def create(self, name, regular_price, categories, parent_id=0):
+        cats = [{'id': category} for category in categories]
         data = {
             'name': name,
-            'slug': slug,
             'parent_id': parent_id,
+            'categories': cats,
             'regular_price': regular_price
         }
         return super().create(data)

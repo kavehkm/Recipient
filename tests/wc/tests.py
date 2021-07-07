@@ -17,11 +17,6 @@ INVALID_CREDENTIALS = {
 }
 
 
-def slugify(name):
-    lower_name = name.lower()
-    return lower_name.replace(' ', '-')
-
-
 class StatusCodes(object):
     """Status Codes Collection"""
     Success =       200     # success
@@ -55,8 +50,8 @@ class TestWCBaseModel(unittest.TestCase):
         self.product_model = WCBaseModel()
         self.product_model.ENDPOINT = self.endpoint
         self.products_data = [
-            {'name': f'product {i}', 'slug': f'product-{i}', 'regular_price': f'{i}000'}
-            for i in range(1, 6)
+            {'name': f'product {i}', 'regular_price': f'{i}000'}
+            for i in range(1, 4)
         ]
         for data in self.products_data:
             product = self.product_model.create(data)
@@ -106,7 +101,6 @@ class TestWCBaseModel(unittest.TestCase):
         data = {
             'name': name,
             'regular_price': str(random.randint(1000, 10000)),
-            'slug': slugify(name)
         }
         result = self.product_model.create(data)
         wcid = result['id']
