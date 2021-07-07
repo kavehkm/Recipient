@@ -230,6 +230,7 @@ class ObjectView(object):
 
     def _get_unregistered_moein_objects(self):
         with db.connection() as conn:
+            self.MODEL.connection = conn
             unregistered_objects = self.MODEL.left_outer_join(
                 self.MAP,
                 self.MODEL_ID, 'id',
@@ -268,14 +269,33 @@ class ProductView(ObjectView):
             self.MODEL.connection = self.MAP.connection = category_map.connection = conn
             for i, wp_product in enumerate(wp_products, 1):
                 wp_category = wp_product['categories'][0]
-                category = category_map.get('id', wpid=wp_category['id'])
+                moein_category = category_map.get('id', wpid=wp_category['id'])
                 self.MODEL.create({
                     'name': wp_product['name'],
                     'price': wp_product['regular_price'],
-                    'category_id': category.id
+                    'category_id': moein_category.id
                 })
                 self.MAP.create({
                     'id': self.MODEL.get_max_pk(),
+                    'wpid': wp_product['id'],
+                    'last_update': datetime.now()
+                })
+                conn.commit()
+                progress_callback.emit(i)
+
+    def _moein_adder(self, moein_products, progress_callback):
+        with db.connection() as conn:
+            category_map = models.CategoryMap()
+            self.MAP.connection = category_map.connection = conn
+            for i, moein_product in enumerate(moein_products, 1):
+                wp_category = category_map.get('wpid', id=moein_product.category_id)
+                wp_product = self.WPMODEL.create(
+                    moein_product.name,
+                    str(moein_product.price),
+                    [wp_category.wpid]
+                )
+                self.MAP.create({
+                    'id': moein_product.id,
                     'wpid': wp_product['id'],
                     'last_update': datetime.now()
                 })
@@ -299,6 +319,21 @@ class CategoryView(ObjectView):
                 })
                 self.MAP.create({
                     'id': self.MODEL.get_max_pk(),
+                    'wpid': wp_category['id'],
+                    'last_update': datetime.now()
+                })
+                conn.commit()
+                progress_callback.emit(i)
+
+    def _moein_adder(self, moein_categories, progress_callback):
+        with db.connection() as conn:
+            self.MAP.connection = conn
+            for i, moein_category in enumerate(moein_categories, 1):
+                wp_category = self.WPMODEL.create(
+                    moein_category.name
+                )
+                self.MAP.create({
+                    'id': moein_category.id,
                     'wpid': wp_category['id'],
                     'last_update': datetime.now()
                 })
