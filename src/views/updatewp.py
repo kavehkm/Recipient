@@ -1,5 +1,4 @@
 # standard
-import time
 from datetime import datetime
 # internal
 from src.worker import Worker
@@ -251,9 +250,7 @@ class ObjectView(object):
         pass
 
     def _updater(self, objects, progress_callback):
-        for i, obj in enumerate(objects, 1):
-            time.sleep(1)
-            progress_callback.emit(i)
+        pass
 
 
 class ProductView(ObjectView):
@@ -302,6 +299,18 @@ class ProductView(ObjectView):
                 conn.commit()
                 progress_callback.emit(i)
 
+    def _updater(self, moein_products, progress_callback):
+        with db.connection() as conn:
+            self.MAP.connection = conn
+            for i, moein_product in enumerate(moein_products, 1):
+                self.WPMODEL.update(moein_product.wpid, {
+                    'name': moein_product.name,
+                    'regular_price': str(moein_product.price)
+                })
+                self.MAP.update({'last_update': datetime.now()}, id=moein_product.id)
+                conn.commit()
+                progress_callback.emit(i)
+
 
 class CategoryView(ObjectView):
     """Category View"""
@@ -337,6 +346,17 @@ class CategoryView(ObjectView):
                     'wpid': wp_category['id'],
                     'last_update': datetime.now()
                 })
+                conn.commit()
+                progress_callback.emit(i)
+
+    def _updater(self, moein_categories, progress_callback):
+        with db.connection() as conn:
+            self.MAP.connection = conn
+            for i, moein_category in enumerate(moein_categories, 1):
+                self.WPMODEL.update(moein_category.wpid, {
+                    'name': moein_category.name
+                })
+                self.MAP.update({'last_update': datetime.now()}, id=moein_category.id)
                 conn.commit()
                 progress_callback.emit(i)
 
