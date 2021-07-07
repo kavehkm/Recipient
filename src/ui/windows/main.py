@@ -254,16 +254,14 @@ class SettingsTab(BaseTab):
         # - database
         self.database = QLineEdit()
         self.form.addRow(QLabel('DataBase'), self.database)
-        # form buttons
-        btnLayout = QHBoxLayout()
+        # controls
+        controlLayout = QHBoxLayout()
+        controlLayout.addStretch(1)
         self.btnClear = QPushButton('Clear')
         self.btnSave = QPushButton('Save')
-        btnLayout.addStretch(1)
-        btnLayout.addWidget(self.btnSave)
-        btnLayout.addWidget(self.btnClear)
-        self.form.addRow(QLabel(), btnLayout)
-        # add stretch at the end
-        self.generalLayout.addStretch(1)
+        controlLayout.addWidget(self.btnClear)
+        controlLayout.addWidget(self.btnSave)
+        self.generalLayout.addLayout(controlLayout)
 
     def setStyles(self):
         self.setStyleSheet("""
@@ -274,9 +272,8 @@ class SettingsTab(BaseTab):
                 margin-right: 50px;
             }
             QPushButton{
-                height: 30px;
+                height: 25px;
                 width: 80px;
-                margin-left: 5px;
             }
         """)
 
