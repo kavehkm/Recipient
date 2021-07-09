@@ -1,6 +1,6 @@
 from .status import Status
 from .invoices import Invoices
-from .updatewp import UpdateWP
+from .woocommerce import WooCommerce
 from .settings import Settings
 from .logs import Logs
 from .help import Help

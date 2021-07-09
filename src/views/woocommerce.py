@@ -14,13 +14,13 @@ class ObjectView(object):
     # object related models and map
     MAP = None
     MODEL = None
-    WPMODEL = None
+    WCMODEL = None
     # object model columns
     MODEL_ID = 'id'
     MODEL_NAME = 'name'
-    # object wpmodel columns
-    WPMODEL_ID = 'id'
-    WPMODEL_NAME = 'name'
+    # object wcmodel columns
+    WCMODEL_ID = 'id'
+    WCMODEL_NAME = 'name'
     # messages slice
     MESSAGE_SLICE = slice(0, 0)
 
@@ -34,7 +34,7 @@ class ObjectView(object):
     def get(self):
         try:
             objects = [
-                [getattr(obj, self.MODEL_ID), getattr(obj, self.MODEL_NAME), obj.wpid, obj.last_update]
+                [getattr(obj, self.MODEL_ID), getattr(obj, self.MODEL_NAME), obj.wcid, obj.last_update]
                 for obj in self._get_registered_objects()
             ]
         except Exception as e:
@@ -57,7 +57,7 @@ class ObjectView(object):
             self.form = RegisterForm(self.ui)
             self.form.setWindowTitle(self.messages[6])
             self.form.setId(record[0])
-            self.form.setWpid(record[2])
+            self.form.setWcid(record[2])
             self.form.btnSave.clicked.connect(lambda: self.save(index))
             self.form.signals.showOptions.connect(self.show_options)
             self.form.show()
@@ -72,11 +72,11 @@ class ObjectView(object):
                     for obj in self._get_unregistered_moein_objects()
                 ]
             else:
-                columns = ['WPID', 'Name']
+                columns = ['WCID', 'Name']
                 title = self.messages[0]
                 options = [
-                    [obj[self.WPMODEL_ID], obj[self.WPMODEL_NAME]]
-                    for obj in self._get_unregistered_wp_objects()
+                    [obj[self.WCMODEL_ID], obj[self.WCMODEL_NAME]]
+                    for obj in self._get_unregistered_wc_objects()
                 ]
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
@@ -93,29 +93,29 @@ class ObjectView(object):
         if subject == self.form.ID:
             self.form.setId(item[0])
         else:
-            self.form.setWpid(item[0])
+            self.form.setWcid(item[0])
         self.options_list.close()
 
     def save(self, index=None):
         try:
-            # get moeinid and wpid from form
+            # get moeinid and wcid from form
             moeinid = int(self.form.getId())
-            wpid = int(self.form.getWpid())
+            wcid = int(self.form.getWcid())
             # check moeinid
             with db.connection() as conn:
                 self.MODEL.connection = conn
                 moein_object = self.MODEL.get(self.MODEL_NAME, **{self.MODEL_ID: moeinid})
-            # check wpid
-            self.WPMODEL.get(wpid)
+            # check wcid
+            self.WCMODEL.get(wcid)
             # everything is ok, lets register or update object
             with db.connection() as conn:
                 self.MAP.connection = conn
                 if index is None:
                     now = datetime.now()
-                    self.MAP.create({'id': moeinid, 'wpid': wpid, 'last_update': now})
+                    self.MAP.create({'id': moeinid, 'wcid': wcid, 'last_update': now})
                 else:
                     record = self.table.getRecord(index)
-                    self.MAP.update({'id': moeinid, 'wpid': wpid}, id=record[0], wpid=record[2])
+                    self.MAP.update({'id': moeinid, 'wcid': wcid}, id=record[0], wcid=record[2])
                 # commit changes
                 conn.commit()
         except Exception as e:
@@ -123,11 +123,11 @@ class ObjectView(object):
             msg.show()
         else:
             if index is None:
-                self.table.addRecord([moeinid, getattr(moein_object, self.MODEL_NAME), wpid, now])
+                self.table.addRecord([moeinid, getattr(moein_object, self.MODEL_NAME), wcid, now])
             else:
                 record[0] = moeinid
                 record[1] = getattr(moein_object, self.MODEL_NAME)
-                record[2] = wpid
+                record[2] = wcid
                 self.table.updateRecord(index, record)
             self.form.close()
             msg = Message(self.ui, Message.SUCCESS, self.messages[15])
@@ -139,8 +139,8 @@ class ObjectView(object):
                 objects = self._get_unregistered_moein_objects()
                 adder = self._moein_adder
             else:
-                objects = self._get_unregistered_wp_objects()
-                adder = self._wp_adder
+                objects = self._get_unregistered_wc_objects()
+                adder = self._wc_adder
         except Exception as e:
             msg = Message(self.options_list, Message.ERROR, self.messages[5], str(e))
             msg.show()
@@ -182,15 +182,15 @@ class ObjectView(object):
                 worker.signals.error.connect(self.update_error)
                 worker.signals.done.connect(self.update_done)
                 QThreadPool.globalInstance().start(worker)
-                self.tab.btnUpdateWP.setDisabled(True)
+                self.tab.btnUpdate.setDisabled(True)
 
     def update_error(self, error):
-        self.tab.btnUpdateWP.setEnabled(True)
+        self.tab.btnUpdate.setEnabled(True)
         msg = Message(self.ui, Message.ERROR, self.messages[12], str(error))
         msg.show()
 
     def update_done(self):
-        self.tab.btnUpdateWP.setEnabled(True)
+        self.tab.btnUpdate.setEnabled(True)
         msg = Message(self.ui, Message.SUCCESS, self.messages[13])
         msg.show()
 
@@ -223,7 +223,7 @@ class ObjectView(object):
             registered_objects = self.MODEL.inner_join(
                 self.MAP,
                 self.MODEL_ID, 'id',
-                [], ['wpid', 'last_update', 'update_required']
+                [], ['wcid', 'last_update', 'update_required']
             )
         return registered_objects
 
@@ -237,13 +237,13 @@ class ObjectView(object):
             )
         return unregistered_objects
 
-    def _get_unregistered_wp_objects(self):
+    def _get_unregistered_wc_objects(self):
         with db.connection() as conn:
             self.MAP.connection = conn
-            ids = [i.wpid for i in self.MAP.all('wpid')]
-        return self.WPMODEL.all(excludes=ids)
+            ids = [i.wcid for i in self.MAP.all('wcid')]
+        return self.WCMODEL.all(excludes=ids)
 
-    def _wp_adder(self, objects, progress_callback):
+    def _wc_adder(self, objects, progress_callback):
         pass
 
     def _moein_adder(self, objects, progress_callback):
@@ -257,24 +257,24 @@ class ProductView(ObjectView):
     """Product View"""
     MAP = models.ProductMap()
     MODEL = models.Product()
-    WPMODEL = wc.Product()
+    WCMODEL = wc.Product()
     MESSAGE_SLICE = slice(0, 19)
 
-    def _wp_adder(self, wp_products, progress_callback):
+    def _wc_adder(self, wc_products, progress_callback):
         with db.connection() as conn:
             category_map = models.CategoryMap()
             self.MODEL.connection = self.MAP.connection = category_map.connection = conn
-            for i, wp_product in enumerate(wp_products, 1):
-                wp_category = wp_product['categories'][0]
-                moein_category = category_map.get('id', wpid=wp_category['id'])
+            for i, wc_product in enumerate(wc_products, 1):
+                wc_category = wc_product['categories'][0]
+                moein_category = category_map.get('id', wcid=wc_category['id'])
                 self.MODEL.create({
-                    'name': wp_product['name'],
-                    'price': wp_product['regular_price'],
+                    'name': wc_product['name'],
+                    'price': wc_product['regular_price'],
                     'category_id': moein_category.id
                 })
                 self.MAP.create({
                     'id': self.MODEL.get_max_pk(),
-                    'wpid': wp_product['id'],
+                    'wcid': wc_product['id'],
                     'last_update': datetime.now()
                 })
                 conn.commit()
@@ -285,15 +285,15 @@ class ProductView(ObjectView):
             category_map = models.CategoryMap()
             self.MAP.connection = category_map.connection = conn
             for i, moein_product in enumerate(moein_products, 1):
-                wp_category = category_map.get('wpid', id=moein_product.category_id)
-                wp_product = self.WPMODEL.create(
+                wc_category = category_map.get('wcid', id=moein_product.category_id)
+                wc_product = self.WCMODEL.create(
                     moein_product.name,
                     str(moein_product.price),
-                    [wp_category.wpid]
+                    [wc_category.wcid]
                 )
                 self.MAP.create({
                     'id': moein_product.id,
-                    'wpid': wp_product['id'],
+                    'wcid': wc_product['id'],
                     'last_update': datetime.now()
                 })
                 conn.commit()
@@ -303,7 +303,7 @@ class ProductView(ObjectView):
         with db.connection() as conn:
             self.MAP.connection = conn
             for i, moein_product in enumerate(moein_products, 1):
-                self.WPMODEL.update(moein_product.wpid, {
+                self.WCMODEL.update(moein_product.wcid, {
                     'name': moein_product.name,
                     'regular_price': str(moein_product.price)
                 })
@@ -316,19 +316,19 @@ class CategoryView(ObjectView):
     """Category View"""
     MAP = models.CategoryMap()
     MODEL = models.Category()
-    WPMODEL = wc.Category()
+    WCMODEL = wc.Category()
     MESSAGE_SLICE = slice(19, 38)
 
-    def _wp_adder(self, wp_categories, progress_callback):
+    def _wc_adder(self, wc_categories, progress_callback):
         with db.connection() as conn:
             self.MODEL.connection = self.MAP.connection = conn
-            for i, wp_category in enumerate(wp_categories, 1):
+            for i, wc_category in enumerate(wc_categories, 1):
                 self.MODEL.create({
-                    'name': wp_category['name']
+                    'name': wc_category['name']
                 })
                 self.MAP.create({
                     'id': self.MODEL.get_max_pk(),
-                    'wpid': wp_category['id'],
+                    'wcid': wc_category['id'],
                     'last_update': datetime.now()
                 })
                 conn.commit()
@@ -338,12 +338,12 @@ class CategoryView(ObjectView):
         with db.connection() as conn:
             self.MAP.connection = conn
             for i, moein_category in enumerate(moein_categories, 1):
-                wp_category = self.WPMODEL.create(
+                wc_category = self.WCMODEL.create(
                     moein_category.name
                 )
                 self.MAP.create({
                     'id': moein_category.id,
-                    'wpid': wp_category['id'],
+                    'wcid': wc_category['id'],
                     'last_update': datetime.now()
                 })
                 conn.commit()
@@ -353,7 +353,7 @@ class CategoryView(ObjectView):
         with db.connection() as conn:
             self.MAP.connection = conn
             for i, moein_category in enumerate(moein_categories, 1):
-                self.WPMODEL.update(moein_category.wpid, {
+                self.WCMODEL.update(moein_category.wcid, {
                     'name': moein_category.name
                 })
                 self.MAP.update({'last_update': datetime.now()}, id=moein_category.id)
@@ -361,8 +361,8 @@ class CategoryView(ObjectView):
                 progress_callback.emit(i)
 
 
-class UpdateWP(object):
-    """UpdateWP View"""
+class WooCommerce(object):
+    """WooCommerce View"""
     # tabs
     PRODUCTS = 0
     CATEGORIES = 10
@@ -386,21 +386,21 @@ class UpdateWP(object):
 
     def __init__(self, ui):
         self.ui = ui
-        self.tab = ui.contents.updateWP
+        self.tab = ui.contents.woocommerce
         # attach views
         self.product = ProductView(self, self.tab.productsTable)
         self.category = CategoryView(self, self.tab.categoriesTable)
         # connect signals
-        self.ui.menu.btnUpdateWP.clicked.connect(self.tab_handler)
+        self.ui.menu.btnWooCommerce.clicked.connect(self.tab_handler)
         self.tab.tabs.currentChanged.connect(lambda: self.dispatcher(self.INIT))
         self.tab.btnAdd.clicked.connect(lambda: self.dispatcher(self.ADD))
         self.tab.btnEdit.clicked.connect(lambda: self.dispatcher(self.EDIT))
         self.tab.btnRemove.clicked.connect(lambda: self.dispatcher(self.REMOVE))
-        self.tab.btnUpdateWP.clicked.connect(lambda: self.dispatcher(self.UPDATE))
+        self.tab.btnUpdate.clicked.connect(lambda: self.dispatcher(self.UPDATE))
 
     def tab_handler(self):
         self.dispatcher(self.INIT)
-        self.ui.contents.showTab(self.ui.contents.UPDATE_WP)
+        self.ui.contents.showTab(self.ui.contents.WOOCOMMERCE)
 
     def dispatcher(self, action):
         # find current tab const

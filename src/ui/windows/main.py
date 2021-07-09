@@ -22,9 +22,9 @@ class Menu(BaseWidget):
         # - invoices
         self.btnInvoices = QPushButton('Invoices')
         self.btnInvoices.setIcon(QIcon(':/icons/btnInvoices.png'))
-        # - update wp
-        self.btnUpdateWP = QPushButton('Update WP')
-        self.btnUpdateWP.setIcon(QIcon(':/icons/btnUpdateWP.png'))
+        # - woocommerce
+        self.btnWooCommerce = QPushButton('WooCommerce')
+        self.btnWooCommerce.setIcon(QIcon(':/icons/btnWooCommerce.png'))
         # - settings
         self.btnSettings = QPushButton('Settings')
         self.btnSettings.setIcon(QIcon(':/icons/btnSettings.png'))
@@ -41,7 +41,7 @@ class Menu(BaseWidget):
         buttons = [
             self.btnStatus,
             self.btnInvoices,
-            self.btnUpdateWP,
+            self.btnWooCommerce,
             self.btnSettings,
             self.btnLogs,
             self.btnHelp,
@@ -178,8 +178,8 @@ class InvoicesTab(BaseTab):
         """)
 
 
-class UpdateWPTab(BaseTab):
-    """Update WP Tab"""
+class WooCommerceTab(BaseTab):
+    """WooCommerce Tab"""
     # tabs
     PRODUCTS = 0
     CATEGORIES = 1
@@ -189,10 +189,10 @@ class UpdateWPTab(BaseTab):
         self.tabs = QTabWidget()
         self.generalLayout.addWidget(self.tabs)
         # - products
-        self.productsTable = Table(['ID', 'Name', 'WPID', 'LastUpdate'])
+        self.productsTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'])
         self.tabs.addTab(self.productsTable, 'Products')
         # - categories
-        self.categoriesTable = Table(['ID', 'Name', 'WPID', 'LastUpdate'])
+        self.categoriesTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'])
         self.tabs.addTab(self.categoriesTable, 'Categories')
         # controls
         controlLayout = QHBoxLayout()
@@ -200,11 +200,11 @@ class UpdateWPTab(BaseTab):
         self.btnAdd = QPushButton('Add')
         self.btnEdit = QPushButton('Edit')
         self.btnRemove = QPushButton('Remove')
-        self.btnUpdateWP = QPushButton('Update WP')
+        self.btnUpdate = QPushButton('Update')
         controlLayout.addWidget(self.btnAdd)
         controlLayout.addWidget(self.btnEdit)
         controlLayout.addWidget(self.btnRemove)
-        controlLayout.addWidget(self.btnUpdateWP)
+        controlLayout.addWidget(self.btnUpdate)
         self.generalLayout.addLayout(controlLayout)
 
     def setStyles(self):
@@ -226,7 +226,7 @@ class SettingsTab(BaseTab):
         # tabs
         self.tabs = QTabWidget()
         self.generalLayout.addWidget(self.tabs)
-        # moein db settings
+        # moein settings
         self.moeinForm = QFormLayout()
         moeinFormFrame = QFrame()
         moeinFormFrame.setLayout(self.moeinForm)
@@ -352,13 +352,13 @@ class AboutTab(BaseTab):
 
 class Contents(BaseWidget):
     """Contents"""
-    STATUS =    0
-    INVOICES =  1
-    UPDATE_WP = 2
-    SETTINGS =  3
-    LOGS =      4
-    HELP =      5
-    ABOUT =     6
+    STATUS =        0
+    INVOICES =      1
+    WOOCOMMERCE =   2
+    SETTINGS =      3
+    LOGS =          4
+    HELP =          5
+    ABOUT =         6
 
     def __init__(self, parent=None):
         self.tabs = []
@@ -375,8 +375,8 @@ class Contents(BaseWidget):
         self.status = StatusTab()
         # - invoices
         self.invoices = InvoicesTab()
-        # - update_wp
-        self.updateWP = UpdateWPTab()
+        # - woocommerce
+        self.woocommerce = WooCommerceTab()
         # - settings
         self.settings = SettingsTab()
         # - logs
@@ -389,7 +389,7 @@ class Contents(BaseWidget):
         self.tabs = [
             self.status,
             self.invoices,
-            self.updateWP,
+            self.woocommerce,
             self.settings,
             self.logs,
             self.help,

@@ -13,7 +13,7 @@ class RegisterFormSignals(QObject):
 class RegisterForm(BaseDialog):
     """Register Form"""
     ID = 0
-    WPID = 1
+    WCID = 1
 
     def __init__(self, parent):
         self.signals = RegisterFormSignals()
@@ -30,14 +30,14 @@ class RegisterForm(BaseDialog):
         idLayout.addWidget(self.id)
         idLayout.addWidget(self.idOptions)
         self.form.addRow(QLabel('ID'), idLayout)
-        # wpid
-        self.wpid = QLineEdit()
-        self.wpidOptions = QPushButton('...')
-        self.wpidOptions.setObjectName('Options')
-        wpidLayout = QHBoxLayout()
-        wpidLayout.addWidget(self.wpid)
-        wpidLayout.addWidget(self.wpidOptions)
-        self.form.addRow(QLabel('WPID'), wpidLayout)
+        # wcid
+        self.wcid = QLineEdit()
+        self.wcidOptions = QPushButton('...')
+        self.wcidOptions.setObjectName('Options')
+        wcidLayout = QHBoxLayout()
+        wcidLayout.addWidget(self.wcid)
+        wcidLayout.addWidget(self.wcidOptions)
+        self.form.addRow(QLabel('WCID'), wcidLayout)
 
     def setupControl(self):
         self.btnSave = QPushButton('Save')
@@ -55,7 +55,7 @@ class RegisterForm(BaseDialog):
     def connectSignals(self):
         self.btnCancel.clicked.connect(self.close)
         self.idOptions.clicked.connect(lambda: self.signals.showOptions.emit(self.ID))
-        self.wpidOptions.clicked.connect(lambda: self.signals.showOptions.emit(self.WPID))
+        self.wcidOptions.clicked.connect(lambda: self.signals.showOptions.emit(self.WCID))
 
     def getId(self):
         return self.id.text()
@@ -63,12 +63,12 @@ class RegisterForm(BaseDialog):
     def setId(self, value):
         self.id.setText(value)
 
-    def getWpid(self):
-        return self.wpid.text()
+    def getWcid(self):
+        return self.wcid.text()
 
-    def setWpid(self, value):
-        self.wpid.setText(value)
+    def setWcid(self, value):
+        self.wcid.setText(value)
 
     def clear(self):
         self.id.clear()
-        self.wpid.clear()
+        self.wcid.clear()

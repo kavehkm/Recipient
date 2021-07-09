@@ -9,7 +9,7 @@ class Controller(object):
         # views
         self.status = views.Status(self.ui)
         self.invoices = views.Invoices(self.ui)
-        self.updatewp = views.UpdateWP(self.ui)
+        self.woocommerce = views.WooCommerce(self.ui)
         self.settings = views.Settings(self.ui)
         self.logs = views.Logs(self.ui)
         self.help = views.Help(self.ui)

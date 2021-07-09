@@ -1,30 +1,30 @@
 MESSAGES = [
-    ##########################################
-    # updatewp: product (0-18)->slice(0, 19) #
-    ##########################################
-    'WP Products',                                              # 00
-    'Moein Products',                                           # 01
-    'Product not found.',                                       # 02
-    'Cannot load options.',                                     # 03
-    'Cannot load registered Products.',                         # 04
-    'Cannot load unregistered Products.',                       # 05
-    'Edit Product',                                             # 06
-    'Add new Product',                                          # 07
-    'Add all Products...',                                      # 08
-    'Update all Products...',                                   # 09
-    'Cannot add all Products.',                                 # 10
-    'All Products added successfully.',                         # 11
-    'Cannot update all Products.',                              # 12
-    'All Products updated successfully.',                       # 13
-    'Cannot save Product.',                                     # 14
-    'Product saved successfully.',                              # 15
-    'Are your sure?',                                           # 16
-    'Cannot remove Product.',                                   # 17
-    'Product removed successfully.',                            # 18
     #############################################
-    # updatewp: category (19-37)->slice(19, 38) #
+    # WooCommerce: product (0-18)->slice(0, 19) #
     #############################################
-    'WP Categories',
+    'WooCommerce Products',                                         # 00
+    'Moein Products',                                               # 01
+    'Product not found.',                                           # 02
+    'Cannot load options.',                                         # 03
+    'Cannot load registered Products.',                             # 04
+    'Cannot load unregistered Products.',                           # 05
+    'Edit Product',                                                 # 06
+    'Add new Product',                                              # 07
+    'Add all Products...',                                          # 08
+    'Update all Products...',                                       # 09
+    'Cannot add all Products.',                                     # 10
+    'All Products added successfully.',                             # 11
+    'Cannot update all Products.',                                  # 12
+    'All Products updated successfully.',                           # 13
+    'Cannot save Product.',                                         # 14
+    'Product saved successfully.',                                  # 15
+    'Are your sure?',                                               # 16
+    'Cannot remove Product.',                                       # 17
+    'Product removed successfully.',                                # 18
+    ################################################
+    # WooCommerce: category (19-37)->slice(19, 38) #
+    ################################################
+    'WooCommerce Categories',
     'Moein Categories',
     'Category not found.',
     'Cannot load options.',

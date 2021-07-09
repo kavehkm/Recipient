@@ -11,7 +11,7 @@
         <!-- menu icons -->
         <file alias="btnStatus.png">icons8-final-state-24.png</file>
         <file alias="btnInvoices.png">icons8-invoice-24.png</file>
-        <file alias="btnUpdateWP.png">icons8-up-squared-24.png</file>
+        <file alias="btnWooCommerce.png">icons8-woocommerce-24.png</file>
         <file alias="btnSettings.png">icons8-maintenance-24.png</file>
         <file alias="btnLogs.png">icons8-error-24.png</file>
         <file alias="btnHelp.png">icons8-lifebuoy-24.png</file>
