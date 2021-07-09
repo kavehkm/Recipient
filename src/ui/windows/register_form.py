@@ -5,18 +5,18 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton
 
 
-class AddEditFormSignals(QObject):
-    """Add/Edit Form Signals"""
+class RegisterFormSignals(QObject):
+    """Register Form Signals"""
     showOptions = pyqtSignal(int)
 
 
-class AddEditForm(BaseDialog):
-    """Add/Edit Form"""
+class RegisterForm(BaseDialog):
+    """Register Form"""
     ID = 0
     WPID = 1
 
     def __init__(self, parent):
-        self.signals = AddEditFormSignals()
+        self.signals = RegisterFormSignals()
         super().__init__(parent)
 
     def setupDialog(self):

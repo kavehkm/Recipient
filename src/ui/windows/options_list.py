@@ -4,10 +4,10 @@ from src.ui.components import TableList
 from PyQt5.QtWidgets import QPushButton
 
 
-class AddEditOptions(TableList):
-    """Add/Edit Options"""
+class OptionsList(TableList):
+    """Options List"""
     def setupControl(self):
-        self.btnAddAll = QPushButton('Add All')
+        self.btnAddAll = QPushButton('Add all')
         self.btnCancel = QPushButton('Cancel')
         self.controlLayout.addWidget(self.btnAddAll)
         self.controlLayout.addWidget(self.btnCancel)

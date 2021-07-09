@@ -157,8 +157,25 @@ class StatusTab(BaseTab):
 class InvoicesTab(BaseTab):
     """Invoices Tab"""
     def setupWidget(self):
-        self.lbl = QLabel('<h3>Invoices Tab</h3>')
-        self.generalLayout.addWidget(self.lbl)
+        # table
+        self.invoicesTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'])
+        self.generalLayout.addWidget(self.invoicesTable)
+        # controls
+        controlLayout = QHBoxLayout()
+        controlLayout.addStretch(1)
+        self.btnRefresh = QPushButton('Refresh')
+        self.btnSaveAll = QPushButton('Save all')
+        controlLayout.addWidget(self.btnRefresh)
+        controlLayout.addWidget(self.btnSaveAll)
+        self.generalLayout.addLayout(controlLayout)
+
+    def setStyles(self):
+        self.setStyleSheet("""
+            QPushButton{
+                height: 25px;
+                width: 80px;
+            }
+        """)
 
 
 class UpdateWPTab(BaseTab):
@@ -206,54 +223,45 @@ class UpdateWPTab(BaseTab):
 class SettingsTab(BaseTab):
     """Settings Tab"""
     def setupWidget(self):
-        # settings frame
-        self.settingsFrame = QFrame()
-        self.settingsFrame.setObjectName('SettingsFrame')
-        self.generalLayout.addWidget(self.settingsFrame)
-        # settings layout
-        self.settingsLayout = QVBoxLayout()
-        self.settingsFrame.setLayout(self.settingsLayout)
-        # form
-        self.form = QFormLayout()
-        self.form.setVerticalSpacing(8)
-        self.settingsLayout.addLayout(self.form)
-        # woocommerce settings
-        # - header
-        wcHeader = QLabel('<h3>WooCommerce API</h3>')
-        wcHeader.setFixedHeight(60)
-        self.form.addRow(wcHeader)
-        # - url
-        self.url = QLineEdit()
-        self.form.addRow(QLabel('URL'), self.url)
-        # - consumer key
-        self.ckey = QLineEdit()
-        self.form.addRow(QLabel('Consumer Key'), self.ckey)
-        # - secret key
-        self.skey = QLineEdit()
-        self.form.addRow(QLabel('Secret Key'), self.skey)
-        # - version
-        self.version = QComboBox()
-        self.version.setFixedWidth(200)
-        self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
-        self.form.addRow(QLabel('Version'), self.version)
+        # tabs
+        self.tabs = QTabWidget()
+        self.generalLayout.addWidget(self.tabs)
         # moein db settings
-        # - header
-        moeinHeader = QLabel('<h3>Moein DB</h3>')
-        moeinHeader.setFixedHeight(60)
-        self.form.addRow(moeinHeader)
+        self.moeinForm = QFormLayout()
+        moeinFormFrame = QFrame()
+        moeinFormFrame.setLayout(self.moeinForm)
+        self.tabs.addTab(moeinFormFrame, 'Moein')
         # - server
         self.server = QLineEdit()
-        self.form.addRow(QLabel('Server'), self.server)
+        self.moeinForm.addRow(QLabel('Server'), self.server,)
         # - username
         self.username = QLineEdit()
-        self.form.addRow(QLabel('Username'), self.username)
+        self.moeinForm.addRow(QLabel('Username'), self.username)
         # - password
         self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.Password)
-        self.form.addRow(QLabel('Password'), self.password)
+        self.moeinForm.addRow(QLabel('Password'), self.password)
         # - database
         self.database = QLineEdit()
-        self.form.addRow(QLabel('DataBase'), self.database)
+        self.moeinForm.addRow(QLabel('DataBase'), self.database)
+        # woocommerce settings
+        self.wcForm = QFormLayout()
+        wcFormFrame = QFrame()
+        wcFormFrame.setLayout(self.wcForm)
+        self.tabs.addTab(wcFormFrame, 'WooCommerce')
+        # - url
+        self.url = QLineEdit()
+        self.wcForm.addRow(QLabel('URL'), self.url)
+        # - consumer key
+        self.ckey = QLineEdit()
+        self.wcForm.addRow(QLabel('Consumer Key'), self.ckey)
+        # - secret key
+        self.skey = QLineEdit()
+        self.wcForm.addRow(QLabel('Secret Key'), self.skey)
+        # - version
+        self.version = QComboBox()
+        self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
+        self.wcForm.addRow(QLabel('Version'), self.version)
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
@@ -265,11 +273,16 @@ class SettingsTab(BaseTab):
 
     def setStyles(self):
         self.setStyleSheet("""
-            #SettingsFrame{
-                border: 1px solid silver;
+            QTabBar::tab{
+                min-height: 10ex;
+                min-width: 30ex;
             }
             QLabel{
+                height: 20px;
                 margin-right: 50px;
+            }
+            QComboBox, QLineEdit{
+                height: 20px;
             }
             QPushButton{
                 height: 25px;
@@ -322,22 +335,19 @@ class SettingsTab(BaseTab):
 class LogsTab(BaseTab):
     """Logs Tab"""
     def setupWidget(self):
-        self.lbl = QLabel('<h3>Logs Tab</h3>')
-        self.generalLayout.addWidget(self.lbl)
+        pass
 
 
 class HelpTab(BaseTab):
     """Help Tab"""
     def setupWidget(self):
-        self.lbl = QLabel('<h3>Help Tab</h3>')
-        self.generalLayout.addWidget(self.lbl)
+        pass
 
 
 class AboutTab(BaseTab):
     """About Tab"""
     def setupWidget(self):
-        self.lbl = QLabel('<h3>About Tab</h3>')
-        self.generalLayout.addWidget(self.lbl)
+        pass
 
 
 class Contents(BaseWidget):

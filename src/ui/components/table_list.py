@@ -27,7 +27,7 @@ class TableList(BaseDialog):
     def setList(self, items):
         self.table.setRecords(items)
 
-    def selectHandler(self, cell):
+    def selectHandler(self):
         item_index = self.table.getCurrentRecordIndex()
         if item_index is not None:
             item = self.table.getRecord(item_index)

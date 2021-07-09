@@ -3,7 +3,7 @@ from datetime import datetime
 # internal
 from src.worker import Worker
 from src import db, wc, models, messages
-from src.ui.windows import AddEditForm, AddEditOptions
+from src.ui.windows import RegisterForm, OptionsList
 from src.ui.components import Message, Confirm, Progress
 # pyqt
 from PyQt5.QtCore import QThreadPool
@@ -44,7 +44,7 @@ class ObjectView(object):
             self.table.setRecords(objects)
 
     def add(self):
-        self.form = AddEditForm(self.ui)
+        self.form = RegisterForm(self.ui)
         self.form.setWindowTitle(self.messages[7])
         self.form.btnSave.clicked.connect(lambda: self.save())
         self.form.signals.showOptions.connect(self.show_options)
@@ -54,7 +54,7 @@ class ObjectView(object):
         index = self.table.getCurrentRecordIndex()
         if index is not None:
             record = self.table.getRecord(index)
-            self.form = AddEditForm(self.ui)
+            self.form = RegisterForm(self.ui)
             self.form.setWindowTitle(self.messages[6])
             self.form.setId(record[0])
             self.form.setWpid(record[2])
@@ -82,19 +82,19 @@ class ObjectView(object):
             msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
             msg.show()
         else:
-            self.table_list = AddEditOptions(self.form, columns)
-            self.table_list.setWindowTitle(title)
-            self.table_list.setList(options)
-            self.table_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
-            self.table_list.signals.select.connect(lambda item: self.select_option(subject, item))
-            self.table_list.show()
+            self.options_list = OptionsList(self.form, columns)
+            self.options_list.setWindowTitle(title)
+            self.options_list.setList(options)
+            self.options_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
+            self.options_list.signals.select.connect(lambda item: self.select_option(subject, item))
+            self.options_list.show()
 
     def select_option(self, subject, item):
         if subject == self.form.ID:
             self.form.setId(item[0])
         else:
             self.form.setWpid(item[0])
-        self.table_list.close()
+        self.options_list.close()
 
     def save(self, index=None):
         try:
@@ -142,11 +142,11 @@ class ObjectView(object):
                 objects = self._get_unregistered_wp_objects()
                 adder = self._wp_adder
         except Exception as e:
-            msg = Message(self.table_list, Message.ERROR, self.messages[5], str(e))
+            msg = Message(self.options_list, Message.ERROR, self.messages[5], str(e))
             msg.show()
         else:
             if objects:
-                pd = Progress(self.table_list, self.messages[8], 0, len(objects))
+                pd = Progress(self.options_list, self.messages[8], 0, len(objects))
                 pd.show()
                 worker = Worker(adder, objects)
                 worker.signals.progress.connect(pd.setValue)
@@ -154,16 +154,16 @@ class ObjectView(object):
                 worker.signals.error.connect(self.add_all_error)
                 worker.signals.done.connect(self.add_all_done)
                 QThreadPool.globalInstance().start(worker)
-                self.table_list.btnAddAll.setDisabled(True)
+                self.options_list.btnAddAll.setDisabled(True)
 
     def add_all_error(self, error):
-        self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.ERROR, self.messages[10], str(error))
+        self.options_list.btnAddAll.setEnabled(True)
+        msg = Message(self.options_list, Message.ERROR, self.messages[10], str(error))
         msg.show()
 
     def add_all_done(self):
-        self.table_list.btnAddAll.setEnabled(True)
-        msg = Message(self.table_list, Message.SUCCESS, self.messages[11])
+        self.options_list.btnAddAll.setEnabled(True)
+        msg = Message(self.options_list, Message.SUCCESS, self.messages[11])
         msg.show()
 
     def update(self):
