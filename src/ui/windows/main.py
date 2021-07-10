@@ -1,5 +1,6 @@
 # internal
 from src.ui.resources import icons
+from .order_details import OrderDetails
 from src.ui.components import BaseWidget, Table
 # pyqt
 from PyQt5.QtGui import QIcon
@@ -168,6 +169,8 @@ class InvoicesTab(BaseTab):
         controlLayout.addWidget(self.btnRefresh)
         controlLayout.addWidget(self.btnSaveAll)
         self.generalLayout.addLayout(controlLayout)
+        # attach order details dialog
+        self.orderDetails = OrderDetails(self)
 
     def setStyles(self):
         self.setStyleSheet("""

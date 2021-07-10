@@ -41,7 +41,7 @@ class Invoices(object):
         index = self.table.getCurrentRecordIndex()
         if index is not None:
             record = self.table.getRecord(index)
-            print(*record)
+            self.tab.orderDetails.show()
 
     def save_all(self):
         pass
