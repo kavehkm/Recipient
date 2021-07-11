@@ -1,267 +1,301 @@
 # internal
-from src.ui.components import BaseDialog
+from src.ui.components import BaseDialog, Table
 # pyqt
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QScrollArea, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 
 
 class OrderDetails(BaseDialog):
     """Order Details Dialog"""
+    def setupLayout(self):
+        super().setupLayout()
+        # set dialog title
+        self.setWindowTitle('Order details')
+        # set dialog geometry
+        self.setGeometry(200, 200, 900, 562)
+
     def setupDialog(self):
+        # scrollable area
+        self.scrollableArea = QScrollArea()
+        self.scrollableArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scrollableArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scrollableArea.setWidgetResizable(True)
+        self.dialogLayout.addWidget(self.scrollableArea)
+        # widget
+        self.widget = QWidget()
+        self.scrollableArea.setWidget(self.widget)
+        # order layout
+        self.orderLayout = QVBoxLayout()
+        self.widget.setLayout(self.orderLayout)
+
+        ###########################
+        # Section1: Order Details #
+        ###########################
+        # widget
+        self.section1 = QWidget(objectName='Section')
+        self.orderLayout.addWidget(self.section1)
+        # layout
+        self.layout1 = QVBoxLayout()
+        self.section1.setLayout(self.layout1)
         # order title
-        self.orderTitle = QLabel('Order #{} {} {}'.format(654, 'Kaveh', 'Mehrbanian'), objectName='OrderTitle')
-        self.generalLayout.addWidget(self.orderTitle)
+        title = 'Order #{} {} {}'.format(654, 'Firstname', 'Lastname')
+        self.orderTitle = QLabel(title, objectName='OrderTitle')
+        self.layout1.addWidget(self.orderTitle)
+        # order details layout
+        self.detailsLayout = QHBoxLayout()
+        self.layout1.addLayout(self.detailsLayout)
 
-        # order details layouts
-        self.orderDetailsLayout = QHBoxLayout()
-        self.generalLayout.addLayout(self.orderDetailsLayout)
-
-        # general details layout
-        self.generalDetailsLayout = QVBoxLayout()
-        self.generalDetailsLayout.setContentsMargins(10, 0, 10, 0)
-        self.orderDetailsLayout.addLayout(self.generalDetailsLayout)
+        # general
+        self.general = QVBoxLayout()
+        self.detailsLayout.addLayout(self.general)
         # - title
-        self.generalDetailsTitle = QLabel('General', objectName='OrderDetailsTitle')
-        self.generalDetailsLayout.addWidget(self.generalDetailsTitle)
+        self.generalTitle = QLabel('General', objectName='SectionTitle')
+        self.general.addWidget(self.generalTitle)
         # - date
-        self.dateLabel = QLabel('Date created:', objectName='DetailLabel')
-        self.dateValue = QLabel('{} @ {}:{}'.format('2021-07-03', 13, 56), objectName='DetailValue')
-        self.generalDetailsLayout.addWidget(self.dateLabel)
-        self.generalDetailsLayout.addWidget(self.dateValue)
+        self.dateCreated = QLabel('', objectName='DetailValue')
+        self.general.addWidget(QLabel('Date created:'))
+        self.general.addWidget(self.dateCreated)
         # - status
-        self.statusLabel = QLabel('Status:', objectName='DetailLabel')
-        self.statusValue = QLabel('Complete', objectName='DetailValue')
-        self.generalDetailsLayout.addWidget(self.statusLabel)
-        self.generalDetailsLayout.addWidget(self.statusValue)
+        self.status = QLabel('', objectName='DetailValue')
+        self.general.addWidget(QLabel('Status:'))
+        self.general.addWidget(self.status)
         # - customer
-        self.customerLabel = QLabel('Customer:', objectName='DetailLabel')
-        self.customerValue = QLabel('Guest', objectName='DetailValue')
-        self.generalDetailsLayout.addWidget(self.customerLabel)
-        self.generalDetailsLayout.addWidget(self.customerValue)
+        self.customer = QLabel('', objectName='DetailValue')
+        self.general.addWidget(QLabel('Customer:'))
+        self.general.addWidget(self.customer)
         # add stretch
-        self.generalDetailsLayout.addStretch(1)
+        self.general.addStretch(1)
 
-        # billing details layout
-        self.billingDetailsLayout = QVBoxLayout()
-        self.billingDetailsLayout.setContentsMargins(10, 0, 10, 0)
-        self.orderDetailsLayout.addLayout(self.billingDetailsLayout)
+        # billing
+        self.billing = QVBoxLayout()
+        self.billing.setContentsMargins(20, 0, 20, 0)
+        self.detailsLayout.addLayout(self.billing)
         # - title
-        self.billingDetailsTitle = QLabel('Billing', objectName='OrderDetailsTitle')
-        self.billingDetailsLayout.addWidget(self.billingDetailsTitle)
+        self.billingTitle = QLabel('Billing', objectName='SectionTitle')
+        self.billing.addWidget(self.billingTitle)
         # - first name and last name
-        billingFullnametRow = QHBoxLayout()
-        self.billingDetailsLayout.addLayout(billingFullnametRow)
+        billingFullnameRow = QHBoxLayout()
+        self.billing.addLayout(billingFullnameRow)
         billingFirstnameColumn = QVBoxLayout()
         billingLastnameColumn = QVBoxLayout()
-        billingFullnametRow.addLayout(billingFirstnameColumn)
-        billingFullnametRow.addLayout(billingLastnameColumn)
+        billingFullnameRow.addLayout(billingFirstnameColumn)
+        billingFullnameRow.addLayout(billingLastnameColumn)
         # -- first name
-        self.billingFnameLabel = QLabel('First name', objectName='DetailLabel')
-        self.billingFnameValue = QLabel('Kaveh', objectName='DetailValue')
-        billingFirstnameColumn.addWidget(self.billingFnameLabel)
-        billingFirstnameColumn.addWidget(self.billingFnameValue)
+        self.billingFirstname = QLabel('', objectName='DetailValue')
+        billingFirstnameColumn.addWidget(QLabel('First name'))
+        billingFirstnameColumn.addWidget(self.billingFirstname)
         # -- last name
-        self.billingLnameLabel = QLabel('Last name', objectName='DetailLabel')
-        self.billingLnameValue = QLabel('Mehrbanian', objectName='DetailValue')
-        billingLastnameColumn.addWidget(self.billingLnameLabel)
-        billingLastnameColumn.addWidget(self.billingLnameValue)
+        self.billingLastname = QLabel('', objectName='DetailValue')
+        billingLastnameColumn.addWidget(QLabel('Last name'))
+        billingLastnameColumn.addWidget(self.billingLastname)
         # - company
-        self.billingCompanyLabel = QLabel('Company', objectName='DetailLabel')
-        self.billingCompanyValue = QLabel('', objectName='DetailValue')
-        self.billingDetailsLayout.addWidget(self.billingCompanyLabel)
-        self.billingDetailsLayout.addWidget(self.billingCompanyValue)
+        self.billingCompany = QLabel('', objectName='DetailValue')
+        self.billing.addWidget(QLabel('Company'))
+        self.billing.addWidget(self.billingCompany)
         # - email and phone
         billingEmailPhoneRow = QHBoxLayout()
-        self.billingDetailsLayout.addLayout(billingEmailPhoneRow)
+        self.billing.addLayout(billingEmailPhoneRow)
         billingEmailColumn = QVBoxLayout()
         billingPhoneColumn = QVBoxLayout()
         billingEmailPhoneRow.addLayout(billingEmailColumn)
         billingEmailPhoneRow.addLayout(billingPhoneColumn)
         # -- email
-        self.billingEmailLabel = QLabel('Email', objectName='DetailLabel')
-        self.billingEmailValue = QLabel('Mehrbaniankaveh@gmail.com', objectName='DetailValue')
-        billingEmailColumn.addWidget(self.billingEmailLabel)
-        billingEmailColumn.addWidget(self.billingEmailValue)
+        self.billingEmail = QLabel('', objectName='DetailValue')
+        billingEmailColumn.addWidget(QLabel('Email'))
+        billingEmailColumn.addWidget(self.billingEmail)
         # -- phone
-        self.billingPhoneLabel = QLabel('Phone', objectName='DetailLabel')
-        self.billingPhoneValue = QLabel('09372542368', objectName='DetailValue')
-        billingPhoneColumn.addWidget(self.billingPhoneLabel)
-        billingPhoneColumn.addWidget(self.billingPhoneValue)
+        self.billingPhone = QLabel('', objectName='DetailValue')
+        billingPhoneColumn.addWidget(QLabel('Phone'))
+        billingPhoneColumn.addWidget(self.billingPhone)
         # - country and state
         billingCountryStateRow = QHBoxLayout()
-        self.billingDetailsLayout.addLayout(billingCountryStateRow)
+        self.billing.addLayout(billingCountryStateRow)
         billingCountryColumn = QVBoxLayout()
         billingStateColumn = QVBoxLayout()
         billingCountryStateRow.addLayout(billingCountryColumn)
         billingCountryStateRow.addLayout(billingStateColumn)
         # -- country
-        self.billingCountryLabel = QLabel('Country', objectName='DetailLabel')
-        self.billingCountryValue = QLabel('Iran', objectName='DetailValue')
-        billingCountryColumn.addWidget(self.billingCountryLabel)
-        billingCountryColumn.addWidget(self.billingCountryValue)
+        self.billingCountry = QLabel('', objectName='DetailValue')
+        billingCountryColumn.addWidget(QLabel('Country'))
+        billingCountryColumn.addWidget(self.billingCountry)
         # -- state
-        self.billingStateLabel = QLabel('State', objectName='DetailLabel')
-        self.billingStateValue = QLabel('Razavi Khorasan', objectName='DetailValue')
-        billingStateColumn.addWidget(self.billingStateLabel)
-        billingStateColumn.addWidget(self.billingStateValue)
+        self.billingState = QLabel('', objectName='DetailValue')
+        billingStateColumn.addWidget(QLabel('State'))
+        billingStateColumn.addWidget(self.billingState)
         # - city and postcode
         billingCityPostcodeRow = QHBoxLayout()
-        self.billingDetailsLayout.addLayout(billingCityPostcodeRow)
+        self.billing.addLayout(billingCityPostcodeRow)
         billingCityColumn = QVBoxLayout()
         billingPostcodeColumn = QVBoxLayout()
         billingCityPostcodeRow.addLayout(billingCityColumn)
         billingCityPostcodeRow.addLayout(billingPostcodeColumn)
         # -- city
-        self.billingCityLabel = QLabel('City', objectName='DetailLabel')
-        self.billingCityValue = QLabel('Mashhad', objectName='DetailValue')
-        billingCityColumn.addWidget(self.billingCityLabel)
-        billingCityColumn.addWidget(self.billingCityValue)
+        self.billingCity = QLabel('Mashhad', objectName='DetailValue')
+        billingCityColumn.addWidget(QLabel('City'))
+        billingCityColumn.addWidget(self.billingCity)
         # -- postcode
-        self.billingPostcodeLabel = QLabel('PostCode', objectName='DetailLabel')
-        self.billingPostcodeValue = QLabel('', objectName='DetailValue')
-        billingPostcodeColumn.addWidget(self.billingPostcodeLabel)
-        billingPostcodeColumn.addWidget(self.billingPostcodeValue)
+        self.billingPostcode = QLabel('', objectName='DetailValue')
+        billingPostcodeColumn.addWidget(QLabel('PostCode'))
+        billingPostcodeColumn.addWidget(self.billingPostcode)
         # - address line 1
-        self.billingAddressLine1Label = QLabel('Address line 1', objectName='DetailLabel')
-        self.billingAddressLine1Value = QLabel('', objectName='DetailValue')
-        self.billingDetailsLayout.addWidget(self.billingAddressLine1Label)
-        self.billingDetailsLayout.addWidget(self.billingAddressLine1Value)
+        self.billingAddressLine1 = QLabel('', objectName='DetailValue')
+        self.billing.addWidget(QLabel('Address line 1'))
+        self.billing.addWidget(self.billingAddressLine1)
         # - address line 2
-        self.billingAddressLine2Label = QLabel('Address line 2', objectName='DetailLabel')
-        self.billingAddressLine2Value = QLabel('', objectName='DetailValue')
-        self.billingDetailsLayout.addWidget(self.billingAddressLine2Label)
-        self.billingDetailsLayout.addWidget(self.billingAddressLine2Value)
+        self.billingAddressLine2 = QLabel('', objectName='DetailValue')
+        self.billing.addWidget(QLabel('Address line 2'))
+        self.billing.addWidget(self.billingAddressLine2)
         # - payment and transaction
         billingPaymentTransactionRow = QHBoxLayout()
-        self.billingDetailsLayout.addLayout(billingPaymentTransactionRow)
+        self.billing.addLayout(billingPaymentTransactionRow)
         billingPaymentColumn = QVBoxLayout()
         billingTransactionColumn = QVBoxLayout()
         billingPaymentTransactionRow.addLayout(billingPaymentColumn)
         billingPaymentTransactionRow.addLayout(billingTransactionColumn)
         # -- payment
-        self.billingPaymentLabel = QLabel('Payment method', objectName='DetailLabel')
-        self.billingPaymentValue = QLabel('Cash on delivery', objectName='DetailValue')
-        billingPaymentColumn.addWidget(self.billingPaymentLabel)
-        billingPaymentColumn.addWidget(self.billingPaymentValue)
+        self.billingPayment = QLabel('Cash on delivery', objectName='DetailValue')
+        billingPaymentColumn.addWidget(QLabel('Payment method'))
+        billingPaymentColumn.addWidget(self.billingPayment)
         # -- transaction
-        self.billingTransactionLabel = QLabel('Transaction ID', objectName='DetailLabel')
-        self.billingTransactionValue = QLabel('', objectName='DetailValue')
-        billingTransactionColumn.addWidget(self.billingTransactionLabel)
-        billingTransactionColumn.addWidget(self.billingTransactionValue)
+        self.billingTransaction = QLabel('', objectName='DetailValue')
+        billingTransactionColumn.addWidget(QLabel('Transaction ID'))
+        billingTransactionColumn.addWidget(self.billingTransaction)
         # add stretch
-        self.billingDetailsLayout.addStretch(1)
+        self.billing.addStretch(1)
 
-        # shipping details layout
-        self.shippingDetailsLayout = QVBoxLayout()
-        self.shippingDetailsLayout.setContentsMargins(10, 0, 10, 0)
-        self.orderDetailsLayout.addLayout(self.shippingDetailsLayout)
+        # shipping
+        self.shipping = QVBoxLayout()
+        self.detailsLayout.addLayout(self.shipping)
         # - title
-        self.shippingDetailsTitle = QLabel('Shipping', objectName='OrderDetailsTitle')
-        self.shippingDetailsLayout.addWidget(self.shippingDetailsTitle)
+        self.shippingTitle = QLabel('Shipping', objectName='SectionTitle')
+        self.shipping.addWidget(self.shippingTitle)
         # - first name and last name
         shippingFullnameRow = QHBoxLayout()
-        self.shippingDetailsLayout.addLayout(shippingFullnameRow)
+        self.shipping.addLayout(shippingFullnameRow)
         shippingFirstnameColumn = QVBoxLayout()
         shippingLastnameColumn = QVBoxLayout()
         shippingFullnameRow.addLayout(shippingFirstnameColumn)
         shippingFullnameRow.addLayout(shippingLastnameColumn)
         # -- first name
-        self.shippingFnameLabel = QLabel('First name', objectName='DetailLabel')
-        self.shippingFnameValue = QLabel('', objectName='DetailValue')
-        shippingFirstnameColumn.addWidget(self.shippingFnameLabel)
-        shippingFirstnameColumn.addWidget(self.shippingFnameValue)
+        self.shippingFirstname = QLabel('', objectName='DetailValue')
+        shippingFirstnameColumn.addWidget(QLabel('First name'))
+        shippingFirstnameColumn.addWidget(self.shippingFirstname)
         # -- last name
-        self.shippingLnameLabel = QLabel('Last name', objectName='DetailLabel')
-        self.shippingLnameValue = QLabel('', objectName='DetailValue')
-        shippingLastnameColumn.addWidget(self.shippingLnameLabel)
-        shippingLastnameColumn.addWidget(self.shippingLnameValue)
+        self.shippingLastname = QLabel('', objectName='DetailValue')
+        shippingLastnameColumn.addWidget(QLabel('Last name'))
+        shippingLastnameColumn.addWidget(self.shippingLastname)
         # - company
-        self.shippingCompanyLabel = QLabel('Company', objectName='DetailLabel')
-        self.shippingCompanyValue = QLabel('', objectName='DetailValue')
-        self.shippingDetailsLayout.addWidget(self.shippingCompanyLabel)
-        self.shippingDetailsLayout.addWidget(self.shippingCompanyValue)
+        self.shippingCompany = QLabel('', objectName='DetailValue')
+        self.shipping.addWidget(QLabel('Company'))
+        self.shipping.addWidget(self.shippingCompany)
         # - country and state
         shippingCountryStateRow = QHBoxLayout()
-        self.shippingDetailsLayout.addLayout(shippingCountryStateRow)
+        self.shipping.addLayout(shippingCountryStateRow)
         shippingCountryColumn = QVBoxLayout()
         shippingStateColumn = QVBoxLayout()
         shippingCountryStateRow.addLayout(shippingCountryColumn)
         shippingCountryStateRow.addLayout(shippingStateColumn)
         # -- country
-        self.shippingCountryLabel = QLabel('Country', objectName='DetailLabel')
-        self.shippingCountryValue = QLabel('', objectName='DetailValue')
-        shippingCountryColumn.addWidget(self.shippingCountryLabel)
-        shippingCountryColumn.addWidget(self.shippingCountryValue)
+        self.shippingCountry = QLabel('', objectName='DetailValue')
+        shippingCountryColumn.addWidget(QLabel('Country'))
+        shippingCountryColumn.addWidget(self.shippingCountry)
         # -- state
-        self.shippingStateLabel = QLabel('State', objectName='DetailLabel')
-        self.shippingStateValue = QLabel('', objectName='DetailValue')
-        shippingStateColumn.addWidget(self.shippingStateLabel)
-        shippingStateColumn.addWidget(self.shippingStateValue)
+        self.shippingState = QLabel('', objectName='DetailValue')
+        shippingStateColumn.addWidget(QLabel('State'))
+        shippingStateColumn.addWidget(self.shippingState)
         # - city and postcode
         shippingCityPostcodeRow = QHBoxLayout()
-        self.shippingDetailsLayout.addLayout(shippingCityPostcodeRow)
+        self.shipping.addLayout(shippingCityPostcodeRow)
         shippingCityColumn = QVBoxLayout()
         shippingPostcodeColumn = QVBoxLayout()
         shippingCityPostcodeRow.addLayout(shippingCityColumn)
         shippingCityPostcodeRow.addLayout(shippingPostcodeColumn)
         # -- city
-        self.shippingCityLabel = QLabel('City', objectName='DetailLabel')
-        self.shippingCityValue = QLabel('', objectName='DetailValue')
-        shippingCityColumn.addWidget(self.shippingCityLabel)
-        shippingCityColumn.addWidget(self.shippingCityValue)
+        self.shippingCity = QLabel('', objectName='DetailValue')
+        shippingCityColumn.addWidget(QLabel('City'))
+        shippingCityColumn.addWidget(self.shippingCity)
         # -- postcode
-        self.shippingPostcodeLabel = QLabel('PostCode', objectName='DetailLabel')
-        self.shippingPostcodeValue = QLabel('', objectName='DetailValue')
-        shippingPostcodeColumn.addWidget(self.shippingPostcodeLabel)
-        shippingPostcodeColumn.addWidget(self.shippingPostcodeValue)
+        self.shippingPostcode = QLabel('', objectName='DetailValue')
+        shippingPostcodeColumn.addWidget(QLabel('PostCode'))
+        shippingPostcodeColumn.addWidget(self.shippingPostcode)
         # - address line 1
-        self.shippingAddressLine1Label = QLabel('Address line 1', objectName='DetailLabel')
-        self.shippingAddressLine1Value = QLabel('', objectName='DetailValue')
-        self.shippingDetailsLayout.addWidget(self.shippingAddressLine1Label)
-        self.shippingDetailsLayout.addWidget(self.shippingAddressLine1Value)
+        self.shippingAddressLine1 = QLabel('', objectName='DetailValue')
+        self.shipping.addWidget(QLabel('Address line 1'))
+        self.shipping.addWidget(self.shippingAddressLine1)
         # - address line 2
-        self.shippingAddressLine2Label = QLabel('Address line 2', objectName='DetailLabel')
-        self.shippingAddressLine2Value = QLabel('', objectName='DetailValue')
-        self.shippingDetailsLayout.addWidget(self.shippingAddressLine2Label)
-        self.shippingDetailsLayout.addWidget(self.shippingAddressLine2Value)
+        self.shippingAddressLine2 = QLabel('', objectName='DetailValue')
+        self.shipping.addWidget(QLabel('Address line 2'))
+        self.shipping.addWidget(self.shippingAddressLine2)
         # - customer note
-        self.shippingCustomerNoteLabel = QLabel('Customer provided note')
-        self.shippingCustomerNoteValue = QLabel('', objectName='ShippingCustomerNote')
-        self.shippingDetailsLayout.addWidget(self.shippingCustomerNoteLabel)
-        self.shippingDetailsLayout.addWidget(self.shippingCustomerNoteValue)
+        self.shippingCustomerNote = QLabel('', objectName='ShippingCustomerNote')
+        self.shipping.addWidget(QLabel('Customer provided note'))
+        self.shipping.addWidget(self.shippingCustomerNote)
         # add stretch
-        self.shippingDetailsLayout.addStretch(1)
+        self.shipping.addStretch(1)
+
+        #########################
+        # Section2: Order Items #
+        #########################
+        # widget
+        self.section2 = QWidget(objectName='Section')
+        self.orderLayout.addWidget(self.section2)
+        # layout
+        self.layout2 = QVBoxLayout()
+        self.section2.setLayout(self.layout2)
+        # title
+        self.itemsTitle = QLabel('Items', objectName='SectionTitle')
+        self.layout2.addWidget(self.itemsTitle)
+        self.itemsTable = Table(['ID', 'Name', 'Cost', 'Quantity', 'Totals'])
+        self.itemsTable.setMinimumHeight(200)
+        self.layout2.addWidget(self.itemsTable)
 
     def setupControl(self):
-        pass
+        self.btnRefund = QPushButton('Refund')
+        self.btnComplete = QPushButton('Complete')
+        self.btnSave = QPushButton('Save')
+        self.btnCancel = QPushButton('Cancel')
+        self.controlLayout.addWidget(self.btnRefund)
+        self.controlLayout.addWidget(self.btnComplete)
+        self.controlLayout.addWidget(self.btnSave)
+        self.controlLayout.addWidget(self.btnCancel)
 
     def connectSignals(self):
-        pass
+        self.btnCancel.clicked.connect(self.close)
 
     def setStyles(self):
         self.setStyleSheet("""
+            QScrollArea{
+                border: none;
+            }
+            QPushButton{
+                min-height: 25px;
+            }
+            #Section{
+                background-color: white;
+            }
             #OrderTitle{
                 font-size: 15px;
+                min-height: 40px;
                 font-weight: bold;
-                min-height: 50px;
             }
-            #OrderDetailsTitle{
+            #SectionTitle{
                 font-size: 12px;
-                font-weight: bold;
                 min-height: 30px;
+                font-weight: bold;
             }
             #DetailValue{
                 padding: 5px;
                 margin-right: 5px;
-                border: 1px solid silver;
                 border-radius: 3px;
+                border: 1px solid silver;
             }
             #ShippingCustomerNote{
+                padding: 5px;
                 min-height: 63px;
                 min-width: 200px;
-                padding: 5px;
                 margin-right: 5px;
-                border: 1px solid silver;
                 border-radius: 3px;
+                border: 1px solid silver;
             }
         """)
 
