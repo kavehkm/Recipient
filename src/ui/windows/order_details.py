@@ -1,7 +1,7 @@
 # internal
 from src.ui.components import BaseDialog
 # pyqt
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QWidget
 
 
 class OrderDetails(BaseDialog):
@@ -17,7 +17,8 @@ class OrderDetails(BaseDialog):
 
         # general details layout
         self.generalDetailsLayout = QVBoxLayout()
-        self.orderDetailsLayout.addLayout(self.generalDetailsLayout, 1)
+        self.generalDetailsLayout.setContentsMargins(10, 0, 10, 0)
+        self.orderDetailsLayout.addLayout(self.generalDetailsLayout)
         # - title
         self.generalDetailsTitle = QLabel('General', objectName='OrderDetailsTitle')
         self.generalDetailsLayout.addWidget(self.generalDetailsTitle)
@@ -41,7 +42,8 @@ class OrderDetails(BaseDialog):
 
         # billing details layout
         self.billingDetailsLayout = QVBoxLayout()
-        self.orderDetailsLayout.addLayout(self.billingDetailsLayout, 2)
+        self.billingDetailsLayout.setContentsMargins(10, 0, 10, 0)
+        self.orderDetailsLayout.addLayout(self.billingDetailsLayout)
         # - title
         self.billingDetailsTitle = QLabel('Billing', objectName='OrderDetailsTitle')
         self.billingDetailsLayout.addWidget(self.billingDetailsTitle)
@@ -92,12 +94,12 @@ class OrderDetails(BaseDialog):
         billingCountryStateRow.addLayout(billingCountryColumn)
         billingCountryStateRow.addLayout(billingStateColumn)
         # -- country
-        self.billingCountryLabel = QLabel('Country / Region', objectName='DetailLabel')
+        self.billingCountryLabel = QLabel('Country', objectName='DetailLabel')
         self.billingCountryValue = QLabel('Iran', objectName='DetailValue')
         billingCountryColumn.addWidget(self.billingCountryLabel)
         billingCountryColumn.addWidget(self.billingCountryValue)
         # -- state
-        self.billingStateLabel = QLabel('State / County', objectName='DetailLabel')
+        self.billingStateLabel = QLabel('State', objectName='DetailLabel')
         self.billingStateValue = QLabel('Razavi Khorasan', objectName='DetailValue')
         billingStateColumn.addWidget(self.billingStateLabel)
         billingStateColumn.addWidget(self.billingStateValue)
@@ -114,7 +116,7 @@ class OrderDetails(BaseDialog):
         billingCityColumn.addWidget(self.billingCityLabel)
         billingCityColumn.addWidget(self.billingCityValue)
         # -- postcode
-        self.billingPostcodeLabel = QLabel('PostCode / Zip', objectName='DetailLabel')
+        self.billingPostcodeLabel = QLabel('PostCode', objectName='DetailLabel')
         self.billingPostcodeValue = QLabel('', objectName='DetailValue')
         billingPostcodeColumn.addWidget(self.billingPostcodeLabel)
         billingPostcodeColumn.addWidget(self.billingPostcodeValue)
@@ -150,10 +152,82 @@ class OrderDetails(BaseDialog):
 
         # shipping details layout
         self.shippingDetailsLayout = QVBoxLayout()
-        self.orderDetailsLayout.addLayout(self.shippingDetailsLayout, 2)
+        self.shippingDetailsLayout.setContentsMargins(10, 0, 10, 0)
+        self.orderDetailsLayout.addLayout(self.shippingDetailsLayout)
         # - title
         self.shippingDetailsTitle = QLabel('Shipping', objectName='OrderDetailsTitle')
         self.shippingDetailsLayout.addWidget(self.shippingDetailsTitle)
+        # - first name and last name
+        shippingFullnameRow = QHBoxLayout()
+        self.shippingDetailsLayout.addLayout(shippingFullnameRow)
+        shippingFirstnameColumn = QVBoxLayout()
+        shippingLastnameColumn = QVBoxLayout()
+        shippingFullnameRow.addLayout(shippingFirstnameColumn)
+        shippingFullnameRow.addLayout(shippingLastnameColumn)
+        # -- first name
+        self.shippingFnameLabel = QLabel('First name', objectName='DetailLabel')
+        self.shippingFnameValue = QLabel('', objectName='DetailValue')
+        shippingFirstnameColumn.addWidget(self.shippingFnameLabel)
+        shippingFirstnameColumn.addWidget(self.shippingFnameValue)
+        # -- last name
+        self.shippingLnameLabel = QLabel('Last name', objectName='DetailLabel')
+        self.shippingLnameValue = QLabel('', objectName='DetailValue')
+        shippingLastnameColumn.addWidget(self.shippingLnameLabel)
+        shippingLastnameColumn.addWidget(self.shippingLnameValue)
+        # - company
+        self.shippingCompanyLabel = QLabel('Company', objectName='DetailLabel')
+        self.shippingCompanyValue = QLabel('', objectName='DetailValue')
+        self.shippingDetailsLayout.addWidget(self.shippingCompanyLabel)
+        self.shippingDetailsLayout.addWidget(self.shippingCompanyValue)
+        # - country and state
+        shippingCountryStateRow = QHBoxLayout()
+        self.shippingDetailsLayout.addLayout(shippingCountryStateRow)
+        shippingCountryColumn = QVBoxLayout()
+        shippingStateColumn = QVBoxLayout()
+        shippingCountryStateRow.addLayout(shippingCountryColumn)
+        shippingCountryStateRow.addLayout(shippingStateColumn)
+        # -- country
+        self.shippingCountryLabel = QLabel('Country', objectName='DetailLabel')
+        self.shippingCountryValue = QLabel('', objectName='DetailValue')
+        shippingCountryColumn.addWidget(self.shippingCountryLabel)
+        shippingCountryColumn.addWidget(self.shippingCountryValue)
+        # -- state
+        self.shippingStateLabel = QLabel('State', objectName='DetailLabel')
+        self.shippingStateValue = QLabel('', objectName='DetailValue')
+        shippingStateColumn.addWidget(self.shippingStateLabel)
+        shippingStateColumn.addWidget(self.shippingStateValue)
+        # - city and postcode
+        shippingCityPostcodeRow = QHBoxLayout()
+        self.shippingDetailsLayout.addLayout(shippingCityPostcodeRow)
+        shippingCityColumn = QVBoxLayout()
+        shippingPostcodeColumn = QVBoxLayout()
+        shippingCityPostcodeRow.addLayout(shippingCityColumn)
+        shippingCityPostcodeRow.addLayout(shippingPostcodeColumn)
+        # -- city
+        self.shippingCityLabel = QLabel('City', objectName='DetailLabel')
+        self.shippingCityValue = QLabel('', objectName='DetailValue')
+        shippingCityColumn.addWidget(self.shippingCityLabel)
+        shippingCityColumn.addWidget(self.shippingCityValue)
+        # -- postcode
+        self.shippingPostcodeLabel = QLabel('PostCode', objectName='DetailLabel')
+        self.shippingPostcodeValue = QLabel('', objectName='DetailValue')
+        shippingPostcodeColumn.addWidget(self.shippingPostcodeLabel)
+        shippingPostcodeColumn.addWidget(self.shippingPostcodeValue)
+        # - address line 1
+        self.shippingAddressLine1Label = QLabel('Address line 1', objectName='DetailLabel')
+        self.shippingAddressLine1Value = QLabel('', objectName='DetailValue')
+        self.shippingDetailsLayout.addWidget(self.shippingAddressLine1Label)
+        self.shippingDetailsLayout.addWidget(self.shippingAddressLine1Value)
+        # - address line 2
+        self.shippingAddressLine2Label = QLabel('Address line 2', objectName='DetailLabel')
+        self.shippingAddressLine2Value = QLabel('', objectName='DetailValue')
+        self.shippingDetailsLayout.addWidget(self.shippingAddressLine2Label)
+        self.shippingDetailsLayout.addWidget(self.shippingAddressLine2Value)
+        # - customer note
+        self.shippingCustomerNoteLabel = QLabel('Customer provided note')
+        self.shippingCustomerNoteValue = QLabel('', objectName='ShippingCustomerNote')
+        self.shippingDetailsLayout.addWidget(self.shippingCustomerNoteLabel)
+        self.shippingDetailsLayout.addWidget(self.shippingCustomerNoteValue)
         # add stretch
         self.shippingDetailsLayout.addStretch(1)
 
@@ -166,18 +240,24 @@ class OrderDetails(BaseDialog):
     def setStyles(self):
         self.setStyleSheet("""
             #OrderTitle{
-                font-size: 20px;
-                min-height: 70px;
+                font-size: 15px;
+                font-weight: bold;
+                min-height: 50px;
             }
             #OrderDetailsTitle{
                 font-size: 12px;
                 font-weight: bold;
-                min-height: 40px;
-            }
-            #DetailLabel{
-            
+                min-height: 30px;
             }
             #DetailValue{
+                padding: 5px;
+                margin-right: 5px;
+                border: 1px solid silver;
+                border-radius: 3px;
+            }
+            #ShippingCustomerNote{
+                min-height: 63px;
+                min-width: 200px;
                 padding: 5px;
                 margin-right: 5px;
                 border: 1px solid silver;
@@ -187,4 +267,3 @@ class OrderDetails(BaseDialog):
 
     def setDetails(self, details):
         pass
-        self.update()
