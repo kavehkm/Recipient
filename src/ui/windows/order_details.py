@@ -2,7 +2,7 @@
 from src.ui.components import BaseDialog, Table
 # pyqt
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QScrollArea, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QWidget, QScrollArea, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel, QPushButton
 
 
 class OrderDetails(BaseDialog):
@@ -11,8 +11,8 @@ class OrderDetails(BaseDialog):
         super().setupLayout()
         # set dialog title
         self.setWindowTitle('Order details')
-        # set dialog geometry
-        self.setGeometry(200, 200, 900, 562)
+        # set dialog minimum size
+        self.setMinimumSize(900, 562)
 
     def setupDialog(self):
         # scrollable area
@@ -26,6 +26,7 @@ class OrderDetails(BaseDialog):
         self.scrollableArea.setWidget(self.widget)
         # order layout
         self.orderLayout = QVBoxLayout()
+        self.orderLayout.setSpacing(20)
         self.widget.setLayout(self.orderLayout)
 
         ###########################
@@ -37,10 +38,6 @@ class OrderDetails(BaseDialog):
         # layout
         self.layout1 = QVBoxLayout()
         self.section1.setLayout(self.layout1)
-        # order title
-        title = 'Order #{} {} {}'.format(654, 'Firstname', 'Lastname')
-        self.orderTitle = QLabel(title, objectName='OrderTitle')
-        self.layout1.addWidget(self.orderTitle)
         # order details layout
         self.detailsLayout = QHBoxLayout()
         self.layout1.addLayout(self.detailsLayout)
@@ -52,15 +49,15 @@ class OrderDetails(BaseDialog):
         self.generalTitle = QLabel('General', objectName='SectionTitle')
         self.general.addWidget(self.generalTitle)
         # - date
-        self.dateCreated = QLabel('', objectName='DetailValue')
+        self.dateCreated = QLabel(objectName='DetailValue')
         self.general.addWidget(QLabel('Date created:'))
         self.general.addWidget(self.dateCreated)
         # - status
-        self.status = QLabel('', objectName='DetailValue')
+        self.status = QLabel(objectName='DetailValue')
         self.general.addWidget(QLabel('Status:'))
         self.general.addWidget(self.status)
         # - customer
-        self.customer = QLabel('', objectName='DetailValue')
+        self.customer = QLabel(objectName='DetailValue')
         self.general.addWidget(QLabel('Customer:'))
         self.general.addWidget(self.customer)
         # add stretch
@@ -81,15 +78,15 @@ class OrderDetails(BaseDialog):
         billingFullnameRow.addLayout(billingFirstnameColumn)
         billingFullnameRow.addLayout(billingLastnameColumn)
         # -- first name
-        self.billingFirstname = QLabel('', objectName='DetailValue')
+        self.billingFirstname = QLabel(objectName='DetailValue')
         billingFirstnameColumn.addWidget(QLabel('First name'))
         billingFirstnameColumn.addWidget(self.billingFirstname)
         # -- last name
-        self.billingLastname = QLabel('', objectName='DetailValue')
+        self.billingLastname = QLabel(objectName='DetailValue')
         billingLastnameColumn.addWidget(QLabel('Last name'))
         billingLastnameColumn.addWidget(self.billingLastname)
         # - company
-        self.billingCompany = QLabel('', objectName='DetailValue')
+        self.billingCompany = QLabel(objectName='DetailValue')
         self.billing.addWidget(QLabel('Company'))
         self.billing.addWidget(self.billingCompany)
         # - email and phone
@@ -100,11 +97,11 @@ class OrderDetails(BaseDialog):
         billingEmailPhoneRow.addLayout(billingEmailColumn)
         billingEmailPhoneRow.addLayout(billingPhoneColumn)
         # -- email
-        self.billingEmail = QLabel('', objectName='DetailValue')
+        self.billingEmail = QLabel(objectName='DetailValue')
         billingEmailColumn.addWidget(QLabel('Email'))
         billingEmailColumn.addWidget(self.billingEmail)
         # -- phone
-        self.billingPhone = QLabel('', objectName='DetailValue')
+        self.billingPhone = QLabel(objectName='DetailValue')
         billingPhoneColumn.addWidget(QLabel('Phone'))
         billingPhoneColumn.addWidget(self.billingPhone)
         # - country and state
@@ -115,11 +112,11 @@ class OrderDetails(BaseDialog):
         billingCountryStateRow.addLayout(billingCountryColumn)
         billingCountryStateRow.addLayout(billingStateColumn)
         # -- country
-        self.billingCountry = QLabel('', objectName='DetailValue')
+        self.billingCountry = QLabel(objectName='DetailValue')
         billingCountryColumn.addWidget(QLabel('Country'))
         billingCountryColumn.addWidget(self.billingCountry)
         # -- state
-        self.billingState = QLabel('', objectName='DetailValue')
+        self.billingState = QLabel(objectName='DetailValue')
         billingStateColumn.addWidget(QLabel('State'))
         billingStateColumn.addWidget(self.billingState)
         # - city and postcode
@@ -130,19 +127,19 @@ class OrderDetails(BaseDialog):
         billingCityPostcodeRow.addLayout(billingCityColumn)
         billingCityPostcodeRow.addLayout(billingPostcodeColumn)
         # -- city
-        self.billingCity = QLabel('Mashhad', objectName='DetailValue')
+        self.billingCity = QLabel(objectName='DetailValue')
         billingCityColumn.addWidget(QLabel('City'))
         billingCityColumn.addWidget(self.billingCity)
         # -- postcode
-        self.billingPostcode = QLabel('', objectName='DetailValue')
+        self.billingPostcode = QLabel(objectName='DetailValue')
         billingPostcodeColumn.addWidget(QLabel('PostCode'))
         billingPostcodeColumn.addWidget(self.billingPostcode)
         # - address line 1
-        self.billingAddressLine1 = QLabel('', objectName='DetailValue')
+        self.billingAddressLine1 = QLabel(objectName='DetailValue')
         self.billing.addWidget(QLabel('Address line 1'))
         self.billing.addWidget(self.billingAddressLine1)
         # - address line 2
-        self.billingAddressLine2 = QLabel('', objectName='DetailValue')
+        self.billingAddressLine2 = QLabel(objectName='DetailValue')
         self.billing.addWidget(QLabel('Address line 2'))
         self.billing.addWidget(self.billingAddressLine2)
         # - payment and transaction
@@ -157,7 +154,7 @@ class OrderDetails(BaseDialog):
         billingPaymentColumn.addWidget(QLabel('Payment method'))
         billingPaymentColumn.addWidget(self.billingPayment)
         # -- transaction
-        self.billingTransaction = QLabel('', objectName='DetailValue')
+        self.billingTransaction = QLabel(objectName='DetailValue')
         billingTransactionColumn.addWidget(QLabel('Transaction ID'))
         billingTransactionColumn.addWidget(self.billingTransaction)
         # add stretch
@@ -177,15 +174,15 @@ class OrderDetails(BaseDialog):
         shippingFullnameRow.addLayout(shippingFirstnameColumn)
         shippingFullnameRow.addLayout(shippingLastnameColumn)
         # -- first name
-        self.shippingFirstname = QLabel('', objectName='DetailValue')
+        self.shippingFirstname = QLabel(objectName='DetailValue')
         shippingFirstnameColumn.addWidget(QLabel('First name'))
         shippingFirstnameColumn.addWidget(self.shippingFirstname)
         # -- last name
-        self.shippingLastname = QLabel('', objectName='DetailValue')
+        self.shippingLastname = QLabel(objectName='DetailValue')
         shippingLastnameColumn.addWidget(QLabel('Last name'))
         shippingLastnameColumn.addWidget(self.shippingLastname)
         # - company
-        self.shippingCompany = QLabel('', objectName='DetailValue')
+        self.shippingCompany = QLabel(objectName='DetailValue')
         self.shipping.addWidget(QLabel('Company'))
         self.shipping.addWidget(self.shippingCompany)
         # - country and state
@@ -196,11 +193,11 @@ class OrderDetails(BaseDialog):
         shippingCountryStateRow.addLayout(shippingCountryColumn)
         shippingCountryStateRow.addLayout(shippingStateColumn)
         # -- country
-        self.shippingCountry = QLabel('', objectName='DetailValue')
+        self.shippingCountry = QLabel(objectName='DetailValue')
         shippingCountryColumn.addWidget(QLabel('Country'))
         shippingCountryColumn.addWidget(self.shippingCountry)
         # -- state
-        self.shippingState = QLabel('', objectName='DetailValue')
+        self.shippingState = QLabel(objectName='DetailValue')
         shippingStateColumn.addWidget(QLabel('State'))
         shippingStateColumn.addWidget(self.shippingState)
         # - city and postcode
@@ -211,23 +208,23 @@ class OrderDetails(BaseDialog):
         shippingCityPostcodeRow.addLayout(shippingCityColumn)
         shippingCityPostcodeRow.addLayout(shippingPostcodeColumn)
         # -- city
-        self.shippingCity = QLabel('', objectName='DetailValue')
+        self.shippingCity = QLabel(objectName='DetailValue')
         shippingCityColumn.addWidget(QLabel('City'))
         shippingCityColumn.addWidget(self.shippingCity)
         # -- postcode
-        self.shippingPostcode = QLabel('', objectName='DetailValue')
+        self.shippingPostcode = QLabel(objectName='DetailValue')
         shippingPostcodeColumn.addWidget(QLabel('PostCode'))
         shippingPostcodeColumn.addWidget(self.shippingPostcode)
         # - address line 1
-        self.shippingAddressLine1 = QLabel('', objectName='DetailValue')
+        self.shippingAddressLine1 = QLabel(objectName='DetailValue')
         self.shipping.addWidget(QLabel('Address line 1'))
         self.shipping.addWidget(self.shippingAddressLine1)
         # - address line 2
-        self.shippingAddressLine2 = QLabel('', objectName='DetailValue')
+        self.shippingAddressLine2 = QLabel(objectName='DetailValue')
         self.shipping.addWidget(QLabel('Address line 2'))
         self.shipping.addWidget(self.shippingAddressLine2)
         # - customer note
-        self.shippingCustomerNote = QLabel('', objectName='ShippingCustomerNote')
+        self.shippingCustomerNote = QLabel(objectName='ShippingCustomerNote')
         self.shipping.addWidget(QLabel('Customer provided note'))
         self.shipping.addWidget(self.shippingCustomerNote)
         # add stretch
@@ -245,17 +242,49 @@ class OrderDetails(BaseDialog):
         # title
         self.itemsTitle = QLabel('Items', objectName='SectionTitle')
         self.layout2.addWidget(self.itemsTitle)
-        self.itemsTable = Table(['ID', 'Name', 'Cost', 'Quantity', 'Totals'])
+        # table
+        self.itemsTable = Table(['ID', 'Name', 'Cost', 'Quantity', 'Total'])
         self.itemsTable.setMinimumHeight(200)
         self.layout2.addWidget(self.itemsTable)
 
+        ##########################
+        # Section3: Order Totals #
+        ##########################
+        # widget
+        self.section3 = QWidget(objectName='Section')
+        self.orderLayout.addWidget(self.section3)
+        # layout
+        self.layout3 = QVBoxLayout()
+        self.section3.setLayout(self.layout3)
+        # title
+        self.totalsTitle = QLabel('Totals', objectName='SectionTitle')
+        self.layout3.addWidget(self.totalsTitle)
+        # form
+        self.totalsForm = QFormLayout()
+        self.totalsForm.setHorizontalSpacing(50)
+        self.totalsForm.setVerticalSpacing(20)
+        self.layout3.addLayout(self.totalsForm)
+        # order items total
+        self.itemsTotal = QLabel()
+        self.totalsForm.addRow(QLabel('Items total'), self.itemsTotal)
+        # order total tax
+        self.totalTax = QLabel()
+        self.totalsForm.addRow(QLabel('Total tax'), self.totalTax)
+        # order shipping total
+        self.shippingTotal = QLabel()
+        self.totalsForm.addRow(QLabel('Shipping total'), self.shippingTotal)
+        # order discount total
+        self.discountTotal = QLabel()
+        self.totalsForm.addRow(QLabel('Discount total'), self.discountTotal)
+        # order total
+        self.orderTotal = QLabel()
+        self.totalsForm.addRow(QLabel('<b>Order total</b>'), self.orderTotal)
+
     def setupControl(self):
         self.btnRefund = QPushButton('Refund')
-        self.btnComplete = QPushButton('Complete')
         self.btnSave = QPushButton('Save')
         self.btnCancel = QPushButton('Cancel')
         self.controlLayout.addWidget(self.btnRefund)
-        self.controlLayout.addWidget(self.btnComplete)
         self.controlLayout.addWidget(self.btnSave)
         self.controlLayout.addWidget(self.btnCancel)
 
@@ -273,14 +302,9 @@ class OrderDetails(BaseDialog):
             #Section{
                 background-color: white;
             }
-            #OrderTitle{
-                font-size: 15px;
-                min-height: 40px;
-                font-weight: bold;
-            }
             #SectionTitle{
-                font-size: 12px;
-                min-height: 30px;
+                font-size: 13px;
+                min-height: 40px;
                 font-weight: bold;
             }
             #DetailValue{
@@ -300,4 +324,65 @@ class OrderDetails(BaseDialog):
         """)
 
     def setDetails(self, details):
-        pass
+        # general
+        general = details.get('general', {})
+        general_fields = {
+            'date': self.dateCreated,
+            'status': self.status,
+            'customer': self.customer,
+        }
+        for name, field in general_fields.items():
+            value = general.get(name, '')
+            getattr(field, 'setText')(str(value))
+        # billing
+        billing = details.get('billing', {})
+        billing_fields = {
+            'firstname': self.billingFirstname,
+            'lastname': self.billingLastname,
+            'company': self.billingCompany,
+            'email': self.billingEmail,
+            'phone': self.billingPhone,
+            'country': self.billingCountry,
+            'state': self.billingState,
+            'city': self.billingCity,
+            'postcode': self.billingPostcode,
+            'address1': self.billingAddressLine1,
+            'address2': self.billingAddressLine2,
+            'payment': self.billingPayment,
+            'transaction': self.billingTransaction
+        }
+        for name, field in billing_fields.items():
+            value = billing.get(name, '')
+            getattr(field, 'setText')(str(value))
+        # shipping
+        shipping = details.get('shipping', {})
+        shipping_fields = {
+            'firstname': self.shippingFirstname,
+            'lastname': self.shippingLastname,
+            'company': self.shippingCompany,
+            'country': self.shippingCountry,
+            'state': self.shippingState,
+            'city': self.shippingCity,
+            'postcode': self.shippingPostcode,
+            'address1': self.shippingAddressLine1,
+            'address2': self.shippingAddressLine2,
+            'note': self.shippingCustomerNote
+        }
+        for name, field in shipping_fields.items():
+            value = shipping.get(name, '')
+            getattr(field, 'setText')(str(value))
+        # items
+        items = details.get('items', [])
+        self.itemsTable.setRecords(items)
+        # totals
+        totals = details.get('totals', {})
+        totals_fields = {
+            'items': self.itemsTotal,
+            'tax': self.totalTax,
+            'shipping': self.shippingTotal,
+            'discount': self.discountTotal,
+            'order': self.orderTotal
+        }
+        for name, field in totals_fields.items():
+            value = totals.get(name, '')
+            getattr(field, 'setText')(str(value))
