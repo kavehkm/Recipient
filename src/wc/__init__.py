@@ -26,3 +26,8 @@ class Product(WCBaseModel):
             'regular_price': regular_price
         }
         return super().create(data)
+
+
+class Order(WCBaseModel):
+    """WooCommerce Order Model"""
+    ENDPOINT = 'orders'
