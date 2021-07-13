@@ -2,11 +2,31 @@
 from src.ui.components import BaseDialog, Table
 # pyqt
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QScrollArea, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import (QWidget, QScrollArea, QHBoxLayout, QVBoxLayout,
+                             QFormLayout, QLabel, QPushButton, QComboBox)
 
 
 class OrderDetails(BaseDialog):
     """Order Details Dialog"""
+    # order status
+    PENDING =       'pending'
+    FAILED =        'failed'
+    PROCESSING =    'processing'
+    COMPLETED =     'completed'
+    ON_HOLD =       'on-hold'
+    CANCELLED =     'cancelled'
+    REFUNDED =      'refunded'
+    # statuses
+    STATUSES = [
+        PENDING,
+        FAILED,
+        PROCESSING,
+        COMPLETED,
+        ON_HOLD,
+        CANCELLED,
+        REFUNDED
+    ]
+
     def setupLayout(self):
         super().setupLayout()
         # set dialog title
@@ -52,14 +72,14 @@ class OrderDetails(BaseDialog):
         self.dateCreated = QLabel(objectName='DetailValue')
         self.general.addWidget(QLabel('Date created:'))
         self.general.addWidget(self.dateCreated)
-        # - status
-        self.status = QLabel(objectName='DetailValue')
-        self.general.addWidget(QLabel('Status:'))
-        self.general.addWidget(self.status)
         # - customer
         self.customer = QLabel(objectName='DetailValue')
         self.general.addWidget(QLabel('Customer:'))
         self.general.addWidget(self.customer)
+        # - status
+        self.status = QLabel(objectName='OrderStatus')
+        self.general.addWidget(QLabel('Status:'))
+        self.general.addWidget(self.status)
         # add stretch
         self.general.addStretch(1)
 
@@ -281,10 +301,20 @@ class OrderDetails(BaseDialog):
         self.totalsForm.addRow(QLabel('<b>Order total</b>'), self.orderTotal)
 
     def setupControl(self):
-        self.btnRefund = QPushButton('Refund')
+        # status combo box
+        self.comboStatus = QComboBox()
+        self.comboStatus.addItems(self.STATUSES)
+        # update button
+        self.btnUpdate = QPushButton('Update')
+        # save button
         self.btnSave = QPushButton('Save')
+        # - hide save button as default
+        self.btnSave.hide()
+        # cancel button
         self.btnCancel = QPushButton('Cancel')
-        self.controlLayout.addWidget(self.btnRefund)
+        # register combo and buttons
+        self.controlLayout.addWidget(self.comboStatus)
+        self.controlLayout.addWidget(self.btnUpdate)
         self.controlLayout.addWidget(self.btnSave)
         self.controlLayout.addWidget(self.btnCancel)
 
@@ -298,6 +328,12 @@ class OrderDetails(BaseDialog):
             }
             QPushButton{
                 min-height: 25px;
+            }
+            QComboBox{
+                min-height: 29px;
+                min-width: 50px;
+                font-size: 12px;
+                padding-left: 10px;
             }
             #Section{
                 background-color: white;
@@ -313,6 +349,36 @@ class OrderDetails(BaseDialog):
                 border-radius: 3px;
                 border: 1px solid silver;
             }
+            #OrderStatus{
+                padding: 5px;
+                margin-right: 5px;
+                border-radius: 3px;
+                border: 1px solid silver;
+                font-size: 12px;
+                font-weight: bold;
+                min-height: 30px;
+            }
+            #OrderStatus[status="pending"]{
+                background-color: #E5E5E5;
+            }
+            #OrderStatus[status="failed"]{
+                background-color: #ECA3A3;
+            }
+            #OrderStatus[status="processing"]{
+                background-color: #C6E2C6;
+            }
+            #OrderStatus[status="completed"]{
+                background-color: #C9D7E1;
+            }
+            #OrderStatus[status="on-hold"]{
+                background-color: #F8DEA7;
+            }
+            #OrderStatus[status="cancelled"]{
+                background-color: #E5E5E5;
+            }
+            #OrderStatus[status="refunded"]{
+                background-color: #E5E5E5;
+            }
             #ShippingCustomerNote{
                 padding: 5px;
                 min-height: 63px;
@@ -322,6 +388,23 @@ class OrderDetails(BaseDialog):
                 border: 1px solid silver;
             }
         """)
+
+    def getCurrentStatus(self):
+        return self.comboStatus.currentText()
+
+    def changeStatus(self, status):
+        if status in self.STATUSES:
+            # change value and style of status field
+            self.status.setText(status)
+            self.status.setProperty('status', status)
+            self.status.setStyleSheet(self.status.styleSheet())
+            # set current status for comboStatus
+            self.comboStatus.setCurrentText(status)
+            # if status is completed show save button
+            if status == self.COMPLETED:
+                self.btnSave.show()
+            else:
+                self.btnSave.hide()
 
     def setDetails(self, details):
         # general
@@ -386,3 +469,6 @@ class OrderDetails(BaseDialog):
         for name, field in totals_fields.items():
             value = totals.get(name, '')
             getattr(field, 'setText')(str(value))
+
+        # set order status
+        self.changeStatus(general['status'])
