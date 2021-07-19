@@ -1,4 +1,4 @@
-from src.wc.base_model import WCBaseModel
+from .base_model import WCBaseModel
 
 
 class Category(WCBaseModel):

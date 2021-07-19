@@ -1,6 +1,5 @@
 # internal
-from src.wc import api
-from src.wc import errors
+from . import api, errors
 
 
 class WCBaseModel(object):
@@ -49,6 +48,7 @@ class WCBaseModel(object):
     def all(self, **params):
         page = 1
         results = []
+        params['per_page'] = 100
         excludes = params.pop('excludes', [])
         while True:
             params['page'] = page
