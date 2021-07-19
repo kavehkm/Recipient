@@ -1,5 +1,5 @@
 # internal
-from src.models.errors import DoesNotExistsError
+from .errors import DoesNotExistsError
 
 
 class Column(object):
