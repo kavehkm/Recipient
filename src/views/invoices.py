@@ -3,23 +3,29 @@ from datetime import datetime
 # internal
 from src import wc, db, models
 from src.ui.components import Message
+from src.models.errors import DoesNotExistsError
 
 
 class Invoices(object):
     """Invoices View"""
     def __init__(self, ui):
-        # orders
+        # cached orders
         self._orders = None
+        # cached orders summary
+        self._summary = None
         # current order on details
-        self._current_order = None
-        self._current_record_index = None
-        self._current_summary_index = None
+        self._current = dict()
 
         # wc order model
         self.wc_order = wc.Order()
-        # moein product and map models
+        # moein models
         self.product = models.Product()
         self.product_map = models.ProductMap()
+        self.customer = models.Customer()
+        self.customer_map = models.CustomerMap()
+        self.invoice = models.Invoice()
+        self.item_line = models.ItemLine()
+        self.saved_order = models.SavedOrder()
 
         # ui
         self.ui = ui
@@ -54,46 +60,80 @@ class Invoices(object):
         gmt = datetime.fromisoformat(order['date_created_gmt'])
         return '{} @ {}'.format(gmt.date().isoformat(), gmt.time().isoformat())
 
+    @staticmethod
+    def _items_total(order):
+        items_total = 0
+        for item in order['line_items']:
+            items_total += int(item['subtotal'])
+        return items_total
+
+    def _items(self, conn, order):
+        items = []
+        self.product.connection = conn
+        self.product_map.connection = conn
+        for item in order['line_items']:
+            product_id = item['product_id']
+            moein_id = self.product_map.get('id', wcid=product_id).id
+            moein_product = self.product.get('name', id=moein_id)
+            items.append({
+                'id': moein_id,
+                'name': moein_product.name,
+                'price': item['price'],
+                'quantity': item['quantity'],
+                # before discounts
+                'subtotal': item['subtotal'],
+                # after discounts
+                'total': item['total']
+            })
+        return items
+
     def _order_key(self, order):
         return '#{} {} {}'.format(order['id'], self._firstname(order), self._lastname(order))
 
     def get(self):
         if self._orders is None:
             try:
-                raw_orders = self.wc_order.all()
+                # find saved order to exclude
+                with db.connection() as conn:
+                    self.saved_order.connection = conn
+                    ids = [order.id for order in self.saved_order.all('id')]
+                raw_orders = self.wc_order.all(excludes=ids)
             except Exception as e:
                 msg = Message(self.ui, Message.ERROR, 'Cannot get orders from WooCommerce.', str(e))
                 msg.show()
                 return
             else:
-                self._orders = {
-                    order['number']: order
-                    for order in raw_orders
-                }
-                # create orders summary for invoices table
-                self._orders['summary'] = [
-                    [order['id'],
-                     self._order_key(order),
-                     self._created_date(order),
-                     order['status'],
-                     order['total']]
-                    for order in raw_orders
-                ]
-        self.table.setRecords(self._orders['summary'])
+                self._orders, self._summary = {}, []
+                # set up cached orders and summary
+                for order in raw_orders:
+                    self._orders[order['number']] = order
+                    self._summary.insert(0, [
+                        order['id'],
+                        self._order_key(order),
+                        self._created_date(order),
+                        order['status'],
+                        order['total']
+                    ])
+        self.table.setRecords(self._summary)
 
     def refresh(self):
+        # clear cache orders and call get method
         self._orders = None
         self.get()
-
-    def save_all(self):
-        pass
 
     def order_details(self):
         index = self.table.getCurrentRecordIndex()
         if index is not None:
             try:
                 record = self.table.getRecord(index)
-                order = self._orders.get(record[0])
+                order = self._orders[record[0]]
+                # get mapped product as items
+                with db.connection() as conn:
+                    items = self._items(conn, order)
+                # save current order and all relative information for later...
+                self._current['order'] = order
+                self._current['items'] = items
+                self._current['index'] = index
                 # collect details from order
                 details = {
                     # general
@@ -136,36 +176,15 @@ class Invoices(object):
                         'tax': order['total_tax'],
                         'shipping': order['shipping_total'],
                         'discount': order['discount_total'],
-                        'order': order['total']
-                    }
+                        'order': order['total'],
+                        'items': self._items_total(order)
+                    },
+                    # items
+                    'items': [
+                        [i['id'], i['name'], i['price'], i['quantity'], i['total']]
+                        for i in items
+                    ]
                 }
-                # compute items-total
-                items_total = 0
-                for item in order['line_items']:
-                    items_total += int(item['subtotal'])
-                details['totals']['items'] = items_total
-
-                # prepare items
-                items = []
-                with db.connection() as conn:
-                    self.product.connection = self.product_map.connection = conn
-                    for item in order['line_items']:
-                        product_id = item['product_id']
-                        moein_id = self.product_map.get('id', wcid=product_id).id
-                        moein_product = self.product.get('name', id=moein_id)
-                        items.append([
-                            moein_id,
-                            moein_product.name,
-                            item['price'],
-                            item['quantity'],
-                            item['subtotal']
-                        ])
-                details['items'] = items
-                # save current order and record for later ...
-                self._current_order = order
-                self._current_record_index = index
-                # compute current record index in self._orders['summary']
-                self._current_summary_index = len(self._orders['summary']) - index - 1
             except Exception as e:
                 msg = Message(self.ui, Message.ERROR, 'Cannot load order details.', str(e))
                 msg.show()
@@ -175,29 +194,96 @@ class Invoices(object):
 
     def update(self):
         status = self.details.getCurrentStatus()
-        order_id = self._current_order['number']
+        order_id = self._current['order']['number']
         try:
-            data = {
-                'status': status
-            }
-            self.wc_order.update(order_id, data)
+            self.wc_order.update(order_id, {'status': status})
         except Exception as e:
             msg = Message(self.details, Message.ERROR, 'Cannot update order.', str(e))
             msg.show()
         else:
             # update cached orders
             self._orders[order_id]['status'] = status
-            # update cached orders['summary']
-            self._orders['summary'][self._current_summary_index][3] = status
+            # update summary
+            self._summary[self._current['index']][3] = status
             # update order on details-dialog
             self.details.changeStatus(status)
             # update invoices table
-            record = self.table.getRecord(self._current_record_index)
+            record = self.table.getRecord(self._current['index'])
             record[3] = status
-            self.table.updateRecord(self._current_record_index, record)
-
+            self.table.updateRecord(self._current['index'], record)
             msg = Message(self.details, Message.SUCCESS, 'Order updated successfully.')
             msg.show()
 
+    def _saver(self, conn, order, items, index):
+        # set models connection
+        self.customer.connection = conn
+        self.customer_map.connection = conn
+        self.invoice.connection = conn
+        self.item_line.connection = conn
+        self.saved_order.connection = conn
+        # detect customer
+        wc_customer_id = order['customer_id']
+        if wc_customer_id == 0:
+            # customer is guest
+            moein_customer_id = 44
+        else:
+            try:
+                moein_customer = self.customer_map.get('id', wcid=wc_customer_id)
+            except DoesNotExistsError:
+                # customer does not exists, lets create
+                self.customer.create({
+                    'firstname': self._firstname(order),
+                    'lastname': self._lastname(order)
+                })
+                # get created_customer's id
+                moein_customer_id = self.customer.get_max_pk()
+                # map moein-customer with woocommerce-customer
+                self.customer_map.create({
+                    'id': moein_customer_id,
+                    'wcid': wc_customer_id,
+                    'last_update': datetime.now()
+                })
+            else:
+                moein_customer_id = moein_customer.id
+        # create invoice
+        self.invoice.create({
+            'customer_id': moein_customer_id,
+            'created_date': datetime.fromisoformat(order['date_created'])
+        })
+        # get created_invoice's id
+        invoice_id = self.invoice.get_max_pk()
+        # set invoice items
+        for item in items:
+            self.item_line.create({
+                'invoice_id': invoice_id,
+                'product_id': item['id'],
+                'quantity': item['quantity']
+            })
+        # save order
+        self.saved_order.create({
+            'id': order['id'],
+            'invoice_id': invoice_id
+        })
+        # update ui after save
+        # - remove from cached orders
+        del self._orders[order['number']]
+        # - remove from cached orders summary
+        del self._summary[index]
+        # - remove from invoices table
+        self.table.removeRecord(index)
+
     def save(self):
+        try:
+            with db.connection() as conn:
+                self._saver(conn, self._current['order'], self._current['items'], self._current['index'])
+                conn.commit()
+        except Exception as e:
+            msg = Message(self.details, Message.ERROR, 'Cannot save order.', str(e))
+            msg.show()
+        else:
+            msg = Message(self.details, Message.SUCCESS, 'Order saved successfully.')
+            msg.btnOk.clicked.connect(self.details.close)
+            msg.show()
+
+    def save_all(self):
         pass
