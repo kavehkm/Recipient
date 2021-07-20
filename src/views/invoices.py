@@ -11,8 +11,6 @@ class Invoices(object):
     def __init__(self, ui):
         # cached orders
         self._orders = None
-        # cached orders summary
-        self._summary = None
         # current order on details
         self._current = dict()
 
@@ -67,6 +65,9 @@ class Invoices(object):
             items_total += int(item['subtotal'])
         return items_total
 
+    def _order_key(self, order):
+        return '#{} {} {}'.format(order['id'], self._firstname(order), self._lastname(order))
+
     def _items(self, conn, order):
         items = []
         self.product.connection = conn
@@ -87,9 +88,6 @@ class Invoices(object):
             })
         return items
 
-    def _order_key(self, order):
-        return '#{} {} {}'.format(order['id'], self._firstname(order), self._lastname(order))
-
     def get(self):
         if self._orders is None:
             try:
@@ -101,20 +99,20 @@ class Invoices(object):
             except Exception as e:
                 msg = Message(self.ui, Message.ERROR, 'Cannot get orders from WooCommerce.', str(e))
                 msg.show()
-                return
             else:
-                self._orders, self._summary = {}, []
+                summary = []
+                self._orders = {}
                 # set up cached orders and summary
                 for order in raw_orders:
                     self._orders[order['number']] = order
-                    self._summary.insert(0, [
+                    summary.insert(0, [
                         order['id'],
                         self._order_key(order),
                         self._created_date(order),
                         order['status'],
                         order['total']
                     ])
-        self.table.setRecords(self._summary)
+                self.table.setRecords(summary)
 
     def refresh(self):
         # clear cache orders and call get method
@@ -203,8 +201,6 @@ class Invoices(object):
         else:
             # update cached orders
             self._orders[order_id]['status'] = status
-            # update summary
-            self._summary[self._current['index']][3] = status
             # update order on details-dialog
             self.details.changeStatus(status)
             # update invoices table
@@ -225,7 +221,7 @@ class Invoices(object):
         wc_customer_id = order['customer_id']
         if wc_customer_id == 0:
             # customer is guest
-            moein_customer_id = 44
+            moein_customer_id = 1
         else:
             try:
                 moein_customer = self.customer_map.get('id', wcid=wc_customer_id)
@@ -267,8 +263,6 @@ class Invoices(object):
         # update ui after save
         # - remove from cached orders
         del self._orders[order['number']]
-        # - remove from cached orders summary
-        del self._summary[index]
         # - remove from invoices table
         self.table.removeRecord(index)
 
