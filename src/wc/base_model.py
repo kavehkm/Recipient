@@ -47,17 +47,17 @@ class WCBaseModel(object):
 
     def all(self, **params):
         page = 1
+        per_page = 100
         results = []
-        params['per_page'] = 100
+        params['per_page'] = per_page
         excludes = params.pop('excludes', [])
         while True:
             params['page'] = page
             objects = self._request('get', self.ENDPOINT, None, params)
-            if objects:
-                results.extend(objects)
-                page += 1
-            else:
+            results.extend(objects)
+            if not objects or len(objects) < per_page:
                 break
+            page += 1
         if excludes:
             results = list(filter(lambda obj: obj['id'] not in excludes, results))
         return results
