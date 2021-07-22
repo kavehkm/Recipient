@@ -1,8 +1,11 @@
 # standard
 from datetime import datetime
 # internal
+from src import db
+from src import wc
+from src import models
+from src import messages
 from src.worker import Worker
-from src import db, wc, models, messages
 from src.ui.windows import RegisterForm, OptionsList
 from src.ui.components import Message, Confirm, Progress
 # pyqt
