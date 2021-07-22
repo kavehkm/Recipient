@@ -4,10 +4,11 @@ from .order_details import OrderDetails
 from src.ui.components import BaseWidget, Table
 # pyqt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QDateTime
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame, QTabWidget,
                              QHBoxLayout, QVBoxLayout, QFormLayout,
-                             QPushButton, QLabel, QLineEdit, QComboBox)
+                             QPushButton, QLabel, QLineEdit, QComboBox,
+                             QCheckBox, QDateTimeEdit, QSpinBox)
 
 
 ########
@@ -225,6 +226,9 @@ class WooCommerceTab(BaseTab):
 
 class SettingsTab(BaseTab):
     """Settings Tab"""
+    DATETIME_FORMAT = 'yyyy-MM-ddTHH:mm:ss'
+    DATETIME_DISPLAY_FORMAT = 'yyyy-MM-dd @ HH:mm:ss'
+
     def setupWidget(self):
         # tabs
         self.tabs = QTabWidget()
@@ -265,6 +269,68 @@ class SettingsTab(BaseTab):
         self.version = QComboBox()
         self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
         self.wcForm.addRow(QLabel('Version'), self.version)
+        # invoices settings
+        self.invoicesForm = QFormLayout()
+        invoicesFormFrame = QFrame()
+        invoicesFormFrame.setLayout(self.invoicesForm)
+        self.tabs.addTab(invoicesFormFrame, 'Invoices')
+        # - status
+        # -- options
+        self.cbxPending = QCheckBox('Pending')
+        self.cbxProcessing = QCheckBox('Processing')
+        self.cbxOnHold = QCheckBox('On Hold')
+        self.cbxCompleted = QCheckBox('Completed')
+        self.cbxCancelled = QCheckBox('Cancelled')
+        self.cbxRefunded = QCheckBox('Refunded')
+        self.cbxFailed = QCheckBox('Failed')
+        self.cbxTrash = QCheckBox('Trash')
+        self.cbxAny = QCheckBox('Any')
+        self.statusOptions = {
+            'pending': self.cbxPending,
+            'processing': self.cbxProcessing,
+            'on-hold': self.cbxOnHold,
+            'completed': self.cbxCompleted,
+            'cancelled': self.cbxCancelled,
+            'refunded': self.cbxRefunded,
+            'failed': self.cbxFailed,
+            'trash': self.cbxTrash,
+            'any': self.cbxAny
+        }
+        # -- options layout
+        statusOptionsLayout = QVBoxLayout()
+        statusOptions1Layout = QHBoxLayout()
+        statusOptions2Layout = QHBoxLayout()
+        statusOptions3Layout = QHBoxLayout()
+        statusOptionsLayout.addLayout(statusOptions1Layout)
+        statusOptionsLayout.addLayout(statusOptions2Layout)
+        statusOptionsLayout.addLayout(statusOptions3Layout)
+        statusOptionsLayout.addSpacing(5)
+        # any as gp1
+        statusOptions1Layout.addWidget(self.cbxAny)
+        # pending, processing, on-hold and complete as gp 2
+        statusOptions2Layout.addWidget(self.cbxPending)
+        statusOptions2Layout.addWidget(self.cbxProcessing)
+        statusOptions2Layout.addWidget(self.cbxOnHold)
+        statusOptions2Layout.addWidget(self.cbxCompleted)
+        # cancelled, refunded, failed and trash as gp3
+        statusOptions3Layout.addWidget(self.cbxCancelled)
+        statusOptions3Layout.addWidget(self.cbxRefunded)
+        statusOptions3Layout.addWidget(self.cbxFailed)
+        statusOptions3Layout.addWidget(self.cbxTrash)
+        self.invoicesForm.addRow(QLabel('Status'), statusOptionsLayout)
+        # - after
+        self.after = QDateTimeEdit()
+        self.after.setCalendarPopup(True)
+        self.after.setDisplayFormat(self.DATETIME_DISPLAY_FORMAT)
+        self.invoicesForm.addRow(QLabel('After'), self.after)
+        # - before
+        self.before = QDateTimeEdit()
+        self.before.setCalendarPopup(True)
+        self.before.setDisplayFormat(self.DATETIME_DISPLAY_FORMAT)
+        self.invoicesForm.addRow(QLabel('Before'), self.before)
+        # - guest
+        self.guest = QSpinBox()
+        self.invoicesForm.addRow(QLabel('Guest Customer ID'), self.guest)
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
@@ -284,7 +350,7 @@ class SettingsTab(BaseTab):
                 height: 20px;
                 margin-right: 50px;
             }
-            QComboBox, QLineEdit{
+            QComboBox, QLineEdit, QDateTimeEdit, QSpinBox{
                 height: 20px;
             }
             QPushButton{
@@ -306,6 +372,12 @@ class SettingsTab(BaseTab):
                 'username': self.username.text(),
                 'password': self.password.text(),
                 'database': self.database.text()
+            },
+            'invoices': {
+                'status': [option for option, cbx in self.statusOptions.items() if cbx.isChecked()],
+                'after': self.after.dateTime().toString(self.DATETIME_FORMAT),
+                'before': self.before.dateTime().toString(self.DATETIME_FORMAT),
+                'guest': self.guest.value()
             }
         }
 
@@ -322,6 +394,13 @@ class SettingsTab(BaseTab):
         self.username.setText(moein.get('username'))
         self.password.setText(moein.get('password'))
         self.database.setText(moein.get('database'))
+        # invoices
+        invoices = settings.get('invoices')
+        for option in invoices.get('status'):
+            self.statusOptions[option].setChecked(True)
+        self.after.setDateTime(QDateTime.fromString(invoices.get('after'), self.DATETIME_FORMAT))
+        self.before.setDateTime(QDateTime.fromString(invoices.get('before'), self.DATETIME_FORMAT))
+        self.guest.setValue(invoices.get('guest'))
 
     def clear(self):
         # woocommerce

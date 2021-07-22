@@ -16,7 +16,8 @@ class Settings(object):
     def tab_handler(self):
         self.tab.set({
             'wc': s.get('wc', {}),
-            'moein': s.get('moein', {})
+            'moein': s.get('moein', {}),
+            'invoices': s.get('invoices', {})
         })
         self.ui.contents.showTab(self.ui.contents.SETTINGS)
 
@@ -25,6 +26,7 @@ class Settings(object):
             settings = self.tab.get()
             s.set('wc', settings.get('wc'))
             s.set('moein', settings.get('moein'))
+            s.set('invoices', settings.get('invoices'))
             s.save()
         except Exception as e:
             lvl = Message.ERROR

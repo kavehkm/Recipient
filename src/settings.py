@@ -1,6 +1,7 @@
 # standard
 import os
 import json
+from datetime import datetime, timedelta
 
 
 ########################
@@ -39,6 +40,17 @@ MOEIN_DB_USERNAME = ''
 MOEIN_DB_PASSWORD = ''
 MOEIN_DB_NAME = ''
 
+# invoices settings
+INVOICES_STATUS = ['processing', 'on-hold', 'completed']
+# - current datetime
+now = datetime.now()
+# - after default value is 7 days ago
+after = now - timedelta(days=7)
+# - before default value is 20 years later
+before = now + timedelta(days=365*20)
+INVOICES_AFTER = after.replace(microsecond=0).isoformat()
+INVOICES_BEFORE = before.replace(microsecond=0).isoformat()
+INVOICES_GUEST_CUSTOMER_ID = 1
 
 #####################################
 # application customizable settings #
@@ -56,6 +68,12 @@ CUSTOMIZABLE_SETTINGS = {
         'username': MOEIN_DB_USERNAME,
         'password': MOEIN_DB_PASSWORD,
         'database': MOEIN_DB_NAME
+    },
+    'invoices': {
+        'status': INVOICES_STATUS,
+        'after': INVOICES_AFTER,
+        'before': INVOICES_BEFORE,
+        'guest': INVOICES_GUEST_CUSTOMER_ID
     }
 }
 
