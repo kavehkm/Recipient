@@ -1,7 +1,10 @@
 # standard
 from datetime import datetime
 # internal
-from src import wc, db, models
+from src import wc
+from src import db
+from src import models
+from src import settings as s
 from src.ui.components import Message
 from src.models.errors import DoesNotExistsError
 
@@ -44,6 +47,10 @@ class Invoices(object):
     def tab_handler(self):
         self.get()
         self.ui.contents.showTab(self.ui.contents.INVOICES)
+
+    @property
+    def settings(self):
+        return s.get('invoices')
 
     @staticmethod
     def _firstname(order):
@@ -95,7 +102,12 @@ class Invoices(object):
                 with db.connection() as conn:
                     self.saved_order.connection = conn
                     ids = [order.id for order in self.saved_order.all('id')]
-                raw_orders = self.wc_order.all(excludes=ids)
+                raw_orders = self.wc_order.all(
+                    excludes=ids,
+                    status=self.settings['status'],
+                    after=self.settings['after'],
+                    before=self.settings['before']
+                )
             except Exception as e:
                 msg = Message(self.ui, Message.ERROR, 'Cannot get orders from WooCommerce.', str(e))
                 msg.show()
@@ -221,7 +233,7 @@ class Invoices(object):
         wc_customer_id = order['customer_id']
         if wc_customer_id == 0:
             # customer is guest
-            moein_customer_id = 1
+            moein_customer_id = self.settings['guest']
         else:
             try:
                 moein_customer = self.customer_map.get('id', wcid=wc_customer_id)
