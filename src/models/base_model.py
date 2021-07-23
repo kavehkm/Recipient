@@ -4,9 +4,8 @@ from .errors import DoesNotExistsError
 
 class Column(object):
     """Model Column"""
-    def __init__(self, t, wp=None):
+    def __init__(self, t):
         self.type = t
-        self.wp = wp
 
 
 class ModelBase(type):
@@ -69,10 +68,11 @@ class Model(metaclass=ModelBase):
 
     def _execute(self, sql, parameters=(), method=None):
         results = None
-        with self._conn.cursor() as cursor:
-            cursor.execute(sql, parameters)
-            if method:
-                results = getattr(cursor, method)()
+        cursor = self._conn.cursor()
+        cursor.execute(sql, parameters)
+        if method:
+            results = getattr(cursor, method)()
+        cursor.close()
         return results
 
     def get_max_pk(self):

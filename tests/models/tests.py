@@ -1,7 +1,8 @@
 # standard
 import unittest
 # internal
-from src import db, settings
+from src import db
+from src import settings as s
 from src.models import Column, Model
 from src.models.errors import DoesNotExistsError
 
@@ -11,10 +12,10 @@ class Order(Model):
     __table_name__ = 'Orders'
     __primary_key__ = 'id'
     # columns
-    id = Column(int, 'wpid')
-    fname = Column(str, 'wpfname')
-    lname = Column(str, 'wplname')
-    address = Column(str, 'wpaddress')
+    id = Column(int)
+    fname = Column(str)
+    lname = Column(str)
+    address = Column(str)
 
 
 class Item(Model):
@@ -22,9 +23,9 @@ class Item(Model):
     __table_name__ = 'Items'
     __primary_key__ = 'id'
     # columns
-    id = Column(int, 'wpid')
-    name = Column(str, 'wpname')
-    price = Column(float, 'wpprice')
+    id = Column(int)
+    name = Column(str)
+    price = Column(float)
 
 
 class OrderItem(Model):
@@ -41,7 +42,7 @@ class TestModel(unittest.TestCase):
     """Test Model Class"""
     def setUp(self):
         # create database connection
-        self.connection = db.connection(**settings.get('testdb'))
+        self.connection = db.connection(**s.get('testdb'))
         # create instances from models
         self.order = Order()
         self.item = Item()
@@ -73,9 +74,10 @@ class TestModel(unittest.TestCase):
             )
             """
         ]
+        cursor = self.connection.cursor()
         for table in tables:
-            with self.connection.cursor() as cursor:
-                cursor.execute(table)
+            cursor.execute(table)
+        cursor.close()
         self.connection.commit()
         # insert some test records to tables
         self.items = [
@@ -101,9 +103,10 @@ class TestModel(unittest.TestCase):
             "INSERT INTO Orders(id, fname, lname, address) VALUES (?, ?, ?, ?)":    self.orders,
             "INSERT INTO OrderItem(oid, iid, quantity) VALUES (?, ?, ?)":           self.order_items
         }
+        cursor = self.connection.cursor()
         for sql, records in inserts.items():
-            with self.connection.cursor() as cursor:
-                cursor.executemany(sql, records)
+            cursor.executemany(sql, records)
+        cursor.close()
         self.connection.commit()
 
     def test__select_empty(self):
@@ -260,9 +263,10 @@ class TestModel(unittest.TestCase):
         # delete person table
         sql = "DROP TABLE {}"
         tables = ['Items', 'Orders', 'OrderItem']
+        cursor = self.connection.cursor()
         for table in tables:
-            with self.connection.cursor() as cursor:
-                cursor.execute(sql.format(table))
+            cursor.execute(sql.format(table))
+        cursor.close()
         self.connection.commit()
         self.connection.close()
 
