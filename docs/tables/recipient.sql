@@ -22,7 +22,9 @@ CREATE TABLE ProductMap(
 )
 
 
-CREATE TABLE SavedOrder(
+CREATE TABLE InvoiceMap(
     id                      INT             PRIMARY KEY,
-    invoice_id              INT             NOT NULL        UNIQUE
+    wcid                    INT             NOT NULL        UNIQUE,
+    last_update             DATETIME        NOT NULL,
+    update_required         BIT             NOT NULL        DEFAULT 0
 )
