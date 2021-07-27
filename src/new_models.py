@@ -8,9 +8,15 @@ from src import new_wc
 
 class Model(object):
     """Recipient Model"""
-    def set_connection(self, connection):
-        pass
+    def __init__(self):
+        self._connection = None
 
+    def set_connection(self, connection):
+        self._connection = connection
+
+
+class Mappable(Model):
+    """Recipient Mappable"""
     def mapped(self):
         pass
 
@@ -42,9 +48,10 @@ class Model(object):
         pass
 
 
-class Product(Model):
+class Product(Mappable):
     """Recipeint Product Model"""
     def __init__(self):
+        super().__init__()
         # product table
         self.p = table.get('Product', 'id')
         # product map table
@@ -56,6 +63,7 @@ class Product(Model):
         self.wcp = new_wc.get(api, 'products')
 
     def set_connection(self, connection):
+        super().set_connection(connection)
         self.p.set_connection(connection)
         self.pm.set_connection(connection)
         self.cm.set_connection(connection)
@@ -181,9 +189,10 @@ class Product(Model):
         })
 
 
-class Category(Model):
+class Category(Mappable):
     """Recipient Category Model"""
     def __init__(self):
+        super().__init__()
         # category table
         self.c = table.get('Category', 'id')
         # category map table
@@ -193,6 +202,7 @@ class Category(Model):
         self.wcc = new_wc.get(api, 'products/categories')
 
     def set_connection(self, connection):
+        super().set_connection(connection)
         self.c.set_connection(connection)
         self.cm.set_connection(connection)
 
@@ -297,3 +307,30 @@ class Category(Model):
             'wcid': wc_category['id'],
             'last_update': datetime.now()
         })
+
+
+class Invoice(Model):
+    """Recipient Invoice Model"""
+    def __init__(self):
+        super().__init__()
+        # invoice table
+        self.i = table.get('Invoice', 'id')
+        # invlice map table
+        self.im = table.get('InvoiceMap', 'id')
+        # item-line table
+        self.il = table.get('ItemLine', 'invoice_id')
+        # customer table
+        self.cs = table.get('Customer', 'id')
+        # customer map table
+        self.csm = table.get('CustomerMap', 'id')
+        # wc order
+        api = wc_api.get()
+        self.wco = new_wc.get(api, 'orders')
+
+    def set_connection(self, connection):
+        super().set_connection(connection)
+        self.i.set_connection(connection)
+        self.im.set_connection(connection)
+        self.il.set_connection(connection)
+        self.cs.set_connection(connection)
+        self.csm.set_connection(connection)
