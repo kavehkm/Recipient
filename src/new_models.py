@@ -1,3 +1,5 @@
+# standard
+from datetime import datetime
 # internal
 from src import table
 from src import wc_api
@@ -21,22 +23,22 @@ class Model(object):
     def wc_unmapped(self):
         pass
 
-    def wc_mapped_update(self, moeinid):
+    def wc_mapped_update(self, mapped):
         pass
 
     def add_map(self, moeinid, wcid, last_update):
         pass
 
-    def edit_map(self, moeinid, kwargs):
+    def edit_map(self, moeinid, new_moeinid, new_wcid):
         pass
 
     def remove_map(self, moeinid):
         pass
 
-    def export2wc(self, moein_obj):
+    def export2wc(self, moein_object):
         pass
 
-    def import2moein(self, wc_obj):
+    def import2moein(self, wc_object):
         pass
 
 
@@ -47,6 +49,8 @@ class Product(Model):
         self.p = table.get('Product', 'id')
         # product map table
         self.pm = table.get('ProductMap', 'id')
+        # category map table
+        self.cm = table.get('CategoryMap', 'id')
         # wc product
         api = wc_api.get()
         self.wcp = new_wc.get(api, 'products')
@@ -54,6 +58,7 @@ class Product(Model):
     def set_connection(self, connection):
         self.p.set_connection(connection)
         self.pm.set_connection(connection)
+        self.cm.set_connection(connection)
 
     def mapped(self):
         mapped = []
@@ -100,17 +105,24 @@ class Product(Model):
         ]
 
     def wc_unmapped(self):
-        ids = [row.wcid for row in pm.all('wcid')]
+        ids = [row.wcid for row in self.pm.all('wcid')]
         return self.wcp.all(excludes=ids)
 
+    def wc_mapped_update(self, mapped):
+        self.wcp.update(mapped['wcid'], {
+            'name': mapped['name'],
+            'regular_price': str(mapped['price'])
+        })
+        self.pm.update({'last_update': datetime.now()}, id=mapped['id'])
+
     def add_map(self, moeinid, wcid, last_update):
-        # check moienid
+        # check moeinid
         product = self.p.get('id', 'name', id=moeinid)
         # check wcid
         self.wcp.get(wcid)
         # every thing is ok lets create map
         fields = {
-            'id': product.id,
+            'id': moeinid,
             'wcid': wcid,
             'last_update': last_update
         }
@@ -119,11 +131,169 @@ class Product(Model):
         fields['name'] = product.name
         return fields
 
-    def edit_map(self, moeinid, kwargs):
-        pass
+    def edit_map(self, moeinid, new_moeinid, new_wcid):
+        # check moeinid
+        product = self.p.get('id', 'name', id=new_moeinid)
+        # check wcid
+        self.wcp.get(new_wcid)
+        fields = {
+            'id': new_moeinid,
+            'wcid': new_wcid
+        }
+        self.pm.update(fields, id=moeinid)
+        # extends fields
+        fields['name'] = product.name
+        return fields
 
     def remove_map(self, moeinid):
         # check moeinid
         self.pm.get(id=moeinid)
         # remove map
         self.pm.delete(id=moeinid)
+
+    def export2wc(self, product):
+        # find wc_category
+        wc_category = self.cm.get('wcid', id=product['category_id'])
+        wc_product = self.wcp.create({
+            'name': product['name'],
+            'regular_price': str(product['price']),
+            'categories': [{'id': wc_category.wcid}]
+        })
+        self.pm.create({
+            'id': product['id'],
+            'wcid': wc_product['id'],
+            'last_update': datetime.now()
+        })
+
+    def import2moein(self, wc_product):
+        # get first category
+        wc_category = wc_product['categories'][0]
+        category = self.cm.get('id', wcid=wc_category['id'])
+        self.p.create({
+            'name': wc_product['name'],
+            'price': wc_product['regular_price'],
+            'category_id': category.id
+        })
+        self.pm.create({
+            'id': self.p.max_pk(),
+            'wcid': wc_product['id'],
+            'last_update': datetime.now()
+        })
+
+
+class Category(Model):
+    """Recipient Category Model"""
+    def __init__(self):
+        # category table
+        self.c = table.get('Category', 'id')
+        # category map table
+        self.cm = table.get('CategoryMap', 'id')
+        # wc category
+        api = wc_api.get()
+        self.wcc = new_wc.get(api, 'products/categories')
+
+    def set_connection(self, connection):
+        self.c.set_connection(connection)
+        self.cm.set_connection(connection)
+
+    def mapped(self):
+        mapped = []
+        rows = self.c.inner_join(
+            self.cm,
+            'id',
+            'id',
+            [],
+            ['wcid', 'last_update', 'update_required']
+        )
+        for row in rows:
+            mapped.append({
+                'id': row.id,
+                'name': row.name,
+                'wcid': row.wcid,
+                'last_update': row.last_update,
+                'update_required': row.update_required
+            })
+        return mapped
+
+    def unmapped(self):
+        unmapped = []
+        rows = self.c.left_outer_join(
+            self.cm,
+            'id',
+            'id',
+            []
+        )
+        for row in rows:
+            unmapped.append({
+                'id': row.id,
+                'name': row.name
+            })
+        return unmapped
+
+    def wc_mapped(self):
+        return [
+            {'id': row.wcid}
+            for row in self.cm.all('wcid')
+        ]
+
+    def wc_unmapped(self):
+        ids = [row.wcid for row in self.cm.all('wcid')]
+        return self.wcc.all(excludes=ids)
+
+    def wc_mapped_update(self, mapped):
+        self.wcc.update(mapped['wcid'], {
+            'name': mapped['name']
+        })
+        self.cm.update({'last_update': datetime.now()}, id=mapped['id'])
+
+    def add_map(self, moeinid, wcid, last_update):
+        # check moeinid
+        category = self.c.get('id', 'name', id=moeinid)
+        # check wcid
+        self.wcc.get(wcid)
+        fields = {
+            'id': moeinid,
+            'wcid': wcid,
+            'last_update': last_update
+        }
+        self.cm.create(fields)
+        fields['name'] = category.name
+        return fields
+
+    def edit_map(self, moeinid, new_moeinid, new_wcid):
+        # check moeinid
+        category = self.c.get('id', 'name', id=new_moeinid)
+        # check wcid
+        self.wcc.get(new_wcid)
+        fields = {
+            'id': new_moeinid,
+            'wcid': new_wcid
+        }
+        self.cm.update(fields, id=moeinid)
+        fields['name'] = category.name
+        return fields
+
+    def remove_map(self, moeinid):
+        self.cm.get(id=moeinid)
+        self.cm.delete(id=moeinid)
+
+    def export2wc(self, category):
+        wc_category = self.wcc.create({
+            'parent': 0,
+            'name': category['name']
+        })
+        self.cm.create({
+            'id': category['id'],
+            'wcid': wc_category['id'],
+            'last_update': datetime.now()
+        })
+
+    def import2moein(self, wc_category):
+        self.c.create({
+            'name': wc_category['name']
+        })
+        self.cm.create({
+            'id': self.c.max_pk(),
+            'wcid': wc_category['id'],
+            'last_update': datetime.now()
+        })

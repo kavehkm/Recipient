@@ -1,11 +1,10 @@
 # standard
 from datetime import datetime
 # internal
-from src import db
-from src import wc
-from src import models
 from src import messages
+from src import connection
 from src.worker import Worker
+from src.new_models import Category, Product
 from src.ui.windows import RegisterForm, OptionsList
 from src.ui.components import Message, Confirm, Progress
 # pyqt
@@ -14,37 +13,34 @@ from PyQt5.QtCore import QThreadPool
 
 class ObjectView(object):
     """Object View"""
-    # object related models and map
-    MAP = None
-    MODEL = None
-    WCMODEL = None
-    # object model columns
-    MODEL_ID = 'id'
-    MODEL_NAME = 'name'
-    # object wcmodel columns
-    WCMODEL_ID = 'id'
-    WCMODEL_NAME = 'name'
-    # messages slice
-    MESSAGE_SLICE = slice(0, 0)
+    # related object
+    model = None
+    # message slice
+    message_slice = slice(0, 0)
 
     def __init__(self, parent, table):
         self.parent = parent
         self.table = table
         self.ui = self.parent.ui
         self.tab = self.parent.tab
-        self.messages = messages.get(self.MESSAGE_SLICE)
+        self.messages = messages.get(self.message_slice)
 
     def get(self):
+        # create and set connection
+        conn = connection.get()
+        self.model.set_connection(conn)
         try:
-            objects = [
-                [getattr(obj, self.MODEL_ID), getattr(obj, self.MODEL_NAME), obj.wcid, obj.last_update]
-                for obj in self._get_registered_objects()
+            mapped = [
+                [m['id'], m['name'], m['wcid'], m['last_update']]
+                for m in self.model.mapped()
             ]
         except Exception as e:
             msg = Message(self.ui, Message.ERROR, self.messages[4], str(e))
             msg.show()
         else:
-            self.table.setRecords(objects)
+            self.table.setRecords(mapped)
+        finally:
+            conn.close()
 
     def add(self):
         self.form = RegisterForm(self.ui)
@@ -66,21 +62,17 @@ class ObjectView(object):
             self.form.show()
 
     def show_options(self, subject):
+        conn = connection.get()
+        self.model.set_connection(conn)
         try:
             if subject == self.form.ID:
                 columns = ['ID', 'Name']
                 title = self.messages[1]
-                options = [
-                    [getattr(obj, self.MODEL_ID), getattr(obj, self.MODEL_NAME)]
-                    for obj in self._get_unregistered_moein_objects()
-                ]
+                options = [[um['id'], um['name']] for um in self.model.unmapped()]
             else:
                 columns = ['WCID', 'Name']
                 title = self.messages[0]
-                options = [
-                    [obj[self.WCMODEL_ID], obj[self.WCMODEL_NAME]]
-                    for obj in self._get_unregistered_wc_objects()
-                ]
+                options = [[um['id'], um['name']] for um in self.model.wc_unmapped()]
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
             msg.show()
@@ -91,6 +83,8 @@ class ObjectView(object):
             self.options_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))
             self.options_list.signals.select.connect(lambda item: self.select_option(subject, item))
             self.options_list.show()
+        finally:
+            conn.close()
 
     def select_option(self, subject, item):
         if subject == self.form.ID:
@@ -100,64 +94,98 @@ class ObjectView(object):
         self.options_list.close()
 
     def save(self, index=None):
+        conn = connection.get()
+        self.model.set_connection(conn)
         try:
-            # get moeinid and wcid from form
             moeinid = int(self.form.getId())
             wcid = int(self.form.getWcid())
-            # check moeinid
-            with db.connection() as conn:
-                self.MODEL.connection = conn
-                moein_object = self.MODEL.get(self.MODEL_NAME, **{self.MODEL_ID: moeinid})
-            # check wcid
-            self.WCMODEL.get(wcid)
-            # everything is ok, lets register or update object
-            with db.connection() as conn:
-                self.MAP.connection = conn
-                if index is None:
-                    now = datetime.now()
-                    self.MAP.create({'id': moeinid, 'wcid': wcid, 'last_update': now})
-                else:
-                    record = self.table.getRecord(index)
-                    self.MAP.update({'id': moeinid, 'wcid': wcid}, id=record[0], wcid=record[2])
-                # commit changes
-                conn.commit()
+            if index is None:
+                new_map = self.model.add_map(moeinid, wcid, datetime.now())
+                self.table.addRecord([
+                    new_map['id'],
+                    new_map['name'],
+                    new_map['wcid'],
+                    new_map['last_update']
+                ])
+            else:
+                record = self.table.getRecord(index)
+                edited_map = self.model.edit_map(record[0], moeinid, wcid)
+                self.table.updateRecord(
+                    index,
+                    [edited_map['id'],
+                     edited_map['name'],
+                     edited_map['wcid'],
+                     record[3]]
+                )
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages[14], str(e))
             msg.show()
         else:
-            if index is None:
-                self.table.addRecord([moeinid, getattr(moein_object, self.MODEL_NAME), wcid, now])
-            else:
-                record[0] = moeinid
-                record[1] = getattr(moein_object, self.MODEL_NAME)
-                record[2] = wcid
-                self.table.updateRecord(index, record)
+            conn.commit()
             self.form.close()
             msg = Message(self.ui, Message.SUCCESS, self.messages[15])
             msg.show()
+        finally:
+            conn.close()
 
     def add_all(self, subject):
+        conn = connection.get()
+        self.model.set_connection(conn)
         try:
             if subject == self.form.ID:
-                objects = self._get_unregistered_moein_objects()
-                adder = self._moein_adder
+                unmapped = self.model.unmapped()
+                adder = self.wc_adder
             else:
-                objects = self._get_unregistered_wc_objects()
-                adder = self._wc_adder
+                unmapped = self.model.wc_unmapped()
+                adder = self.moein_adder
         except Exception as e:
             msg = Message(self.options_list, Message.ERROR, self.messages[5], str(e))
             msg.show()
         else:
-            if objects:
-                pd = Progress(self.options_list, self.messages[8], 0, len(objects))
+            if unmapped:
+                pd = Progress(self.options_list, self.messages[8], 0, len(unmapped))
                 pd.show()
-                worker = Worker(adder, objects)
+                worker = Worker(adder, unmapped)
                 worker.signals.progress.connect(pd.setValue)
                 worker.signals.error.connect(pd.close)
                 worker.signals.error.connect(self.add_all_error)
                 worker.signals.done.connect(self.add_all_done)
                 QThreadPool.globalInstance().start(worker)
                 self.options_list.btnAddAll.setDisabled(True)
+        finally:
+            conn.close()
+
+    def moein_adder(self, unmapped, progress_callback):
+        error = None
+        conn = connection.get()
+        self.model.set_connection(conn)
+        try:
+            for i, um in enumerate(unmapped, 1):
+                self.model.import2moein(um)
+                conn.commit()
+                progress_callback.emit(i)
+        except Exception as e:
+            conn.rollback()
+            error = e
+        conn.close()
+        if error:
+            raise error
+
+    def wc_adder(self, unmapped, progress_callback):
+        error = None
+        conn = connection.get()
+        self.model.set_connection(conn)
+        try:
+            for i, um in enumerate(unmapped, 1):
+                self.model.export2wc(um)
+                conn.commit()
+                progress_callback.emit(i)
+        except Exception as e:
+            conn.rollback()
+            error = e
+        conn.close()
+        if error:
+            raise error
 
     def add_all_error(self, error):
         self.options_list.btnAddAll.setEnabled(True)
@@ -170,22 +198,42 @@ class ObjectView(object):
         msg.show()
 
     def update(self):
+        conn = connection.get()
+        self.model.set_connection(conn)
         try:
-            objects = self._get_registered_objects()
+            mapped = self.model.mapped()
         except Exception as e:
             msg = Message(self.ui, Message.ERROR, self.messages[4], str(e))
             msg.show()
         else:
-            if objects:
-                pd = Progress(self.ui, self.messages[9], 0, len(objects))
+            if mapped:
+                pd = Progress(self.ui, self.messages[9], 0, len(mapped))
                 pd.show()
-                worker = Worker(self._updater, objects)
+                worker = Worker(self.updater, mapped)
                 worker.signals.progress.connect(pd.setValue)
                 worker.signals.error.connect(pd.close)
                 worker.signals.error.connect(self.update_error)
                 worker.signals.done.connect(self.update_done)
                 QThreadPool.globalInstance().start(worker)
                 self.tab.btnUpdate.setDisabled(True)
+        finally:
+            conn.close()
+
+    def updater(self, mapped, progress_callback):
+        error = None
+        conn = connection.get()
+        self.model.set_connection(conn)
+        try:
+            for i, m in enumerate(mapped, 1):
+                self.model.wc_mapped_update(m)
+                conn.commit()
+                progress_callback.emit(i)
+        except Exception as e:
+            conn.rollback()
+            error = e
+        conn.close()
+        if error:
+            raise error
 
     def update_error(self, error):
         self.tab.btnUpdate.setEnabled(True)
@@ -205,163 +253,33 @@ class ObjectView(object):
             cfm.show()
 
     def remove_confirm(self, index):
+        conn = connection.get()
+        self.model.set_connection(conn)
         try:
-            # get moeinid
             moeinid = int(self.table.getRecord(index)[0])
-            with db.connection() as conn:
-                self.MAP.connection = conn
-                self.MAP.delete(id=moeinid)
-                conn.commit()
+            self.model.remove_map(moeinid)
         except Exception as e:
             msg = Message(self.ui, Message.ERROR, self.messages[17], str(e))
             msg.show()
         else:
+            conn.commit()
             self.table.removeRecord(index)
             msg = Message(self.ui, Message.SUCCESS, self.messages[18])
             msg.show()
-
-    def _get_registered_objects(self):
-        with db.connection() as conn:
-            self.MODEL.connection = conn
-            registered_objects = self.MODEL.inner_join(
-                self.MAP,
-                self.MODEL_ID, 'id',
-                [], ['wcid', 'last_update', 'update_required']
-            )
-        return registered_objects
-
-    def _get_unregistered_moein_objects(self):
-        with db.connection() as conn:
-            self.MODEL.connection = conn
-            unregistered_objects = self.MODEL.left_outer_join(
-                self.MAP,
-                self.MODEL_ID, 'id',
-                []
-            )
-        return unregistered_objects
-
-    def _get_unregistered_wc_objects(self):
-        with db.connection() as conn:
-            self.MAP.connection = conn
-            ids = [i.wcid for i in self.MAP.all('wcid')]
-        return self.WCMODEL.all(excludes=ids)
-
-    def _wc_adder(self, objects, progress_callback):
-        pass
-
-    def _moein_adder(self, objects, progress_callback):
-        pass
-
-    def _updater(self, objects, progress_callback):
-        pass
+        finally:
+            conn.close()
 
 
 class ProductView(ObjectView):
     """Product View"""
-    MAP = models.ProductMap()
-    MODEL = models.Product()
-    WCMODEL = wc.Product()
-    MESSAGE_SLICE = slice(0, 19)
-
-    def _wc_adder(self, wc_products, progress_callback):
-        with db.connection() as conn:
-            category_map = models.CategoryMap()
-            self.MODEL.connection = self.MAP.connection = category_map.connection = conn
-            for i, wc_product in enumerate(wc_products, 1):
-                wc_category = wc_product['categories'][0]
-                moein_category = category_map.get('id', wcid=wc_category['id'])
-                self.MODEL.create({
-                    'name': wc_product['name'],
-                    'price': wc_product['regular_price'],
-                    'category_id': moein_category.id
-                })
-                self.MAP.create({
-                    'id': self.MODEL.get_max_pk(),
-                    'wcid': wc_product['id'],
-                    'last_update': datetime.now()
-                })
-                conn.commit()
-                progress_callback.emit(i)
-
-    def _moein_adder(self, moein_products, progress_callback):
-        with db.connection() as conn:
-            category_map = models.CategoryMap()
-            self.MAP.connection = category_map.connection = conn
-            for i, moein_product in enumerate(moein_products, 1):
-                wc_category = category_map.get('wcid', id=moein_product.category_id)
-                wc_product = self.WCMODEL.create(
-                    moein_product.name,
-                    str(moein_product.price),
-                    [wc_category.wcid]
-                )
-                self.MAP.create({
-                    'id': moein_product.id,
-                    'wcid': wc_product['id'],
-                    'last_update': datetime.now()
-                })
-                conn.commit()
-                progress_callback.emit(i)
-
-    def _updater(self, moein_products, progress_callback):
-        with db.connection() as conn:
-            self.MAP.connection = conn
-            for i, moein_product in enumerate(moein_products, 1):
-                self.WCMODEL.update(moein_product.wcid, {
-                    'name': moein_product.name,
-                    'regular_price': str(moein_product.price)
-                })
-                self.MAP.update({'last_update': datetime.now()}, id=moein_product.id)
-                conn.commit()
-                progress_callback.emit(i)
+    model = Product()
+    message_slice = slice(0, 19)
 
 
 class CategoryView(ObjectView):
     """Category View"""
-    MAP = models.CategoryMap()
-    MODEL = models.Category()
-    WCMODEL = wc.Category()
-    MESSAGE_SLICE = slice(19, 38)
-
-    def _wc_adder(self, wc_categories, progress_callback):
-        with db.connection() as conn:
-            self.MODEL.connection = self.MAP.connection = conn
-            for i, wc_category in enumerate(wc_categories, 1):
-                self.MODEL.create({
-                    'name': wc_category['name']
-                })
-                self.MAP.create({
-                    'id': self.MODEL.get_max_pk(),
-                    'wcid': wc_category['id'],
-                    'last_update': datetime.now()
-                })
-                conn.commit()
-                progress_callback.emit(i)
-
-    def _moein_adder(self, moein_categories, progress_callback):
-        with db.connection() as conn:
-            self.MAP.connection = conn
-            for i, moein_category in enumerate(moein_categories, 1):
-                wc_category = self.WCMODEL.create(
-                    moein_category.name
-                )
-                self.MAP.create({
-                    'id': moein_category.id,
-                    'wcid': wc_category['id'],
-                    'last_update': datetime.now()
-                })
-                conn.commit()
-                progress_callback.emit(i)
-
-    def _updater(self, moein_categories, progress_callback):
-        with db.connection() as conn:
-            self.MAP.connection = conn
-            for i, moein_category in enumerate(moein_categories, 1):
-                self.WCMODEL.update(moein_category.wcid, {
-                    'name': moein_category.name
-                })
-                self.MAP.update({'last_update': datetime.now()}, id=moein_category.id)
-                conn.commit()
-                progress_callback.emit(i)
+    model = Category()
+    message_slice = slice(19, 38)
 
 
 class WooCommerce(object):
