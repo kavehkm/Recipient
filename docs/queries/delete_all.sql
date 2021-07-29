@@ -1,0 +1,9 @@
+DELETE FROM Category;
+DELETE FROM CategoryMap;
+DELETE FROM Product;
+DELETE FROM ProductMap;
+DELETE FROM Customer WHERE id > 1;
+DELETE FROM CustomerMap;
+DELETE FROM Invoice;
+DELETE FROM InvoiceMap;
+DELETE FROM LineItem;

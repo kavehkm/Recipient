@@ -5,6 +5,10 @@ CREATE TABLE Customer(
 )
 
 
+INSERT INTO Customer(firstname, lastname)
+VALUES ('Guest', 'Customer')
+
+
 CREATE TABLE Category(
     id                  INT                 PRIMARY KEY           IDENTITY,
     name                NVARCHAR(100)       NOT NULL              UNIQUE
@@ -26,7 +30,7 @@ CREATE TABLE Invoice(
 )
 
 
-CREATE TABLE ItemLine(
+CREATE TABLE LineItem(
     invoice_id          INT                 NOT NULL,
     product_id          INT                 NOT NULL,
     quantity            INT                 NOT NULL
