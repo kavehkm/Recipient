@@ -1,12 +1,8 @@
-# standard
-from datetime import datetime
 # internal
-from src import wc
-from src import db
-from src import models
+from src import connection
 from src import settings as s
+from src.new_models import Invoice
 from src.ui.components import Message
-from src.models.errors import DoesNotExistsError
 
 
 class Invoices(object):
@@ -16,24 +12,13 @@ class Invoices(object):
         self._orders = None
         # current order on details
         self._current = dict()
-
-        # wc order model
-        self.wc_order = wc.Order()
-        # moein models
-        self.product = models.Product()
-        self.product_map = models.ProductMap()
-        self.customer = models.Customer()
-        self.customer_map = models.CustomerMap()
-        self.invoice = models.Invoice()
-        self.item_line = models.ItemLine()
-        self.saved_order = models.SavedOrder()
-
+        # invoice model
+        self.invoice = Invoice()
         # ui
         self.ui = ui
         self.tab = ui.contents.invoices
         self.table = self.tab.invoicesTable
         self.details = self.tab.orderDetails
-
         # connect signals
         self.ui.menu.btnInvoices.clicked.connect(self.tab_handler)
         # - tab
@@ -48,83 +33,36 @@ class Invoices(object):
         self.get()
         self.ui.contents.showTab(self.ui.contents.INVOICES)
 
-    @property
-    def settings(self):
-        return s.get('invoices')
-
-    @staticmethod
-    def _firstname(order):
-        return order['billing']['first_name'] or order['shipping']['first_name']
-
-    @staticmethod
-    def _lastname(order):
-        return order['billing']['last_name'] or order['shipping']['last_name']
-
-    @staticmethod
-    def _created_date(order):
-        gmt = datetime.fromisoformat(order['date_created_gmt'])
-        return '{} @ {}'.format(gmt.date().isoformat(), gmt.time().isoformat())
-
-    @staticmethod
-    def _items_total(order):
-        items_total = 0
-        for item in order['line_items']:
-            items_total += int(item['subtotal'])
-        return items_total
-
-    def _order_key(self, order):
-        return '#{} {} {}'.format(order['id'], self._firstname(order), self._lastname(order))
-
-    def _items(self, conn, order):
-        items = []
-        self.product.connection = conn
-        self.product_map.connection = conn
-        for item in order['line_items']:
-            product_id = item['product_id']
-            moein_id = self.product_map.get('id', wcid=product_id).id
-            moein_product = self.product.get('name', id=moein_id)
-            items.append({
-                'id': moein_id,
-                'name': moein_product.name,
-                'price': item['price'],
-                'quantity': item['quantity'],
-                # before discounts
-                'subtotal': item['subtotal'],
-                # after discounts
-                'total': item['total']
-            })
-        return items
-
     def get(self):
         if self._orders is None:
+            conn = connection.get()
+            self.invoice.set_connection(conn)
             try:
-                # find saved order to exclude
-                with db.connection() as conn:
-                    self.saved_order.connection = conn
-                    ids = [order.id for order in self.saved_order.all('id')]
-                raw_orders = self.wc_order.all(
-                    excludes=ids,
-                    status=self.settings['status'],
-                    after=self.settings['after'],
-                    before=self.settings['before']
+                settings = s.get('invoices')
+                raw_orders = self.invoice.orders(
+                    settings['status'],
+                    settings['after'],
+                    settings['before']
                 )
             except Exception as e:
                 msg = Message(self.ui, Message.ERROR, 'Cannot get orders from WooCommerce.', str(e))
                 msg.show()
             else:
-                summary = []
-                self._orders = {}
-                # set up cached orders and summary
+                orders = dict()
+                summary = list()
                 for order in raw_orders:
-                    self._orders[order['number']] = order
-                    summary.insert(0, [
-                        order['id'],
-                        self._order_key(order),
-                        self._created_date(order),
-                        order['status'],
-                        order['total']
-                    ])
+                    orders[order['number']] = order
+                    # generate summary
+                    fname = order['billing']['first_name'] or order['shipping']['first_name']
+                    lname = order['billing']['last_name'] or order['shipping']['last_name']
+                    key = '#{} {} {}'.format(order['id'], fname, lname)
+                    created_date = order['created_date'].strftime('%Y-%m-%d @ %H:%M:%S')
+                    # keep news up: summary.insert(0, ...)
+                    summary.insert(0, [order['id'], key, created_date, order['status'], order['total']])
+                self._orders = orders
                 self.table.setRecords(summary)
+            finally:
+                conn.close()
 
     def refresh(self):
         # clear cache orders and call get method
@@ -134,162 +72,105 @@ class Invoices(object):
     def order_details(self):
         index = self.table.getCurrentRecordIndex()
         if index is not None:
-            try:
-                record = self.table.getRecord(index)
-                order = self._orders[record[0]]
-                # get mapped product as items
-                with db.connection() as conn:
-                    items = self._items(conn, order)
-                # save current order and all relative information for later...
-                self._current['order'] = order
-                self._current['items'] = items
-                self._current['index'] = index
-                # collect details from order
-                details = {
-                    # general
-                    'general': {
-                        'date': self._created_date(order),
-                        'status': order['status'],
-                        'customer': order['customer_id'] or 'Guest',
-                    },
-                    # billing
-                    'billing': {
-                        'firstname': order['billing']['first_name'],
-                        'lastname': order['billing']['last_name'],
-                        'company': order['billing']['company'],
-                        'email': order['billing']['email'],
-                        'phone': order['billing']['phone'],
-                        'country': order['billing']['country'],
-                        'state': order['billing']['state'],
-                        'city': order['billing']['city'],
-                        'postcode': order['billing']['postcode'],
-                        'address1': order['billing']['address_1'],
-                        'address2': order['billing']['address_2'],
-                        'payment': order['payment_method_title'],
-                        'transaction': order['transaction_id']
-                    },
-                    # shipping
-                    'shipping': {
-                        'firstname': order['shipping']['first_name'],
-                        'lastname': order['shipping']['last_name'],
-                        'company': order['shipping']['company'],
-                        'country': order['shipping']['country'],
-                        'state': order['shipping']['state'],
-                        'city': order['shipping']['city'],
-                        'postcode': order['shipping']['postcode'],
-                        'address1': order['shipping']['address_1'],
-                        'address2': order['shipping']['address_2'],
-                        'note': order['customer_note']
-                    },
-                    # totals
-                    'totals': {
-                        'tax': order['total_tax'],
-                        'shipping': order['shipping_total'],
-                        'discount': order['discount_total'],
-                        'order': order['total'],
-                        'items': self._items_total(order)
-                    },
-                    # items
-                    'items': [
-                        [i['id'], i['name'], i['price'], i['quantity'], i['total']]
-                        for i in items
-                    ]
+            record = self.table.getRecord(index)
+            order = self._orders[record[0]]
+            # save current order id and table's index
+            self._current['number'] = order['number']
+            self._current['index'] = index
+            details = {
+                'items': [
+                    [item['id'],
+                     item['name'],
+                     item['price'],
+                     item['quantity'],
+                     item['total']]
+                    for item in order['items']
+                ],
+                'totals': {
+                    'order': order['total'],
+                    'tax': order['total_tax'],
+                    'items': order['items_total'],
+                    'shipping': order['shipping_total'],
+                    'discount': order['discount_total']
+                },
+                'general': {
+                    'status': order['status'],
+                    'customer': order['customer_id'] or 'Guest',
+                    'date': order['created_date'].strftime('%Y-%m-%d @ %H:%M:%S')
+                },
+                'billing': {
+                    'firstname': order['billing']['first_name'],
+                    'lastname': order['billing']['last_name'],
+                    'company': order['billing']['company'],
+                    'email': order['billing']['email'],
+                    'phone': order['billing']['phone'],
+                    'country': order['billing']['country'],
+                    'state': order['billing']['state'],
+                    'city': order['billing']['city'],
+                    'postcode': order['billing']['postcode'],
+                    'address1': order['billing']['address_1'],
+                    'address2': order['billing']['address_2'],
+                    'payment': order['payment_method_title'],
+                    'transaction': order['transaction_id']
+                },
+                'shipping': {
+                    'firstname': order['shipping']['first_name'],
+                    'lastname': order['shipping']['last_name'],
+                    'company': order['shipping']['company'],
+                    'country': order['shipping']['country'],
+                    'state': order['shipping']['state'],
+                    'city': order['shipping']['city'],
+                    'postcode': order['shipping']['postcode'],
+                    'address1': order['shipping']['address_1'],
+                    'address2': order['shipping']['address_2'],
+                    'note': order['customer_note']
                 }
-            except Exception as e:
-                msg = Message(self.ui, Message.ERROR, 'Cannot load order details.', str(e))
-                msg.show()
-            else:
-                self.details.setDetails(details)
-                self.details.show()
+            }
+            self.details.setDetails(details)
+            self.details.show()
 
     def update(self):
         status = self.details.getCurrentStatus()
-        order_id = self._current['order']['number']
         try:
-            self.wc_order.update(order_id, {'status': status})
+            self.invoice.update_order(self._current['number'], {'status': status})
         except Exception as e:
             msg = Message(self.details, Message.ERROR, 'Cannot update order.', str(e))
             msg.show()
         else:
             # update cached orders
-            self._orders[order_id]['status'] = status
-            # update order on details-dialog
+            self._orders[self._current['number']]['status'] = status
+            # update order details dialog
             self.details.changeStatus(status)
-            # update invoices table
+            # update order's summary table
             record = self.table.getRecord(self._current['index'])
             record[3] = status
             self.table.updateRecord(self._current['index'], record)
             msg = Message(self.details, Message.SUCCESS, 'Order updated successfully.')
             msg.show()
 
-    def _saver(self, conn, order, items, index):
-        # set models connection
-        self.customer.connection = conn
-        self.customer_map.connection = conn
-        self.invoice.connection = conn
-        self.item_line.connection = conn
-        self.saved_order.connection = conn
-        # detect customer
-        wc_customer_id = order['customer_id']
-        if wc_customer_id == 0:
-            # customer is guest
-            moein_customer_id = self.settings['guest']
-        else:
-            try:
-                moein_customer = self.customer_map.get('id', wcid=wc_customer_id)
-            except DoesNotExistsError:
-                # customer does not exists, lets create
-                self.customer.create({
-                    'firstname': self._firstname(order),
-                    'lastname': self._lastname(order)
-                })
-                # get created_customer's id
-                moein_customer_id = self.customer.get_max_pk()
-                # map moein-customer with woocommerce-customer
-                self.customer_map.create({
-                    'id': moein_customer_id,
-                    'wcid': wc_customer_id,
-                    'last_update': datetime.now()
-                })
-            else:
-                moein_customer_id = moein_customer.id
-        # create invoice
-        self.invoice.create({
-            'customer_id': moein_customer_id,
-            'created_date': datetime.fromisoformat(order['date_created'])
-        })
-        # get created_invoice's id
-        invoice_id = self.invoice.get_max_pk()
-        # set invoice items
-        for item in items:
-            self.item_line.create({
-                'invoice_id': invoice_id,
-                'product_id': item['id'],
-                'quantity': item['quantity']
-            })
-        # save order
-        self.saved_order.create({
-            'id': order['id'],
-            'invoice_id': invoice_id
-        })
-        # update ui after save
-        # - remove from cached orders
-        del self._orders[order['number']]
-        # - remove from invoices table
-        self.table.removeRecord(index)
-
     def save(self):
+        conn = connection.get()
+        self.invoice.set_connection(conn)
+        order = self._orders[self._current['number']]
         try:
-            with db.connection() as conn:
-                self._saver(conn, self._current['order'], self._current['items'], self._current['index'])
-                conn.commit()
+            self.invoice.save(order)
         except Exception as e:
+            # rollback all changes
+            conn.rollback()
             msg = Message(self.details, Message.ERROR, 'Cannot save order.', str(e))
             msg.show()
         else:
+            # commit all changes
+            conn.commit()
+            # update ui
+            del self._orders[self._current['number']]
+            self.table.removeRecord(self._current['index'])
+            # show success message
             msg = Message(self.details, Message.SUCCESS, 'Order saved successfully.')
             msg.btnOk.clicked.connect(self.details.close)
             msg.show()
+        finally:
+            conn.close()
 
     def save_all(self):
         pass
