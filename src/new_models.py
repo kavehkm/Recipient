@@ -4,6 +4,7 @@ from datetime import datetime
 from src import table
 from src import wc_api
 from src import new_wc
+from src import settings as s
 
 
 class Model(object):
@@ -323,6 +324,12 @@ class Invoice(Model):
         self.cs = table.get('Customer', 'id')
         # customer map table
         self.csm = table.get('CustomerMap', 'id')
+        # product table
+        self.p = table.get('Product', 'id')
+        # product map table
+        self.pm = table.get('ProductMap', 'id')
+        # line-item table
+        self.line_item = table.get('LineItem', 'invoice_id')
         # wc order
         api = wc_api.get()
         self.wco = new_wc.get(api, 'orders')
@@ -334,3 +341,110 @@ class Invoice(Model):
         self.il.set_connection(connection)
         self.cs.set_connection(connection)
         self.csm.set_connection(connection)
+        self.p.set_connection(connection)
+        self.pm.set_connection(connection)
+        self.line_item.set_connection(connection)
+
+    def _items(self, line_items):
+        items = []
+        for item in line_items:
+            moeinid = self.pm.get('id', wcid=item['product_id']).id
+            product = self.p.get('id', 'name', id=moeinid)
+            items.append({
+                'id': product.id,
+                'name': product.name,
+                'price': item['price'],
+                'quantity': item['quantity'],
+                'subtotal': item['subtotal'],
+                'total': item['total']
+            })
+        return items
+
+    def _items_total(self, line_items):
+        total = 0
+        for item in line_items:
+            total += int(item['subtotal'])
+        return total
+
+    def orders(self, status, after, before):
+        orders = []
+        ids = [row.wcid for row in self.im.all('wcid')]
+        rows = self.wco.all(excludes=ids, status=status, after=after, before=before)
+        for row in rows:
+            row['created_date'] = datetime.fromisoformat(row['date_created_gmt'])
+            row['items'] = self._items(row['line_items'])
+            row['items_total'] = self._items_total(row['line_items'])
+            orders.append(row)
+        return orders
+
+    def update_order(self, order_id, data):
+        self.wco.update(order_id, data)
+
+    def saved(self):
+        saved = []
+        rows = self.i.inner_join(
+            self.im,
+            'id',
+            'id',
+            [],
+            ['wcid', 'last_update']
+        )
+        for row in rows:
+            customer = self.cs.get('id', 'firstname', 'lastname', id=row.customer_id)
+            saved.append({
+                'id': row.id,
+                'created_date': row.created_date,
+                'customer_id': customer.id,
+                'customer_firstname': customer.firstname,
+                'customer_lastname': customer.lastname,
+                'order_id': row.wcid,
+                'saved_date': row.last_update
+            })
+        return saved
+
+    def save(self, order):
+        # detect customer
+        wc_customer_id = order['customer_id']
+        if wc_customer_id == 0:
+            # customer is guest
+            # get moein's guest customer id from settings
+            customer_id = s.get('invoices')['guest']
+        else:
+            try:
+                customer_id = self.csm.get('id', wcid=wc_customer_id).id
+            except table.DoesNotExistsError:
+                # customer does not exists, lets create
+                fname = order['billing']['first_name'] or order['shipping']['first_name']
+                lname = order['billing']['last_name'] or order['shipping']['last_name']
+                self.cs.create({
+                    'firstname': fname,
+                    'lastname': lname
+                })
+                customer_id = self.cs.max_pk()
+                self.csm.create({
+                    'id': customer_id,
+                    'wcid': wc_customer_id,
+                    'last_update': datetime.now()
+                })
+        # create invoice
+        self.i.create({
+            'customer_id': customer_id,
+            'created_date': order['created_date']
+        })
+        # get created invoice's id
+        invoice_id = self.i.max_pk()
+        for item in order['items']:
+            self.line_item.create({
+                'invoice_id': invoice_id,
+                'product_id': item['id'],
+                'quantity': item['quantity']
+            })
+        # map invoice to wc_order
+        self.im.create({
+            'id': invoice_id,
+            'wcid': order['id'],
+            'last_update': datetime.now()
+        })
+
+    def remove(self, order_id):
+        pass
