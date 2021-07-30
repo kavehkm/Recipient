@@ -1,4 +1,5 @@
-from .db import *
-from .models import *
 from .settings import *
+from .connection import *
+from .table import *
 from .wc import *
+from .wc_api import *

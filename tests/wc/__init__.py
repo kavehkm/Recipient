@@ -1,1 +1,1 @@
-from .tests import TestAPI, TestWCBaseModel
+from .tests import TestWC

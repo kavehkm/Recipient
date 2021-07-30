@@ -39,6 +39,7 @@ class TestConnection(unittest.TestCase):
             conn = connection.get(**invalid_credentials)
             cursor = conn.cursor()
             cursor.execute("SELECT @@VERSION")
+        self.assertIsInstance(cm.exception, pyodbc.Error)
         # call rollback, commit and close on None must be safe
         conn.rollback()
         conn.commit()

@@ -4,7 +4,7 @@ from datetime import datetime
 from src import messages
 from src import connection
 from src.worker import Worker
-from src.new_models import Category, Product
+from src.models import Category, Product
 from src.ui.windows import RegisterForm, OptionsList
 from src.ui.components import Message, Confirm, Progress
 # pyqt

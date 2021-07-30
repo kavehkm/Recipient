@@ -1,7 +1,7 @@
 # internal
 from src import connection
 from src import settings as s
-from src.new_models import Invoice
+from src.models import Invoice
 from src.ui.components import Message
 
 
@@ -10,7 +10,7 @@ class Invoices(object):
     def __init__(self, ui):
         # cached orders
         self._orders = None
-        # current order on details
+        # current
         self._current = dict()
         # invoice model
         self.invoice = Invoice()
@@ -57,10 +57,15 @@ class Invoices(object):
                     lname = order['billing']['last_name'] or order['shipping']['last_name']
                     key = '#{} {} {}'.format(order['id'], fname, lname)
                     created_date = order['created_date'].strftime('%Y-%m-%d @ %H:%M:%S')
-                    # keep news up: summary.insert(0, ...)
-                    summary.insert(0, [order['id'], key, created_date, order['status'], order['total']])
+                    summary.append([
+                        order['id'],
+                        key,
+                        created_date,
+                        order['status'],
+                        order['total']
+                    ])
                 self._orders = orders
-                self.table.setRecords(summary)
+                self.table.setRecords(reversed(summary))
             finally:
                 conn.close()
 

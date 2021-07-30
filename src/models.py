@@ -3,7 +3,7 @@ from datetime import datetime
 # internal
 from src import table
 from src import wc_api
-from src import new_wc
+from src import wc
 from src import settings as s
 
 
@@ -61,7 +61,7 @@ class Product(Mappable):
         self.cm = table.get('CategoryMap', 'id')
         # wc product
         api = wc_api.get()
-        self.wcp = new_wc.get(api, 'products')
+        self.wcp = wc.get(api, 'products')
 
     def set_connection(self, connection):
         super().set_connection(connection)
@@ -200,7 +200,7 @@ class Category(Mappable):
         self.cm = table.get('CategoryMap', 'id')
         # wc category
         api = wc_api.get()
-        self.wcc = new_wc.get(api, 'products/categories')
+        self.wcc = wc.get(api, 'products/categories')
 
     def set_connection(self, connection):
         super().set_connection(connection)
@@ -332,7 +332,7 @@ class Invoice(Model):
         self.line_item = table.get('LineItem', 'invoice_id')
         # wc order
         api = wc_api.get()
-        self.wco = new_wc.get(api, 'orders')
+        self.wco = wc.get(api, 'orders')
 
     def set_connection(self, connection):
         super().set_connection(connection)
