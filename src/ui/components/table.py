@@ -67,3 +67,7 @@ class Table(QTableWidget):
         self.removeAllRecords()
         for record in records:
             self.addRecord(record)
+
+    def findRecord(self, value):
+        items = self.findItems(str(value), Qt.Qt.MatchExactly)
+        return items[0].row() if items else None
