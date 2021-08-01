@@ -1,5 +1,6 @@
 # internal
 from src.ui.resources import icons
+from .save_all import SaveAllReport
 from .order_details import OrderDetails
 from src.ui.components import BaseWidget, Table
 # pyqt
@@ -172,6 +173,8 @@ class InvoicesTab(BaseTab):
         self.generalLayout.addLayout(controlLayout)
         # attach order details dialog
         self.orderDetails = OrderDetails(self)
+        # attach save all report dialog
+        self.saveAllReport = SaveAllReport(self)
 
     def setStyles(self):
         self.setStyleSheet("""

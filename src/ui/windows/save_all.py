@@ -1,26 +1,7 @@
 # internal
-from src.ui.components import BaseWidget, BaseDialog
+from src.ui.components import BaseDialog, Table
 # pyqt
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QWidget, QScrollArea, QHBoxLayout, QVBoxLayout, QLabel, QPushButton)
-
-
-class OrderWidget(BaseWidget):
-    """Order Widget"""
-    def __init__(self, order_id, firstname, lastname, date, total, status):
-        self.order_id = order_id
-        self.firstname = firstname
-        self.lastname = lastname
-        self.date = date
-        self.total = total
-        self.status = status
-        super().__init__()
-
-    def setupWidget(self):
-        pass
-
-    def setStyles(self):
-        pass
+from PyQt5.QtWidgets import QPushButton
 
 
 class SaveAllReport(BaseDialog):
@@ -38,31 +19,43 @@ class SaveAllReport(BaseDialog):
         self.setMinimumSize(700, 437)
 
     def setupDialog(self):
-        # scrollable area
-        self.scrollableArea = QScrollArea()
-        self.scrollableArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scrollableArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scrollableArea.setWidgetResizable(True)
-        self.dialogLayout.addWidget(self.scrollableArea)
-        # widget
-        self.widget = QWidget(objectName='MainWidget')
-        self.scrollableArea.setWidget(self.widget)
-        # orders layout
-        self.ordersLayout = QVBoxLayout()
-        self.widget.setLayout(self.ordersLayout)
+        # orders table
+        self.ordersTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'])
+        self.dialogLayout.addWidget(self.ordersTable)
 
     def setupControl(self):
-        pass
+        # save button
+        self.btnConfirm = QPushButton('Confirm')
+        self.controlLayout.addWidget(self.btnConfirm)
+        # cancel button
+        self.btnCancel = QPushButton('Cancel')
+        self.controlLayout.addWidget(self.btnCancel)
 
     def setStyles(self):
         self.setStyleSheet("""
-            QScrollArea{
-                border: none;
-            }
-            #MainWidget{
-                background-color: white;
+            QPushButton{
+                min-height: 25px;
             }
         """)
 
+    def connectSignals(self):
+        self.btnCancel.clicked.connect(self.close)
+
     def setOrders(self, orders):
-        pass
+        # remove old orders
+        self._orders = dict()
+        self.ordersTable.removeAllRecords()
+        # set new orders
+        for index, order in enumerate(orders):
+            firstname = order['billing']['first_name'] or order['shipping']['first_name']
+            lastname = order['billing']['last_name'] or order['shipping']['last_name']
+            key = '#{} {} {}'.format(order['id'], firstname, lastname)
+            record = [
+                order['id'],
+                key,
+                order['created_date'].strftime('%Y-%m-%d @ %H:%M'),
+                order['status'],
+                order['total']
+            ]
+            self.ordersTable.addRecord(record, index)
+            self._orders[order['number']] = index

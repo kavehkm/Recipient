@@ -49,9 +49,9 @@ class Table(QTableWidget):
         for colIndex, item in enumerate(items, 0):
             self.setItem(rowIndex, colIndex, QTableWidgetItem(str(item)))
 
-    def addRecord(self, record):
-        self.insertRow(0)
-        self._fillRow(0, record)
+    def addRecord(self, record, recordIndex=0):
+        self.insertRow(recordIndex)
+        self._fillRow(recordIndex, record)
 
     def updateRecord(self, recordIndex, newItems):
         self._fillRow(recordIndex, newItems)
@@ -71,3 +71,7 @@ class Table(QTableWidget):
     def findRecord(self, value):
         items = self.findItems(str(value), Qt.Qt.MatchExactly)
         return items[0].row() if items else None
+
+    def highlightRecord(self, recordIndex, qColor):
+        for colIndex in range(len(self.columns)):
+            self.item(recordIndex, colIndex).setBackground(qColor)

@@ -19,6 +19,7 @@ class Invoices(object):
         self.tab = ui.contents.invoices
         self.table = self.tab.invoicesTable
         self.details = self.tab.orderDetails
+        self.report = self.tab.saveAllReport
         # connect signals
         self.ui.menu.btnInvoices.clicked.connect(self.tab_handler)
         # - tab
@@ -28,6 +29,9 @@ class Invoices(object):
         # - details
         self.details.btnUpdate.clicked.connect(self.update)
         self.details.btnSave.clicked.connect(self.save)
+        # - report
+        self.report.btnConfirm.clicked.connect(self.save_all_confirm)
+        self.report.btnCancel.clicked.connect(self.save_all_cancel)
 
     def tab_handler(self):
         self.get()
@@ -178,4 +182,15 @@ class Invoices(object):
             conn.close()
 
     def save_all(self):
-        pass
+        completed_orders = list()
+        for order in self._orders.values():
+            if order['status'] == 'completed':
+                completed_orders.append(order)
+        self.report.setOrders(completed_orders)
+        self.report.show()
+
+    def save_all_confirm(self):
+        print('confirmed')
+
+    def save_all_cancel(self):
+        print('cancelled')
