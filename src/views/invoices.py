@@ -2,7 +2,7 @@
 from src import connection
 from src import settings as s
 from src.models import Invoice
-from src.ui.components import Message
+from src.ui.components import Message, Confirm
 
 
 class Invoices(object):
@@ -19,7 +19,6 @@ class Invoices(object):
         self.tab = ui.contents.invoices
         self.table = self.tab.invoicesTable
         self.details = self.tab.orderDetails
-        self.report = self.tab.saveAllReport
         # connect signals
         self.ui.menu.btnInvoices.clicked.connect(self.tab_handler)
         # - tab
@@ -29,9 +28,6 @@ class Invoices(object):
         # - details
         self.details.btnUpdate.clicked.connect(self.update)
         self.details.btnSave.clicked.connect(self.save)
-        # - report
-        self.report.btnConfirm.clicked.connect(self.save_all_confirm)
-        self.report.btnCancel.clicked.connect(self.save_all_cancel)
 
     def tab_handler(self):
         self.get()
@@ -182,15 +178,52 @@ class Invoices(object):
             conn.close()
 
     def save_all(self):
-        completed_orders = list()
-        for order in self._orders.values():
-            if order['status'] == 'completed':
-                completed_orders.append(order)
-        self.report.setOrders(completed_orders)
-        self.report.show()
+        if self._orders is not None:
+            completed = list()
+            for order in self._orders.values():
+                if order['status'] == 'completed':
+                    completed.append(order)
+            if completed:
+                # cache completed orders
+                self._current['completed'] = completed
+                # create confirm dialog
+                plural = 's' if len(completed) > 1 else ''
+                details = '{} order{} will be save.'.format(len(completed), plural)
+                confirm = Confirm(self.ui, Confirm.WARNING, 'Are you sure?', details)
+                confirm.btnOk.clicked.connect(self.save_all_confirm)
+                confirm.show()
+            else:
+                msg = Message(self.ui, Message.ERROR, 'Order with completed status not found.')
+                msg.show()
 
     def save_all_confirm(self):
-        print('confirmed')
-
-    def save_all_cancel(self):
-        print('cancelled')
+        # track number of saved and failed
+        saved = 0
+        failed = 0
+        # create and set connection
+        conn = connection.get()
+        self.invoice.set_connection(conn)
+        for order in self._current['completed']:
+            order_number = order['number']
+            try:
+                self.invoice.save(order)
+            except Exception as e:
+                # rollback changes
+                conn.rollback()
+                failed += 1
+            else:
+                # commit changes
+                conn.commit()
+                saved += 1
+                # remove from cached orders
+                del self._orders[order_number]
+                # remove from orders table
+                index = self.table.findRecord(order_number)
+                if index is not None:
+                    self.table.removeRecord(index)
+        # close connection
+        conn.close()
+        # create report
+        details = 'Saved orders: {}\nFailed: {}'.format(saved, failed)
+        report = Message(self.ui, Message.INFO, 'Save process completed.', details)
+        report.show()
