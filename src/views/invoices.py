@@ -17,20 +17,29 @@ class Invoices(object):
         # ui
         self.ui = ui
         self.tab = ui.contents.invoices
-        self.table = self.tab.invoicesTable
+        self.orders_table = self.tab.ordersTable
+        self.invoices_table = self.tab.invoicesTable
         self.details = self.tab.orderDetails
         # connect signals
         self.ui.menu.btnInvoices.clicked.connect(self.tab_handler)
-        # - tab
+        self.tab.tabs.currentChanged.connect(self.tab_handler)
+        # - orders tab
         self.tab.btnRefresh.clicked.connect(self.refresh)
         self.tab.btnSaveAll.clicked.connect(self.save_all)
-        self.table.itemDoubleClicked.connect(self.order_details)
+        self.orders_table.itemDoubleClicked.connect(self.order_details)
+        # - invoices tab
+        self.tab.btnRemove.clicked.connect(self.remove)
         # - details
         self.details.btnUpdate.clicked.connect(self.update)
         self.details.btnSave.clicked.connect(self.save)
 
     def tab_handler(self):
-        self.get()
+        # find current tab const
+        index = self.tab.tabs.currentIndex()
+        if index == self.tab.ORDERS:
+            self.get()
+        else:
+            self.get_saved()
         self.ui.contents.showTab(self.ui.contents.INVOICES)
 
     def get(self):
@@ -65,7 +74,7 @@ class Invoices(object):
                         order['total']
                     ])
                 self._orders = orders
-                self.table.setRecords(reversed(summary))
+                self.orders_table.setRecords(reversed(summary))
             finally:
                 conn.close()
 
@@ -75,9 +84,9 @@ class Invoices(object):
         self.get()
 
     def order_details(self):
-        index = self.table.getCurrentRecordIndex()
+        index = self.orders_table.getCurrentRecordIndex()
         if index is not None:
-            record = self.table.getRecord(index)
+            record = self.orders_table.getRecord(index)
             order = self._orders[record[0]]
             # save current order id and table's index
             self._current['number'] = order['number']
@@ -147,9 +156,9 @@ class Invoices(object):
             # update order details dialog
             self.details.changeStatus(status)
             # update order's summary table
-            record = self.table.getRecord(self._current['index'])
+            record = self.orders_table.getRecord(self._current['index'])
             record[3] = status
-            self.table.updateRecord(self._current['index'], record)
+            self.orders_table.updateRecord(self._current['index'], record)
             msg = Message(self.details, Message.SUCCESS, 'Order updated successfully.')
             msg.show()
 
@@ -169,7 +178,7 @@ class Invoices(object):
             conn.commit()
             # update ui
             del self._orders[self._current['number']]
-            self.table.removeRecord(self._current['index'])
+            self.orders_table.removeRecord(self._current['index'])
             # show success message
             msg = Message(self.details, Message.SUCCESS, 'Order saved successfully.')
             msg.btnOk.clicked.connect(self.details.close)
@@ -210,9 +219,9 @@ class Invoices(object):
                 saves += 1
                 # remove saved order from cached orders
                 del self._orders[order_number]
-                index = self.table.findRecord(order_number)
+                index = self.orders_table.findRecord(order_number)
                 if index is not None:
-                    self.table.removeRecord(index)
+                    self.orders_table.removeRecord(index)
         except Exception as e:
             conn.rollback()
             message = 'Save progress interrupt by order #{}.'.format(order_number)
@@ -225,3 +234,13 @@ class Invoices(object):
             msg.show()
         finally:
             conn.close()
+
+    def get_saved(self):
+        self.invoices_table.setRecords([
+            ['1', '1 Good Customer1', '100', '2021/08/01'],
+            ['2', '2 Good Customer2', '200', '2021/08/02'],
+            ['3', '3 Good Customer3', '300', '2021/08/03'],
+        ])
+
+    def remove(self):
+        print('removing...')

@@ -158,28 +158,59 @@ class StatusTab(BaseTab):
 
 class InvoicesTab(BaseTab):
     """Invoices Tab"""
+    # tabs
+    ORDERS = 0
+    INVOICES = 1
+
     def setupWidget(self):
-        # table
-        self.invoicesTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'])
-        self.generalLayout.addWidget(self.invoicesTable)
+        # tabs
+        self.tabs = QTabWidget()
+        self.generalLayout.addWidget(self.tabs)
+        # - orders
+        self.ordersTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'])
+        self.tabs.addTab(self.ordersTable, 'Orders')
+        # - invoices
+        self.invoicesTable = Table(['ID', 'Customer', 'OrderID', 'SavedDate'])
+        self.tabs.addTab(self.invoicesTable, 'Invoices')
         # controls
-        controlLayout = QHBoxLayout()
-        controlLayout.addStretch(1)
+        self.controlLayout = QHBoxLayout()
+        self.controlLayout.addStretch(1)
+        self.generalLayout.addLayout(self.controlLayout)
         self.btnRefresh = QPushButton('Refresh')
         self.btnSaveAll = QPushButton('Save all')
-        controlLayout.addWidget(self.btnRefresh)
-        controlLayout.addWidget(self.btnSaveAll)
-        self.generalLayout.addLayout(controlLayout)
+        self.btnRemove = QPushButton('Remove')
+        self.btnRemove.setHidden(True)
+        self.controlLayout.addWidget(self.btnRefresh)
+        self.controlLayout.addWidget(self.btnSaveAll)
+        self.controlLayout.addWidget(self.btnRemove)
+
         # attach order details dialog
         self.orderDetails = OrderDetails(self)
 
     def setStyles(self):
         self.setStyleSheet("""
+            QTabBar::tab{
+                min-height: 10ex;
+                min-width: 30ex;
+            }
             QPushButton{
                 height: 25px;
                 width: 80px;
             }
         """)
+
+    def connectSignals(self):
+        self.tabs.currentChanged.connect(self.tabHandler)
+
+    def tabHandler(self, index):
+        if index == self.ORDERS:
+            self.btnRemove.setHidden(True)
+            self.btnRefresh.setHidden(False)
+            self.btnSaveAll.setHidden(False)
+        else:
+            self.btnRemove.setHidden(False)
+            self.btnRefresh.setHidden(True)
+            self.btnSaveAll.setHidden(True)
 
 
 class WooCommerceTab(BaseTab):
