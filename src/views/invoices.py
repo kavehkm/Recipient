@@ -197,33 +197,31 @@ class Invoices(object):
                 msg.show()
 
     def save_all_confirm(self):
-        # track number of saved and failed
-        saved = 0
-        failed = 0
-        # create and set connection
+        # keep track of saves
+        saves = 0
         conn = connection.get()
         self.invoice.set_connection(conn)
-        for order in self._current['completed']:
-            order_number = order['number']
-            try:
+        try:
+            for order in self._current['completed']:
+                order_number = order['number']
                 self.invoice.save(order)
-            except Exception as e:
-                # rollback changes
-                conn.rollback()
-                failed += 1
-            else:
-                # commit changes
+                # commit changes and increase saves number
                 conn.commit()
-                saved += 1
-                # remove from cached orders
+                saves += 1
+                # remove saved order from cached orders
                 del self._orders[order_number]
-                # remove from orders table
                 index = self.table.findRecord(order_number)
                 if index is not None:
                     self.table.removeRecord(index)
-        # close connection
-        conn.close()
-        # create report
-        details = 'Saved orders: {}\nFailed: {}'.format(saved, failed)
-        report = Message(self.ui, Message.INFO, 'Save process completed.', details)
-        report.show()
+        except Exception as e:
+            conn.rollback()
+            message = 'Save progress interrupt by order #{}.'.format(order_number)
+            msg = Message(self.ui, Message.ERROR, message, str(e))
+            msg.show()
+        else:
+            plural = 's' if saves > 1 else ''
+            message = '{} order{} saved successfully.'.format(saves, plural)
+            msg = Message(self.ui, Message.SUCCESS, message)
+            msg.show()
+        finally:
+            conn.close()
