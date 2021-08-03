@@ -76,11 +76,17 @@ class WC(object):
         return self._request('get', self._endpoint(wcid), None)
 
     def all(self, **params):
+        results = []
+        # paging
         page = 1
         per_page = 100
-        results = []
         params['per_page'] = per_page
+        # excludes
         excludes = params.pop('excludes', [])
+        # order status
+        status = params.pop('status', None)
+        if status:
+            params['status'] = ','.join(status)
         while True:
             params['page'] = page
             objects = self._request('get', self.endpoint, None, params)
