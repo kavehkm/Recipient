@@ -236,11 +236,44 @@ class Invoices(object):
             conn.close()
 
     def get_saved(self):
-        self.invoices_table.setRecords([
-            ['1', '1 Good Customer1', '100', '2021/08/01'],
-            ['2', '2 Good Customer2', '200', '2021/08/02'],
-            ['3', '3 Good Customer3', '300', '2021/08/03'],
-        ])
+        conn = connection.get()
+        self.invoice.set_connection(conn)
+        try:
+            saved = self.invoice.saved()
+        except Exception as e:
+            msg = Message(self.ui, Message.ERROR, 'Cannot load saved invoices.', str(e))
+            msg.show()
+        else:
+            records = []
+            for invoice in saved:
+                cid = invoice['customer_id']
+                cfname = invoice['customer_firstname']
+                clname = invoice['customer_lastname']
+                records.append([
+                    invoice['id'],
+                    '{} {} {}'.format(cid, cfname, clname),
+                    invoice['order_id'],
+                    invoice['saved_date'].strftime('%Y-%m-%d @ %H:%M:%S')
+                ])
+            self.invoices_table.setRecords(records)
+        finally:
+            conn.close()
 
     def remove(self):
-        print('removing...')
+        index = self.invoices_table.getCurrentRecordIndex()
+        if index is not None:
+            conn = connection.get()
+            self.invoice.set_connection(conn)
+            try:
+                record = self.invoices_table.getRecord(index)
+                self.invoice.remove(record[2])
+            except Exception as e:
+                conn.rollback()
+                msg = Message(self.ui, Message.ERROR, 'Cannot remove invoice.', str(e))
+                msg.show()
+            else:
+                conn.commit()
+                # update ui
+                self.invoices_table.removeRecord(index)
+            finally:
+                conn.close()

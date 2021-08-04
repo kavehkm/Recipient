@@ -447,4 +447,11 @@ class Invoice(Model):
         })
 
     def remove(self, order_id):
-        pass
+        # find invoice id
+        invoice_id = self.im.get('id', wcid=order_id).id
+        # remove related items to invoice
+        self.line_item.delete(invoice_id=invoice_id)
+        # remove invoice
+        self.i.delete(id=invoice_id)
+        # remove map
+        self.im.delete(id=invoice_id)
