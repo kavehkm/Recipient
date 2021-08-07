@@ -3,9 +3,12 @@ import time
 import random
 from threading import Event
 # internal
+from src import settings as s
+from src.wc import ConnectionsError
 from src.ui.components import Message
+from src.worker import NetworkChecker
 # pyqt
-from PyQt5.QtCore import QThread, QObject, pyqtSignal
+from PyQt5.QtCore import QThread, QObject, pyqtSignal, QThreadPool
 
 
 class RecipientEngineSignals(QObject):
@@ -23,11 +26,12 @@ class RecipientEngine(QThread):
         self.stop_event = Event()
         # - resume
         self.resume_event = Event()
-        self.resume_event.set()
         # signals
         self.signals = RecipientEngineSignals()
 
     def start(self):
+        # set resume event
+        self.resume_event.set()
         # clear stop event
         self.stop_event.clear()
         super().start()
@@ -39,18 +43,20 @@ class RecipientEngine(QThread):
         self.resume_event.set()
 
     def stop(self):
-        # set resume event
-        self.resume_event.set()
         # set stop event
         self.stop_event.set()
         self.quit()
+        # set resume event
+        self.resume_event.set()
 
     def _do(self):
         time.sleep(2)
         random_int = random.randint(1, 1000)
         print(random_int)
-        if random_int > 700:
-            raise Exception('some many tears')
+        if random_int < 300:
+            raise ConnectionsError()
+        elif random_int > 800:
+            raise Exception('So many tears')
 
     def run(self):
         # do-while(stop_event is not set)
@@ -97,6 +103,23 @@ class Status(object):
         self.engine.stop()
 
     def engine_error_handle(self, error):
-        msg = Message(self.ui, Message.ERROR, 'Error', str(error))
-        msg.show()
-        self.engine.stop()
+        if isinstance(error, ConnectionsError):
+            # put tab state on connecting...
+            self.tab.connecting()
+            # create network checker
+            nc = NetworkChecker(s.IP, s.PORT, s.TIMEOUT, s.INTERVAL, s.JITTER)
+            # connect signals
+            nc.signals.connected.connect(self.nc_connected_handler)
+            nc.signals.tik.connect(self.tab.connecting_count)
+            # move to thread pool and start
+            QThreadPool.globalInstance().start(nc)
+        else:
+            self.engine.stop()
+            msg = Message(self.ui, Message.ERROR, 'Engine stop working.', str(error))
+            msg.show()
+
+    def nc_connected_handler(self):
+        # put tab state on start
+        self.tab.start()
+        # resume engine
+        self.engine.resume()

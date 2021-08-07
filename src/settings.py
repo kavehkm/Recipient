@@ -28,6 +28,13 @@ APP_NAME = 'recipient'
 APP_VERSION = 1.0
 APP_AUTHOR = 'Kaveh Mehrbanian'
 
+# network check settings
+IP = '1.1.1.1'
+PORT = 53
+TIMEOUT = 3
+INTERVAL = 3
+JITTER = 1
+
 # woocommerce settings
 WC_URL = ''
 WC_CONSUMER_KEY = ''

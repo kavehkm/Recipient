@@ -155,6 +155,9 @@ class StatusTab(BaseTab):
         self.serviceFrame.setProperty('state', 'connecting')
         self.serviceFrame.setStyleSheet(self.serviceFrame.styleSheet())
 
+    def connecting_count(self, counter):
+        self.serviceStateVal.setText('Connecting after {} seconds...'.format(counter))
+
 
 class InvoicesTab(BaseTab):
     """Invoices Tab"""
