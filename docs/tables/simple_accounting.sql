@@ -11,7 +11,8 @@ VALUES ('Guest', 'Customer')
 
 CREATE TABLE Category(
     id                  INT                 PRIMARY KEY           IDENTITY,
-    name                NVARCHAR(100)       NOT NULL              UNIQUE
+    name                NVARCHAR(100)       NOT NULL              UNIQUE,
+    parent              INT
 )
 
 
