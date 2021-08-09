@@ -222,12 +222,6 @@ class Category(Mappable):
             }
         return self.hierarchy_name(parent) + '___' + category['name'] if parent else category['name']
 
-    def hierarchify(self, categories):
-        for category in categories:
-            category['_name'] = category['name']
-            category['name'] = self.hierarchy_name(category)
-        categories.sort(key=lambda c: c['parent'] or 0)
-
     def wc_hierarchy_name(self, category, categories):
         if not category['parent']:
             return category['name']
@@ -238,10 +232,13 @@ class Category(Mappable):
                 break
         return self.wc_hierarchy_name(parent, categories) + '___' + category['name'] if parent else category['name']
 
-    def wc_hierarchify(self, categories):
+    def hierarchify(self, categories, woocommerce=False):
         for category in categories:
             category['_name'] = category['name']
-            category['name'] = self.wc_hierarchy_name(category, categories)
+            if woocommerce:
+                category['name'] = self.wc_hierarchy_name(category, categories)
+            else:
+                category['name'] = self.hierarchy_name(category)
         categories.sort(key=lambda c: c['parent'] or 0)
 
     def mapped(self):
@@ -292,21 +289,34 @@ class Category(Mappable):
         unmapped = []
         ids = [row.wcid for row in self.cm.all('wcid')]
         categories = self.wcc.all()
-        self.wc_hierarchify(categories)
+        self.hierarchify(categories, woocommerce=True)
         for category in categories:
             if category['id'] not in ids:
                 unmapped.append(category)
         return unmapped
 
     def wc_mapped_update(self, mapped):
-        self.wcc.update(mapped['wcid'], {
-            'name': mapped['name']
-        })
+        data = {
+            'name': mapped['_name']
+        }
+        if mapped['parent']:
+            try:
+                row = self.cm.get('wcid', id=mapped['parent'])
+            except table.DoesNotExistsError:
+                pass
+            else:
+                data['parent'] = row.wcid
+        self.wcc.update(mapped['wcid'], data)
         self.cm.update({'last_update': datetime.now()}, id=mapped['id'])
 
     def add_map(self, moeinid, wcid, last_update):
         # check moeinid
-        category = self.c.get('id', 'name', id=moeinid)
+        row = self.c.get('id', 'name', 'parent', id=moeinid)
+        category = {
+            'id': row.id,
+            'name': row.name,
+            'parent': row.parent
+        }
         # check wcid
         self.wcc.get(wcid)
         fields = {
@@ -315,12 +325,17 @@ class Category(Mappable):
             'last_update': last_update
         }
         self.cm.create(fields)
-        fields['name'] = category.name
+        fields['name'] = self.hierarchy_name(category)
         return fields
 
     def edit_map(self, moeinid, new_moeinid, new_wcid):
         # check moeinid
-        category = self.c.get('id', 'name', id=new_moeinid)
+        row = self.c.get('id', 'name', 'parent', id=new_moeinid)
+        category = {
+            'id': row.id,
+            'name': row.name,
+            'parent': row.parent
+        }
         # check wcid
         self.wcc.get(new_wcid)
         fields = {
@@ -328,7 +343,7 @@ class Category(Mappable):
             'wcid': new_wcid
         }
         self.cm.update(fields, id=moeinid)
-        fields['name'] = category.name
+        fields['name'] = self.hierarchy_name(category)
         return fields
 
     def remove_map(self, moeinid):
@@ -336,9 +351,14 @@ class Category(Mappable):
         self.cm.delete(id=moeinid)
 
     def export2wc(self, category):
+        if category['parent']:
+            row = self.cm.get('wcid', id=category['parent'])
+            parent_id = row.wcid
+        else:
+            parent_id = 0
         wc_category = self.wcc.create({
-            'parent': 0,
-            'name': category['name']
+            'name': category['_name'],
+            'parent': parent_id
         })
         self.cm.create({
             'id': category['id'],
