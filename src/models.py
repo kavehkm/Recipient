@@ -207,6 +207,43 @@ class Category(Mappable):
         self.c.set_connection(connection)
         self.cm.set_connection(connection)
 
+    def hierarchy_name(self, category):
+        if not category['parent']:
+            return category['name']
+        try:
+            row = self.c.get('id', 'name', 'parent', id=category['parent'])
+        except table.DoesNotExistsError:
+            parent = None
+        else:
+            parent = {
+                'id': row.id,
+                'name': row.name,
+                'parent': row.parent
+            }
+        return self.hierarchy_name(parent) + '___' + category['name'] if parent else category['name']
+
+    def hierarchify(self, categories):
+        for category in categories:
+            category['_name'] = category['name']
+            category['name'] = self.hierarchy_name(category)
+        categories.sort(key=lambda c: c['parent'] or 0)
+
+    def wc_hierarchy_name(self, category, categories):
+        if not category['parent']:
+            return category['name']
+        parent = None
+        for cat in categories:
+            if cat['id'] == category['parent']:
+                parent = cat
+                break
+        return self.wc_hierarchy_name(parent, categories) + '___' + category['name'] if parent else category['name']
+
+    def wc_hierarchify(self, categories):
+        for category in categories:
+            category['_name'] = category['name']
+            category['name'] = self.wc_hierarchy_name(category, categories)
+        categories.sort(key=lambda c: c['parent'] or 0)
+
     def mapped(self):
         mapped = []
         rows = self.c.inner_join(
@@ -220,10 +257,12 @@ class Category(Mappable):
             mapped.append({
                 'id': row.id,
                 'name': row.name,
+                'parent': row.parent,
                 'wcid': row.wcid,
                 'last_update': row.last_update,
                 'update_required': row.update_required
             })
+        self.hierarchify(mapped)
         return mapped
 
     def unmapped(self):
@@ -237,8 +276,10 @@ class Category(Mappable):
         for row in rows:
             unmapped.append({
                 'id': row.id,
-                'name': row.name
+                'name': row.name,
+                'parent': row.parent
             })
+        self.hierarchify(unmapped)
         return unmapped
 
     def wc_mapped(self):
@@ -248,8 +289,14 @@ class Category(Mappable):
         ]
 
     def wc_unmapped(self):
+        unmapped = []
         ids = [row.wcid for row in self.cm.all('wcid')]
-        return self.wcc.all(excludes=ids)
+        categories = self.wcc.all()
+        self.wc_hierarchify(categories)
+        for category in categories:
+            if category['id'] not in ids:
+                unmapped.append(category)
+        return unmapped
 
     def wc_mapped_update(self, mapped):
         self.wcc.update(mapped['wcid'], {
@@ -300,8 +347,14 @@ class Category(Mappable):
         })
 
     def import2moein(self, wc_category):
+        if wc_category['parent']:
+            row = self.cm.get('id', wcid=wc_category['parent'])
+            parent_id = row.id
+        else:
+            parent_id = None
         self.c.create({
-            'name': wc_category['name']
+            'name': wc_category['_name'],
+            'parent': parent_id
         })
         self.cm.create({
             'id': self.c.max_pk(),
