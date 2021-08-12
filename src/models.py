@@ -7,11 +7,17 @@ from src import wc_api
 from src import settings as s
 
 
+##############
+# Exceptions #
+##############
 class DoesNotExists(Exception):
     """Does Not Exists Exception"""
     pass
 
 
+##############
+# Base Model #
+##############
 class Model(object):
     """Recipient Model"""
     def __init__(self):
@@ -20,15 +26,94 @@ class Model(object):
     def set_connection(self, connection):
         self._connection = connection
 
-    def max(self, table_name, column):
-        sql = "SELECT MAX({}) FROM {}".format(column, table_name)
+    def execute(self, sql, parameters=(), method=None):
+        results = None
         cursor = self._connection.cursor()
-        cursor.execute(sql)
-        m = cursor.fetchval()
+        cursor.execute(sql, parameters)
+        if method:
+            results = getattr(cursor, method)()
         cursor.close()
-        return m
+        return results
+
+    def max(self, table, column):
+        sql = 'SELECT MAX({}) FROM {}'.format(column, table)
+        return self.execute(sql, method='fetchval')
 
 
+#############
+# Map Model #
+#############
+class Map(Model):
+    """Recipient Map"""
+    def __init__(self, table, mappable_name):
+        super().__init__()
+        self.table = table
+        self.mappable_name = mappable_name
+
+    @staticmethod
+    def where(conditions):
+        params = list()
+        sql = " WHERE "
+        for column, value in conditions.items():
+            sql += "{} = ? AND ".format(column)
+            params.append(value)
+        return sql.rstrip(" AND "), params
+
+    def get(self, **conditions):
+        sql = "SELECT * FROM {}".format(self.table)
+        _sql, params = self.where(conditions)
+        sql += _sql
+        obj = self.execute(sql, params, method='fetchone')
+        if obj is None:
+            msg = 'Map for {} with '.format(self.mappable_name)
+            for column, value in conditions.items():
+                msg += '{} `{}`, '.format(column, value)
+            msg = msg.rstrip(', ')
+            msg += ' does not exists.'
+            raise DoesNotExists(msg)
+        return obj
+
+    def all(self):
+        sql = "SELECT * FROM {}".format(self.table)
+        return self.execute(sql, method='fetchall')
+
+    def filter(self, **conditions):
+        sql = "SELECT * FROM {}".format(self.table)
+        _sql, params = self.where(conditions)
+        sql += _sql
+        return self.execute(sql, params, method='fetchall')
+
+    def create(self, mid, wcid, last_update=None):
+        last_update = last_update or datetime.now()
+        params = [mid, wcid, last_update]
+        sql = "INSERT INTO {}(id, wcid, last_update) VALUES (?, ?, ?)".format(self.table)
+        self.execute(sql, params)
+
+    def update(self, fields, **conditions):
+        params = list()
+        sql = "UPDATE {} SET ".format(self.table)
+        for column, value in fields.items():
+            sql += "{} = ?, ".format(column)
+            params.append(value)
+        sql = sql.rstrip(', ')
+        if conditions:
+            _sql, _params = self.where(conditions)
+            sql += _sql
+            params.extend(_params)
+        return self.execute(sql, params)
+
+    def delete(self, **conditions):
+        params = list()
+        sql = "DELETE FROM {}".format(self.table)
+        if conditions:
+            _sql, params = self.where(conditions)
+            sql += _sql
+        return self.execute(sql, params)
+
+
+##################
+# Mappable Model #
+##################
 class Mappable(Model):
     """Recipient Mappable"""
     def mapped(self):
@@ -62,17 +147,27 @@ class Mappable(Model):
         pass
 
 
+#################
+# Product Model #
+#################
 class Product(Mappable):
-    """Recipeint Product Model"""
+    """Recipient Product Model"""
     def __init__(self):
         super().__init__()
-        self.price_type =   2
-        self.price_level =  1
-        self.repository =   1
-        # wc product
+        self.map = Map('ProductMap', 'product')
         self.wc = wc.get(wc_api.get(), 'products')
 
+        self.repository =   1
+        self.price_level =  1
+        self.price_type =   2
+
+    def set_connection(self, connection):
+        super().set_connection(connection)
+        self.map.set_connection(connection)
+
     def mapped(self):
+        mapped = list()
+        params = [self.repository, self.price_type, self.price_level]
         sql = """
             SELECT
                 P.ID, P.Name, P.GroupID, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
@@ -82,30 +177,27 @@ class Product(Mappable):
                 ProductMap AS PM ON P.ID = PM.id
             INNER JOIN
                 KalaPrice AS KP ON P.ID = KP.KalaID
-            INNER JOIN
+            LEFT JOIN
                 dbo.Mojoodi_all('1000/00/00', '3000/00/00', ?, '23:59:59', 0) AS MA ON P.ID = MA.ID_Kala
             WHERE
                 KP.Type = ? AND KP.PriceID = ?
         """
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [self.repository, self.price_type, self.price_level])
-        rows = cursor.fetchall()
-        cursor.close()
-        mapped = list()
-        for row in rows:
+        for row in self.execute(sql, params, method='fetchall'):
             mapped.append({
-                'id':               row.ID,
-                'name':             row.Name,
-                'price':            row.FinalPrice,
-                'quantity':         row.Mojoodi,
-                'category_id':      row.GroupID,
-                'wcid':             row.wcid,
-                'last_update':      row.last_update,
-                'update_required':  row.update_required
+                'id': row.ID,
+                'name': row.Name,
+                'price': row.FinalPrice,
+                'quantity': row.Mojoodi,
+                'category_id': row.GroupID,
+                'wcid': row.wcid,
+                'last_update': row.last_update,
+                'update_required': row.update_required
             })
         return mapped
 
     def unmapped(self):
+        unmapped = list()
+        params = [self.repository, self.price_type, self.price_level]
         sql = """
             SELECT
                 P.ID, P.Name, P.GroupID, KP.FinalPrice, MA.Mojoodi
@@ -115,74 +207,41 @@ class Product(Mappable):
                 ProductMap AS PM ON P.ID = PM.id
             INNER JOIN
                 KalaPrice AS KP ON P.ID = KP.KalaID
-            INNER JOIN
+            LEFT JOIN
                 dbo.Mojoodi_all('1000/00/00', '3000/00/00', ?, '23:59:59', 0) AS MA ON P.ID = MA.ID_Kala
             WHERE
                 PM.id IS NULL AND KP.Type = ? AND KP.PriceID = ?
         """
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [self.repository, self.price_type, self.price_level])
-        rows = cursor.fetchall()
-        cursor.close()
-        unmapped = list()
-        for row in rows:
+        for row in self.execute(sql, params, method='fetchall'):
             unmapped.append({
-                'id':           row.ID,
-                'name':         row.Name,
-                'price':        row.FinalPrice,
-                'quantity':     row.Mojoodi,
-                'category_id':  row.GroupID,
+                'id': row.ID,
+                'name': row.Name,
+                'price': row.FinalPrice,
+                'quantity': row.Mojoodi,
+                'category_id': row.GroupID,
             })
         return unmapped
 
     def wc_mapped(self):
-        sql = "SELECT wcid FROM ProductMap"
-        cursor = self._connection.cursor()
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        cursor.close()
-        return [{'id': row.wcid} for row in rows]
+        return [
+            {'id': row.wcid}
+            for row in self.map.all()
+        ]
 
     def wc_unmapped(self):
-        ids = [wcm['id'] for wcm in self.wc_mapped()]
+        ids = [m.wcid for m in self.map.all()]
         return self.wc.all(excludes=ids)
-
-    def wc_mapped_update(self, mapped):
-        sql = "SELECT wcid FROM CategoryMap WHERE id = ?"
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [mapped['category_id']])
-        category = cursor.fetchone()
-        if category is None:
-            # category map does not exists
-            msg = 'Map for category {} does not exists.'.format(mapped['category_id'])
-            raise DoesNotExists(msg)
-        self.wc.update(mapped['wcid'], {
-            'name': mapped['name'],
-            'regular_price': str(mapped['price']),
-            'stock_quantity': mapped['quantity'],
-            'categories': [{'id': category.wcid}]
-        })
-        # update product map
-        sql = "UPDATE ProductMap SET last_update = ? WHERE id = ?"
-        cursor.execute(sql, [datetime.now(), mapped['id']])
-        cursor.close()
 
     def add_map(self, moeinid, wcid, last_update):
         # check product
         sql = "SELECT Name FROM KalaList WHERE ID = ?"
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [moeinid])
-        product = cursor.fetchone()
+        product = self.execute(sql, [moeinid], method='fetchone')
         if product is None:
-            # product does not exists
-            msg = 'Product with id {} does not exists.'.format(moeinid)
-            raise DoesNotExists(msg)
+            raise DoesNotExists('Product with id {} does not exists'.format(moeinid))
         # check woocommerce product
         self.wc.get(wcid)
         # everything is ok, lets create map
-        sql = "INSERT INTO ProductMap(id, wcid, last_update) VALUES (?, ?, ?)"
-        cursor.execute(sql, [moeinid, wcid, last_update])
-        cursor.close()
+        self.map.create(moeinid, wcid, last_update)
         return {
             'id': moeinid,
             'wcid': wcid,
@@ -192,19 +251,13 @@ class Product(Mappable):
     def edit_map(self, moeinid, new_moeinid, new_wcid):
         # check product
         sql = "SELECT Name FROM KalaList WHERE ID = ?"
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [new_moeinid])
-        new_product = cursor.fetchone()
-        if new_product is None:
-            # new product does not exists
-            msg = 'Product with id {} does not exists.'.format(new_moeinid)
-            raise DoesNotExists(msg)
+        new_product = self.execute(sql, [new_moeinid], method='fetchone')
+        if new_moeinid is None:
+            raise DoesNotExists('Product with id {} does not exists'.format(new_moeinid))
         # check woocommerce product
         self.wc.get(new_wcid)
-        # everything is ok lets update map
-        sql = "UPDATE ProductMap SET id = ?, wcid = ? WHERE id = ?"
-        cursor.execute(sql, [new_moeinid, new_wcid, moeinid])
-        cursor.close()
+        # everything is ok, lets update current map
+        self.map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
         return {
             'id': new_moeinid,
             'wcid': new_wcid,
@@ -212,85 +265,144 @@ class Product(Mappable):
         }
 
     def remove_map(self, moeinid):
-        sql = "SELECT id FROM ProductMap WHERE id = ?"
+        # check for map
+        self.map.get(id=moeinid)
+        # map exists, lets delete it
+        self.map.delete(id=moeinid)
+
+    def wc_mapped_update(self, mapped):
+        sql = """
+            SELECT
+                wcid
+            FROM
+                CategoryMap
+            WHERE
+                id = ?
+        """
         cursor = self._connection.cursor()
-        cursor.execute(sql, [moeinid])
-        product = cursor.fetchone()
-        if product is None:
-            # target product does not exists
-            msg = 'Product with id {} does not exists.'.format(moeinid)
+        cursor.execute(sql, [mapped['category_id']])
+        category = cursor.fetchone()
+        if category is None:
+            # category map does not exists
+            msg = 'Map for category {} does not exists.'.format(mapped['category_id'])
             raise DoesNotExists(msg)
-        sql = "DELETE FROM ProductMap WHERE id = ?"
-        cursor.execute(sql, [moeinid])
+        data = {
+            'name': mapped['name'],
+            'categories': [{'id': category.wcid}]
+        }
+        if mapped['quantity'] is not None:
+            data['stock_quantity'] = mapped['quantity']
+        self.wc.update(mapped['wcid'], data)
+        # update product map
+        sql = """
+            UPDATE
+                ProductMap
+            SET
+                last_update = ?
+            WHERE
+                id = ?
+        """
+        cursor.execute(sql, [datetime.now(), mapped['id']])
         cursor.close()
 
     def export2wc(self, product):
-        sql = "SELECT wcid FROM CategoryMap WHERE id = ?"
+        sql = """
+            SELECT
+                wcid
+            FROM
+                CategoryMap
+            WHERE
+                id = ?
+        """
         cursor = self._connection.cursor()
         cursor.execute(sql, [product['category_id']])
         wc_category = cursor.fetchone()
         if wc_category is None:
             msg = 'Map for category {} does not exists.'.format(product['category_id'])
             raise DoesNotExists(msg)
-        wc_product = self.wc.create({
+        data = {
             'name': product['name'],
-            'manage_stock': True,
             'regular_price': str(product['price']),
-            'stock_quantity': product['quantity'],
             'categories': [{'id': wc_category.wcid}]
-        })
-        sql = "INSERT INTO ProductMap(id, wcid, last_update) VALUES (?, ?, ?)"
+        }
+        if product['quantity'] is not None:
+            data['manage_stock'] = True
+            data['stock_quantity'] = product['quantity']
+        wc_product = self.wc.create(data)
+        sql = """
+            INSERT INTO
+                ProductMap(id, wcid, last_update)
+            VALUES
+                (?, ?, ?)
+        """
         cursor.execute(sql, [product['id'], wc_product['id']], datetime.now())
         cursor.close()
 
     def import2moein(self, wc_product):
-        sql = "SELECT id FROM CategoryMap WHERE wcid = ?"
+        sql = """
+            SELECT
+                id
+            FROM
+                CategoryMap
+            WHERE
+                wcid = ?
+        """
+        wc_category = wc_product['categories'][0]
         cursor = self._connection.cursor()
-        cursor.execute(sql, [wc_product['categories'][0]])
+        cursor.execute(sql, [wc_category['id']])
         category = cursor.fetchone()
         if category is None:
-            msg = 'Map for category {} does not exists.'.format(wc_product['categories'][0])
+            msg = 'Map for category {} does not exists.'.format(wc_category['name'])
             raise DoesNotExists(msg)
-        sql = "INSERT INTO KalaList(Name, GroupID) VALUES (?, ?)"
+        sql = """
+            INSERT INTO
+                KalaList(Name, GroupID)
+            VALUES
+                (?, ?)
+        """
         cursor.execute(sql, [wc_product['name'], category.id])
-        sql = "INSERT INTO ProductMap(id, wcid, last_update) VALUES (?, ?, ?)"
+        sql = """
+            INSERT INTO
+                ProductMap(id, wcid, last_update)
+            VALUES
+                (?, ?, ?)
+        """
         cursor.execute(sql, [self.max('KalaList', 'ID'), wc_product['id'], datetime.now()])
         cursor.close()
 
 
+##################
+# Category Model #
+##################
 class Category(Mappable):
     """Recipient Category Model"""
     def __init__(self):
         super().__init__()
-        # category table
-        self.c = table.get('GroupKala', 'ID')
-        # category map table
-        self.cm = table.get('CategoryMap', 'id')
-        # wc category
-        api = wc_api.get()
-        self.wcc = wc.get(api, 'products/categories')
+        self.map = Map('CategoryMap', 'category')
+        self.wc = wc.get(wc_api.get(), 'products/categories')
 
     def set_connection(self, connection):
         super().set_connection(connection)
-        self.c.set_connection(connection)
-        self.cm.set_connection(connection)
+        self.map.set_connection(connection)
 
     def hierarchy_name(self, category):
+        # check for parent
         if not category['parent']:
             return category['name']
-        try:
-            row = self.c.get('ID', 'GroupKala', 'ParentID', ID=category['parent'])
-        except table.DoesNotExistsError:
-            parent = None
+        sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
+        parent = self.execute(sql, [category['parent']], method='fetchone')
+        if parent is None:
+            return category['name']
         else:
             parent = {
-                'id': row.ID,
-                'name': row.GroupKala,
-                'parent': row.ParentID
+                'id': parent.ID,
+                'name': parent.GroupKala,
+                'parent': parent.ParentID
             }
-        return self.hierarchy_name(parent) + '___' + category['name'] if parent else category['name']
+            return self.hierarchy_name(parent) + '___' + category['name']
 
     def wc_hierarchy_name(self, category, categories):
+        # check for parent
         if not category['parent']:
             return category['name']
         parent = None
@@ -307,18 +419,19 @@ class Category(Mappable):
                 category['name'] = self.wc_hierarchy_name(category, categories)
             else:
                 category['name'] = self.hierarchy_name(category)
-        categories.sort(key=lambda c: c['parent'] or 0)
+        categories.sort(key=lambda c: c['parent'])
 
     def mapped(self):
-        mapped = []
-        rows = self.c.inner_join(
-            self.cm,
-            'ID',
-            'id',
-            [],
-            ['wcid', 'last_update', 'update_required']
-        )
-        for row in rows:
+        mapped = list()
+        sql = """
+            SELECT
+                C.ID, C.ParentID, C.GroupKala, CM.id, CM.wcid, CM.last_update, CM.update_required
+            FROM
+                GroupKala as C
+            INNER JOIN
+                CategoryMap AS CM ON C.ID = CM.id
+        """
+        for row in self.execute(sql, method='fetchall'):
             mapped.append({
                 'id': row.ID,
                 'name': row.GroupKala,
@@ -331,14 +444,18 @@ class Category(Mappable):
         return mapped
 
     def unmapped(self):
-        unmapped = []
-        rows = self.c.left_outer_join(
-            self.cm,
-            'ID',
-            'id',
-            []
-        )
-        for row in rows:
+        unmapped = list()
+        sql = """
+            SELECT
+                C.ID, C.ParentID, C.GroupKala
+            FROM
+                GroupKala as C
+            LEFT JOIN
+                CategoryMap as CM ON C.ID = CM.id
+            WHERE
+                CM.id IS NULL
+        """
+        for row in self.execute(sql, method='fetchall'):
             unmapped.append({
                 'id': row.ID,
                 'name': row.GroupKala,
@@ -350,105 +467,108 @@ class Category(Mappable):
     def wc_mapped(self):
         return [
             {'id': row.wcid}
-            for row in self.cm.all('wcid')
+            for row in self.map.all()
         ]
 
     def wc_unmapped(self):
-        unmapped = []
-        ids = [row.wcid for row in self.cm.all('wcid')]
-        categories = self.wcc.all()
+        unmapped = list()
+        ids = [m.wcid for m in self.map.all()]
+        categories = self.wc.all()
         self.hierarchify(categories, woocommerce=True)
         for category in categories:
             if category['id'] not in ids:
                 unmapped.append(category)
         return unmapped
 
-    def wc_mapped_update(self, mapped):
-        data = {
-            'name': mapped['_name']
-        }
-        if mapped['parent']:
-            try:
-                row = self.cm.get('wcid', id=mapped['parent'])
-            except table.DoesNotExistsError:
-                pass
-            else:
-                data['parent'] = row.wcid
-        self.wcc.update(mapped['wcid'], data)
-        self.cm.update({'last_update': datetime.now()}, id=mapped['id'])
-
     def add_map(self, moeinid, wcid, last_update):
-        # check moeinid
-        row = self.c.get('ID', 'GroupKala', 'ParentID', ID=moeinid)
+        # check category and parent
+        sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
+        category = self.execute(sql, [moeinid], method='fetchone')
+        if category is None:
+            raise DoesNotExists('Category with id {} does not exists.'.format(moeinid))
+        if category.ParentID:
+            self.map.get(id=category.ParentID)
         category = {
-            'id': row.ID,
-            'name': row.GroupKala,
-            'parent': row.ParentID
+            'id': category.ID,
+            'name': category.GroupKala,
+            'parent': category.ParentID
         }
-        # check wcid
-        self.wcc.get(wcid)
-        fields = {
+        # check woocommerce category
+        self.wc.get(wcid)
+        # everything is ok, lets create map
+        self.map.create(moeinid, wcid, last_update)
+        return {
             'id': moeinid,
             'wcid': wcid,
-            'last_update': last_update
+            'last_update': last_update,
+            'name': self.hierarchy_name(category)
         }
-        self.cm.create(fields)
-        fields['name'] = self.hierarchy_name(category)
-        return fields
 
     def edit_map(self, moeinid, new_moeinid, new_wcid):
-        # check moeinid
-        row = self.c.get('ID', 'GroupKala', 'ParentID', ID=new_moeinid)
-        category = {
-            'id': row.ID,
-            'name': row.GroupKala,
-            'parent': row.ParentID
+        # check new category and parent
+        sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
+        new_category = self.execute(sql, [new_moeinid], method='fetchone')
+        if new_category is None:
+            raise DoesNotExists('Category with id {} does not exists'.format(new_moeinid))
+        if new_category.ParentID:
+            self.map.get(id=new_category.ParentID)
+        new_category = {
+            'id': new_category.ID,
+            'name': new_category.GroupKala,
+            'parent': new_category.ParentID
         }
-        # check wcid
-        self.wcc.get(new_wcid)
-        fields = {
+        # check for new woocommerce category
+        self.wc.get(new_wcid)
+        # everything is ok, lets update current map
+        self.map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
+        return {
             'id': new_moeinid,
-            'wcid': new_wcid
+            'wcid': new_wcid,
+            'name': self.hierarchy_name(new_category)
         }
-        self.cm.update(fields, id=moeinid)
-        fields['name'] = self.hierarchy_name(category)
-        return fields
 
     def remove_map(self, moeinid):
-        self.cm.get(id=moeinid)
-        self.cm.delete(id=moeinid)
+        # check for map
+        self.map.get(id=moeinid)
+        # map exists, lets delete it
+        self.map.delete(id=moeinid)
+
+    def wc_mapped_update(self, mapped):
+        data = {'name': mapped['_name']}
+        # check for parent
+        if mapped['parent']:
+            parent = self.map.get(id=mapped['parent'])
+            data['parent'] = parent.wcid
+        # update woocommerce category
+        self.wc.update(mapped['wcid'], data)
+        # update category map
+        self.map.update({'last_update': datetime.now()}, id=mapped['id'])
 
     def export2wc(self, category):
-        if category['parent']:
-            row = self.cm.get('wcid', id=category['parent'])
-            parent_id = row.wcid
-        else:
-            parent_id = 0
-        wc_category = self.wcc.create({
+        data = {
             'name': category['_name'],
-            'parent': parent_id
-        })
-        self.cm.create({
-            'id': category['id'],
-            'wcid': wc_category['id'],
-            'last_update': datetime.now()
-        })
+            'parent': category['parent']
+        }
+        # check for parent
+        if category['parent']:
+            parent = self.map.get(id=category['parent'])
+            data['parent'] = parent.wcid
+        # create woocommerce category
+        wc_category = self.wc.create(data)
+        self.map.create(category['id'], wc_category['id'])
 
     def import2moein(self, wc_category):
+        # check for parent
         if wc_category['parent']:
-            row = self.cm.get('id', wcid=wc_category['parent'])
-            parent_id = row.id
+            parent = self.map.get(wcid=wc_category['parent'])
+            parent_id = parent.id
         else:
-            parent_id = None
-        self.c.create({
-            'GroupKala': wc_category['_name'],
-            'ParentID': parent_id
-        })
-        self.cm.create({
-            'id': self.c.max_pk(),
-            'wcid': wc_category['id'],
-            'last_update': datetime.now()
-        })
+            parent_id = 0
+        # create category
+        sql = "INSERT INTO GroupKala(GroupKala, ParentID) VALUES (?, ?)"
+        self.execute(sql, [wc_category['_name'], parent_id])
+        # create map
+        self.map.create(self.max('GroupKala', 'ID'), wc_category['id'])
 
 
 class Invoice(Model):
