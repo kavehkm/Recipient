@@ -155,7 +155,8 @@ class Product(Mappable):
     def __init__(self):
         super().__init__()
         self.map = Map('ProductMap', 'product')
-        self.wc = wc.get(wc_api.get(), 'products')
+        self.category_map = Map('CategoryMap', 'category')
+        self.woocommerce = wc.get(wc_api.get(), 'products')
 
         self.repository =   1
         self.price_level =  1
@@ -164,6 +165,7 @@ class Product(Mappable):
     def set_connection(self, connection):
         super().set_connection(connection)
         self.map.set_connection(connection)
+        self.category_map.set_connection(connection)
 
     def mapped(self):
         mapped = list()
@@ -224,22 +226,22 @@ class Product(Mappable):
 
     def wc_mapped(self):
         return [
-            {'id': row.wcid}
-            for row in self.map.all()
+            {'id': product_map.wcid}
+            for product_map in self.map.all()
         ]
 
     def wc_unmapped(self):
-        ids = [m.wcid for m in self.map.all()]
-        return self.wc.all(excludes=ids)
+        ids = [product_map.wcid for product_map in self.map.all()]
+        return self.woocommerce.all(excludes=ids)
 
     def add_map(self, moeinid, wcid, last_update):
         # check product
         sql = "SELECT Name FROM KalaList WHERE ID = ?"
         product = self.execute(sql, [moeinid], method='fetchone')
         if product is None:
-            raise DoesNotExists('Product with id {} does not exists'.format(moeinid))
+            raise DoesNotExists('Product with id {} does not exists.'.format(moeinid))
         # check woocommerce product
-        self.wc.get(wcid)
+        self.woocommerce.get(wcid)
         # everything is ok, lets create map
         self.map.create(moeinid, wcid, last_update)
         return {
@@ -255,7 +257,7 @@ class Product(Mappable):
         if new_moeinid is None:
             raise DoesNotExists('Product with id {} does not exists'.format(new_moeinid))
         # check woocommerce product
-        self.wc.get(new_wcid)
+        self.woocommerce.get(new_wcid)
         # everything is ok, lets update current map
         self.map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
         return {
@@ -271,104 +273,35 @@ class Product(Mappable):
         self.map.delete(id=moeinid)
 
     def wc_mapped_update(self, mapped):
-        sql = """
-            SELECT
-                wcid
-            FROM
-                CategoryMap
-            WHERE
-                id = ?
-        """
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [mapped['category_id']])
-        category = cursor.fetchone()
-        if category is None:
-            # category map does not exists
-            msg = 'Map for category {} does not exists.'.format(mapped['category_id'])
-            raise DoesNotExists(msg)
+        category_map = self.category_map.get(id=mapped['category_id'])
         data = {
             'name': mapped['name'],
-            'categories': [{'id': category.wcid}]
+            'categories': [{'id': category_map.wcid}],
+            'regular_price': str(mapped['price']),
+            'stock_quantity': mapped['quantity'] or 0
         }
-        if mapped['quantity'] is not None:
-            data['stock_quantity'] = mapped['quantity']
-        self.wc.update(mapped['wcid'], data)
+        # update woocommerce product
+        self.woocommerce.update(mapped['wcid'], data)
         # update product map
-        sql = """
-            UPDATE
-                ProductMap
-            SET
-                last_update = ?
-            WHERE
-                id = ?
-        """
-        cursor.execute(sql, [datetime.now(), mapped['id']])
-        cursor.close()
+        self.map.update({'last_update': datetime.now()}, id=mapped['id'])
 
     def export2wc(self, product):
-        sql = """
-            SELECT
-                wcid
-            FROM
-                CategoryMap
-            WHERE
-                id = ?
-        """
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [product['category_id']])
-        wc_category = cursor.fetchone()
-        if wc_category is None:
-            msg = 'Map for category {} does not exists.'.format(product['category_id'])
-            raise DoesNotExists(msg)
+        category_map = self.category_map.get(id=product['category_id'])
         data = {
             'name': product['name'],
+            'categories': [{'id': category_map.wcid}],
             'regular_price': str(product['price']),
-            'categories': [{'id': wc_category.wcid}]
+            'manage_stock': True,
+            'stock_quantity': product['quantity'] or 0,
+            'status': 'publish' if product['quantity'] else 'draft'
         }
-        if product['quantity'] is not None:
-            data['manage_stock'] = True
-            data['stock_quantity'] = product['quantity']
-        wc_product = self.wc.create(data)
-        sql = """
-            INSERT INTO
-                ProductMap(id, wcid, last_update)
-            VALUES
-                (?, ?, ?)
-        """
-        cursor.execute(sql, [product['id'], wc_product['id']], datetime.now())
-        cursor.close()
+        # create woocommerce product
+        wc_product = self.woocommerce.create(data)
+        # create product map
+        self.map.create(product['id'], wc_product['id'])
 
     def import2moein(self, wc_product):
-        sql = """
-            SELECT
-                id
-            FROM
-                CategoryMap
-            WHERE
-                wcid = ?
-        """
-        wc_category = wc_product['categories'][0]
-        cursor = self._connection.cursor()
-        cursor.execute(sql, [wc_category['id']])
-        category = cursor.fetchone()
-        if category is None:
-            msg = 'Map for category {} does not exists.'.format(wc_category['name'])
-            raise DoesNotExists(msg)
-        sql = """
-            INSERT INTO
-                KalaList(Name, GroupID)
-            VALUES
-                (?, ?)
-        """
-        cursor.execute(sql, [wc_product['name'], category.id])
-        sql = """
-            INSERT INTO
-                ProductMap(id, wcid, last_update)
-            VALUES
-                (?, ?, ?)
-        """
-        cursor.execute(sql, [self.max('KalaList', 'ID'), wc_product['id'], datetime.now()])
-        cursor.close()
+        pass
 
 
 ##################
@@ -379,7 +312,7 @@ class Category(Mappable):
     def __init__(self):
         super().__init__()
         self.map = Map('CategoryMap', 'category')
-        self.wc = wc.get(wc_api.get(), 'products/categories')
+        self.woocommerce = wc.get(wc_api.get(), 'products/categories')
 
     def set_connection(self, connection):
         super().set_connection(connection)
@@ -466,14 +399,14 @@ class Category(Mappable):
 
     def wc_mapped(self):
         return [
-            {'id': row.wcid}
-            for row in self.map.all()
+            {'id': category_map.wcid}
+            for category_map in self.map.all()
         ]
 
     def wc_unmapped(self):
         unmapped = list()
-        ids = [m.wcid for m in self.map.all()]
-        categories = self.wc.all()
+        ids = [category_map.wcid for category_map in self.map.all()]
+        categories = self.woocommerce.all()
         self.hierarchify(categories, woocommerce=True)
         for category in categories:
             if category['id'] not in ids:
@@ -494,7 +427,7 @@ class Category(Mappable):
             'parent': category.ParentID
         }
         # check woocommerce category
-        self.wc.get(wcid)
+        self.woocommerce.get(wcid)
         # everything is ok, lets create map
         self.map.create(moeinid, wcid, last_update)
         return {
@@ -509,7 +442,7 @@ class Category(Mappable):
         sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
         new_category = self.execute(sql, [new_moeinid], method='fetchone')
         if new_category is None:
-            raise DoesNotExists('Category with id {} does not exists'.format(new_moeinid))
+            raise DoesNotExists('Category with id {} does not exists.'.format(new_moeinid))
         if new_category.ParentID:
             self.map.get(id=new_category.ParentID)
         new_category = {
@@ -518,7 +451,7 @@ class Category(Mappable):
             'parent': new_category.ParentID
         }
         # check for new woocommerce category
-        self.wc.get(new_wcid)
+        self.woocommerce.get(new_wcid)
         # everything is ok, lets update current map
         self.map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
         return {
@@ -540,7 +473,7 @@ class Category(Mappable):
             parent = self.map.get(id=mapped['parent'])
             data['parent'] = parent.wcid
         # update woocommerce category
-        self.wc.update(mapped['wcid'], data)
+        self.woocommerce.update(mapped['wcid'], data)
         # update category map
         self.map.update({'last_update': datetime.now()}, id=mapped['id'])
 
@@ -554,7 +487,7 @@ class Category(Mappable):
             parent = self.map.get(id=category['parent'])
             data['parent'] = parent.wcid
         # create woocommerce category
-        wc_category = self.wc.create(data)
+        wc_category = self.woocommerce.create(data)
         self.map.create(category['id'], wc_category['id'])
 
     def import2moein(self, wc_category):
@@ -575,21 +508,21 @@ class Invoice(Model):
     """Recipient Invoice Model"""
     def __init__(self):
         super().__init__()
-        # invoice table
+        # invoice models
         self.i = table.get('Invoice', 'id')
-        # invlice map table
+        # invlice map models
         self.im = table.get('InvoiceMap', 'id')
-        # item-line table
+        # item-line models
         self.il = table.get('ItemLine', 'invoice_id')
-        # customer table
+        # customer models
         self.cs = table.get('Customer', 'id')
-        # customer map table
+        # customer map models
         self.csm = table.get('CustomerMap', 'id')
-        # product table
+        # product models
         self.p = table.get('Product', 'id')
-        # product map table
+        # product map models
         self.pm = table.get('ProductMap', 'id')
-        # line-item table
+        # line-item models
         self.line_item = table.get('LineItem', 'invoice_id')
         # wc order
         api = wc_api.get()
