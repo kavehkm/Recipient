@@ -1,9 +1,9 @@
 # internal
+from .buttons import SMButton
 from .base_dialog import BaseDialog
-from src.ui.resources import icons
 # pyqt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel
 
 
 class Message(BaseDialog):
@@ -62,7 +62,7 @@ class Message(BaseDialog):
         contentsLayout.addStretch(1)
 
     def setupControl(self):
-        self.btnOk = QPushButton('OK')
+        self.btnOk = SMButton('OK')
         self.controlLayout.addWidget(self.btnOk)
 
     def setStyles(self):

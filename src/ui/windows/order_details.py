@@ -1,9 +1,7 @@
 # internal
-from src.ui.components import BaseDialog, Table
+from src.ui.components import BaseDialog, Table, ScrollArea, MDButton, MDCombo
 # pyqt
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QWidget, QScrollArea, QHBoxLayout, QVBoxLayout,
-                             QFormLayout, QLabel, QPushButton, QComboBox)
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
 
 
 class OrderDetails(BaseDialog):
@@ -36,18 +34,12 @@ class OrderDetails(BaseDialog):
 
     def setupDialog(self):
         # scrollable area
-        self.scrollableArea = QScrollArea()
-        self.scrollableArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scrollableArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scrollableArea.setWidgetResizable(True)
+        self.scrollableArea = ScrollArea()
         self.dialogLayout.addWidget(self.scrollableArea)
-        # widget
-        self.widget = QWidget()
-        self.scrollableArea.setWidget(self.widget)
         # order layout
         self.orderLayout = QVBoxLayout()
         self.orderLayout.setSpacing(20)
-        self.widget.setLayout(self.orderLayout)
+        self.scrollableArea.setLayout(self.orderLayout)
 
         ###########################
         # Section1: Order Details #
@@ -302,16 +294,16 @@ class OrderDetails(BaseDialog):
 
     def setupControl(self):
         # status combo box
-        self.comboStatus = QComboBox()
+        self.comboStatus = MDCombo()
         self.comboStatus.addItems(self.STATUSES)
         # update button
-        self.btnUpdate = QPushButton('Update')
+        self.btnUpdate = MDButton('Update')
         # save button
-        self.btnSave = QPushButton('Save')
+        self.btnSave = MDButton('Save')
         # - hide save button as default
         self.btnSave.hide()
         # cancel button
-        self.btnCancel = QPushButton('Cancel')
+        self.btnCancel = MDButton('Cancel')
         # register combo and buttons
         self.controlLayout.addWidget(self.comboStatus)
         self.controlLayout.addWidget(self.btnUpdate)
@@ -323,18 +315,6 @@ class OrderDetails(BaseDialog):
 
     def setStyles(self):
         self.setStyleSheet("""
-            QScrollArea{
-                border: none;
-            }
-            QPushButton{
-                min-height: 25px;
-            }
-            QComboBox{
-                min-height: 29px;
-                min-width: 50px;
-                font-size: 12px;
-                padding-left: 10px;
-            }
             #Section{
                 background-color: white;
             }

@@ -1,14 +1,13 @@
 # internal
 from .message import Message
-# pyqt
-from PyQt5.QtWidgets import QPushButton
+from .buttons import SMButton
 
 
 class Confirm(Message):
     """Confirm"""
     def setupControl(self):
         super().setupControl()
-        self.btnCancel = QPushButton('Cencel')
+        self.btnCancel = SMButton('Cencel')
         self.controlLayout.addWidget(self.btnCancel)
 
     def connectSignals(self):

@@ -5,3 +5,7 @@ from .message import Message
 from .confirm import Confirm
 from .progress import Progress
 from .table_list import TableList
+from .tab import Tab
+from .scroll_area import ScrollArea
+from .buttons import *
+from .inputs import *

@@ -1,8 +1,8 @@
 # internal
-from src.ui.components import BaseDialog
+from src.ui.components import BaseDialog, SMButton, SMEdit
 # pyqt
 from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtWidgets import QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QHBoxLayout, QFormLayout, QLabel
 
 
 class RegisterFormSignals(QObject):
@@ -23,16 +23,16 @@ class RegisterForm(BaseDialog):
         self.form = QFormLayout()
         self.dialogLayout.addLayout(self.form)
         # id
-        self.id = QLineEdit()
-        self.idOptions = QPushButton('...')
+        self.id = SMEdit()
+        self.idOptions = SMButton('...')
         self.idOptions.setObjectName('Options')
         idLayout = QHBoxLayout()
         idLayout.addWidget(self.id)
         idLayout.addWidget(self.idOptions)
         self.form.addRow(QLabel('ID'), idLayout)
         # wcid
-        self.wcid = QLineEdit()
-        self.wcidOptions = QPushButton('...')
+        self.wcid = SMEdit()
+        self.wcidOptions = SMButton('...')
         self.wcidOptions.setObjectName('Options')
         wcidLayout = QHBoxLayout()
         wcidLayout.addWidget(self.wcid)
@@ -40,17 +40,10 @@ class RegisterForm(BaseDialog):
         self.form.addRow(QLabel('WCID'), wcidLayout)
 
     def setupControl(self):
-        self.btnSave = QPushButton('Save')
-        self.btnCancel = QPushButton('Cancel')
+        self.btnSave = SMButton('Save')
+        self.btnCancel = SMButton('Cancel')
         self.controlLayout.addWidget(self.btnSave)
         self.controlLayout.addWidget(self.btnCancel)
-
-    def setStyles(self):
-        self.setStyleSheet("""
-            #Options{
-                max-width: 25px;
-            }
-        """)
 
     def connectSignals(self):
         self.btnCancel.clicked.connect(self.close)

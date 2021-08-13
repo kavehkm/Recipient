@@ -1,14 +1,14 @@
 # internal
+# noinspection PyUnresolvedReferences
 from src.ui.resources import icons
 from .order_details import OrderDetails
-from src.ui.components import BaseWidget, Table
+from src.ui.components import (BaseWidget, Table, Tab, MainMenuButton,
+                               MDButton, SMEdit, SMDateTimeEdit, SMCombo, SMSpin)
 # pyqt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSize, QDateTime
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame, QTabWidget,
-                             QHBoxLayout, QVBoxLayout, QFormLayout,
-                             QPushButton, QLabel, QLineEdit, QComboBox,
-                             QCheckBox, QDateTimeEdit, QSpinBox)
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame, QHBoxLayout,
+                             QVBoxLayout, QFormLayout, QLabel, QCheckBox)
 
 
 ########
@@ -16,28 +16,32 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame, QTabWidget,
 ########
 class Menu(BaseWidget):
     """Menu"""
+    def setupLayout(self):
+        super().setupLayout()
+        self.setFixedWidth(200)
+
     def setupWidget(self):
         # setup buttons
         # - status
-        self.btnStatus = QPushButton('Status')
+        self.btnStatus = MainMenuButton('Status')
         self.btnStatus.setIcon(QIcon(':/icons/btnStatus.png'))
         # - invoices
-        self.btnInvoices = QPushButton('Invoices')
+        self.btnInvoices = MainMenuButton('Invoices')
         self.btnInvoices.setIcon(QIcon(':/icons/btnInvoices.png'))
         # - woocommerce
-        self.btnWooCommerce = QPushButton('WooCommerce')
+        self.btnWooCommerce = MainMenuButton('WooCommerce')
         self.btnWooCommerce.setIcon(QIcon(':/icons/btnWooCommerce.png'))
         # - settings
-        self.btnSettings = QPushButton('Settings')
+        self.btnSettings = MainMenuButton('Settings')
         self.btnSettings.setIcon(QIcon(':/icons/btnSettings.png'))
         # - logs
-        self.btnLogs = QPushButton('Logs')
+        self.btnLogs = MainMenuButton('Logs')
         self.btnLogs.setIcon(QIcon(':/icons/btnLogs.png'))
         # - help
-        self.btnHelp = QPushButton('Help')
+        self.btnHelp = MainMenuButton('Help')
         self.btnHelp.setIcon(QIcon(':/icons/btnHelp.png'))
         # - about
-        self.btnAbout = QPushButton('About')
+        self.btnAbout = MainMenuButton('About')
         self.btnAbout.setIcon(QIcon(':/icons/btnAbout.png'))
         # register buttons
         buttons = [
@@ -54,15 +58,6 @@ class Menu(BaseWidget):
             self.generalLayout.addWidget(btn)
         # add stretch at the end
         self.generalLayout.addStretch(1)
-
-    def setStyles(self):
-        self.setStyleSheet("""
-            QPushButton {
-                height: 50px;
-                text-align: left;
-                padding-left: 20px
-            }
-        """)
 
 
 ############
@@ -105,8 +100,8 @@ class StatusTab(BaseTab):
         self.serviceLayout.addLayout(serviceStateLayout)
         # service control
         serviceControlLayout = QHBoxLayout()
-        self.btnStart = QPushButton('Start')
-        self.btnStop = QPushButton('Stop')
+        self.btnStart = MDButton('Start')
+        self.btnStop = MDButton('Stop')
         serviceControlLayout.addWidget(self.btnStart)
         serviceControlLayout.addWidget(self.btnStop)
         serviceControlLayout.addStretch(1)
@@ -128,9 +123,6 @@ class StatusTab(BaseTab):
             }
             #ServiceFrame[state="connecting"]{
                 border-right-color: orange;
-            }
-            QPushButton{
-                height: 25px;
             }
         """)
 
@@ -167,7 +159,7 @@ class InvoicesTab(BaseTab):
 
     def setupWidget(self):
         # tabs
-        self.tabs = QTabWidget()
+        self.tabs = Tab()
         self.generalLayout.addWidget(self.tabs)
         # - orders
         self.ordersTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'])
@@ -179,9 +171,9 @@ class InvoicesTab(BaseTab):
         self.controlLayout = QHBoxLayout()
         self.controlLayout.addStretch(1)
         self.generalLayout.addLayout(self.controlLayout)
-        self.btnRefresh = QPushButton('Refresh')
-        self.btnSaveAll = QPushButton('Save all')
-        self.btnRemove = QPushButton('Remove')
+        self.btnRefresh = MDButton('Refresh')
+        self.btnSaveAll = MDButton('Save all')
+        self.btnRemove = MDButton('Remove')
         self.btnRemove.setHidden(True)
         self.controlLayout.addWidget(self.btnRefresh)
         self.controlLayout.addWidget(self.btnSaveAll)
@@ -189,18 +181,6 @@ class InvoicesTab(BaseTab):
 
         # attach order details dialog
         self.orderDetails = OrderDetails(self)
-
-    def setStyles(self):
-        self.setStyleSheet("""
-            QTabBar::tab{
-                min-height: 10ex;
-                min-width: 30ex;
-            }
-            QPushButton{
-                height: 25px;
-                width: 80px;
-            }
-        """)
 
     def connectSignals(self):
         self.tabs.currentChanged.connect(self.tabHandler)
@@ -224,7 +204,7 @@ class WooCommerceTab(BaseTab):
 
     def setupWidget(self):
         # tabs
-        self.tabs = QTabWidget()
+        self.tabs = Tab()
         self.generalLayout.addWidget(self.tabs)
         # - products
         self.productsTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'])
@@ -235,37 +215,22 @@ class WooCommerceTab(BaseTab):
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
-        self.btnAdd = QPushButton('Add')
-        self.btnEdit = QPushButton('Edit')
-        self.btnRemove = QPushButton('Remove')
-        self.btnUpdate = QPushButton('Update')
+        self.btnAdd = MDButton('Add')
+        self.btnEdit = MDButton('Edit')
+        self.btnRemove = MDButton('Remove')
+        self.btnUpdate = MDButton('Update')
         controlLayout.addWidget(self.btnAdd)
         controlLayout.addWidget(self.btnEdit)
         controlLayout.addWidget(self.btnRemove)
         controlLayout.addWidget(self.btnUpdate)
         self.generalLayout.addLayout(controlLayout)
 
-    def setStyles(self):
-        self.setStyleSheet("""
-            QTabBar::tab{
-                min-height: 10ex;
-                min-width: 30ex;
-            }
-            QPushButton{
-                height: 25px;
-                width: 80px;
-            }
-        """)
-
 
 class SettingsTab(BaseTab):
     """Settings Tab"""
-    DATETIME_FORMAT = 'yyyy-MM-ddTHH:mm:ss'
-    DATETIME_DISPLAY_FORMAT = 'yyyy-MM-dd @ HH:mm:ss'
-
     def setupWidget(self):
         # tabs
-        self.tabs = QTabWidget()
+        self.tabs = Tab()
         self.generalLayout.addWidget(self.tabs)
         # moein settings
         self.moeinForm = QFormLayout()
@@ -273,17 +238,16 @@ class SettingsTab(BaseTab):
         moeinFormFrame.setLayout(self.moeinForm)
         self.tabs.addTab(moeinFormFrame, 'Moein')
         # - server
-        self.server = QLineEdit()
+        self.server = SMEdit()
         self.moeinForm.addRow(QLabel('Server'), self.server,)
         # - username
-        self.username = QLineEdit()
+        self.username = SMEdit()
         self.moeinForm.addRow(QLabel('Username'), self.username)
         # - password
-        self.password = QLineEdit()
-        self.password.setEchoMode(QLineEdit.Password)
+        self.password = SMEdit(password=True)
         self.moeinForm.addRow(QLabel('Password'), self.password)
         # - database
-        self.database = QLineEdit()
+        self.database = SMEdit()
         self.moeinForm.addRow(QLabel('DataBase'), self.database)
         # woocommerce settings
         self.wcForm = QFormLayout()
@@ -291,16 +255,16 @@ class SettingsTab(BaseTab):
         wcFormFrame.setLayout(self.wcForm)
         self.tabs.addTab(wcFormFrame, 'WooCommerce')
         # - url
-        self.url = QLineEdit()
+        self.url = SMEdit()
         self.wcForm.addRow(QLabel('URL'), self.url)
         # - consumer key
-        self.ckey = QLineEdit()
+        self.ckey = SMEdit()
         self.wcForm.addRow(QLabel('Consumer Key'), self.ckey)
         # - secret key
-        self.skey = QLineEdit()
+        self.skey = SMEdit()
         self.wcForm.addRow(QLabel('Secret Key'), self.skey)
         # - version
-        self.version = QComboBox()
+        self.version = SMCombo()
         self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
         self.wcForm.addRow(QLabel('Version'), self.version)
         # invoices settings
@@ -353,43 +317,28 @@ class SettingsTab(BaseTab):
         statusOptions3Layout.addWidget(self.cbxTrash)
         self.invoicesForm.addRow(QLabel('Status'), statusOptionsLayout)
         # - after
-        self.after = QDateTimeEdit()
-        self.after.setCalendarPopup(True)
-        self.after.setDisplayFormat(self.DATETIME_DISPLAY_FORMAT)
+        self.after = SMDateTimeEdit()
         self.invoicesForm.addRow(QLabel('After'), self.after)
         # - before
-        self.before = QDateTimeEdit()
-        self.before.setCalendarPopup(True)
-        self.before.setDisplayFormat(self.DATETIME_DISPLAY_FORMAT)
+        self.before = SMDateTimeEdit()
         self.invoicesForm.addRow(QLabel('Before'), self.before)
         # - guest
-        self.guest = QSpinBox()
+        self.guest = SMSpin()
         self.invoicesForm.addRow(QLabel('Guest Customer ID'), self.guest)
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
-        self.btnClear = QPushButton('Clear')
-        self.btnSave = QPushButton('Save')
+        self.btnClear = MDButton('Clear')
+        self.btnSave = MDButton('Save')
         controlLayout.addWidget(self.btnClear)
         controlLayout.addWidget(self.btnSave)
         self.generalLayout.addLayout(controlLayout)
 
     def setStyles(self):
         self.setStyleSheet("""
-            QTabBar::tab{
-                min-height: 10ex;
-                min-width: 30ex;
-            }
             QLabel{
                 height: 20px;
                 margin-right: 50px;
-            }
-            QComboBox, QLineEdit, QDateTimeEdit, QSpinBox{
-                height: 20px;
-            }
-            QPushButton{
-                height: 25px;
-                width: 80px;
             }
         """)
 
@@ -409,8 +358,8 @@ class SettingsTab(BaseTab):
             },
             'invoices': {
                 'status': [option for option, cbx in self.statusOptions.items() if cbx.isChecked()],
-                'after': self.after.dateTime().toString(self.DATETIME_FORMAT),
-                'before': self.before.dateTime().toString(self.DATETIME_FORMAT),
+                'after': self.after.getDateTime(),
+                'before': self.before.getDateTime(),
                 'guest': self.guest.value()
             }
         }
@@ -432,8 +381,8 @@ class SettingsTab(BaseTab):
         invoices = settings.get('invoices')
         for option in invoices.get('status'):
             self.statusOptions[option].setChecked(True)
-        self.after.setDateTime(QDateTime.fromString(invoices.get('after'), self.DATETIME_FORMAT))
-        self.before.setDateTime(QDateTime.fromString(invoices.get('before'), self.DATETIME_FORMAT))
+        self.after.setDateTime(invoices.get('after'))
+        self.before.setDateTime(invoices.get('before'))
         self.guest.setValue(invoices.get('guest'))
 
     def clear(self):
@@ -555,9 +504,7 @@ class Main(QMainWindow):
         self.setWindowIcon(windowIcon)
 
     def setupMain(self):
-        # set menu widget 30%
         self.menu = Menu(self)
-        self.generalLayout.addWidget(self.menu, 30)
-        # set content widget 70%
+        self.generalLayout.addWidget(self.menu)
         self.contents = Contents(self)
-        self.generalLayout.addWidget(self.contents, 70)
+        self.generalLayout.addWidget(self.contents)
