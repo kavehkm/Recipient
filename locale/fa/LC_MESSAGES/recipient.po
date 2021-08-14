@@ -1,0 +1,42 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2021-08-14 11:22+0430\n"
+"PO-Revision-Date: 2021-08-14 11:30+0430\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fa_IR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=(n==0 || n==1);\n"
+
+#: .\src\ui\windows\main.py:27
+msgid "Status"
+msgstr "وضعیت"
+
+#: .\src\ui\windows\main.py:30
+msgid "Invoices"
+msgstr "فاکتورها"
+
+#: .\src\ui\windows\main.py:33
+msgid "WooCommerce"
+msgstr "ووکامرس"
+
+#: .\src\ui\windows\main.py:36
+msgid "Settings"
+msgstr "تنظیمات"
+
+#: .\src\ui\windows\main.py:39
+msgid "Logs"
+msgstr "لاگ ها"
+
+#: .\src\ui\windows\main.py:42
+msgid "Help"
+msgstr "راهنما"
+
+#: .\src\ui\windows\main.py:45
+msgid "About"
+msgstr "درباره"

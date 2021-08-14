@@ -29,11 +29,23 @@ APP_VERSION = 1.0
 APP_AUTHOR = 'Kaveh Mehrbanian'
 
 # network check settings
-IP = '1.1.1.1'
+IP = '8.8.8.8'
 PORT = 53
 TIMEOUT = 3
 INTERVAL = 3
 JITTER = 1
+
+# localization settings
+LOCALE_DIR = os.path.join(BASE_DIR, 'locale')
+LOCALE_DOMAIN = 'recipient'
+LOCALE_LANGUAGES = {
+    'English': 'en',
+    'Persian': 'fa'
+}
+LOCALE_DEFAULT_LANG = LOCALE_LANGUAGES['English']
+
+# general settings
+GENERAL_LANGUAGE = 'English'
 
 # woocommerce settings
 WC_URL = ''
@@ -64,6 +76,9 @@ INVOICES_GUEST_CUSTOMER_ID = 1
 #####################################
 
 CUSTOMIZABLE_SETTINGS = {
+    'general': {
+        'language': GENERAL_LANGUAGE
+    },
     'wc': {
         'url': WC_URL,
         'ckey': WC_CONSUMER_KEY,

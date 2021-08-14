@@ -15,6 +15,7 @@ class Settings(object):
 
     def tab_handler(self):
         self.tab.set({
+            'general': s.get('general', {}),
             'wc': s.get('wc', {}),
             'moein': s.get('moein', {}),
             'invoices': s.get('invoices', {})
@@ -24,6 +25,7 @@ class Settings(object):
     def save(self):
         try:
             settings = self.tab.get()
+            s.set('general', settings.get('general'))
             s.set('wc', settings.get('wc'))
             s.set('moein', settings.get('moein'))
             s.set('invoices', settings.get('invoices'))
