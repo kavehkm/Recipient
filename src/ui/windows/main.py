@@ -1,9 +1,10 @@
 # internal
 # noinspection PyUnresolvedReferences
 from src.ui.resources import icons
+from src.translation import _
 from .order_details import OrderDetails
-from src.ui.components import (BaseWidget, Table, Tab, MainMenuButton,
-                               MDButton, SMEdit, SMDateTimeEdit, SMCombo, SMSpin)
+from src.ui.components import (BaseWidget, Table, Tab, MainMenuButton, ScrollArea,
+                               GpBox, MDButton, SMEdit, SMDateTimeEdit, SMCombo, SMSpin)
 # pyqt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
@@ -16,6 +17,11 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame, QHBoxLayout,
 ########
 class Menu(BaseWidget):
     """Menu"""
+    def __init__(self, parent=None):
+        self.buttons = []
+        self.main = parent
+        super().__init__(parent)
+
     def setupLayout(self):
         super().setupLayout()
         self.setFixedWidth(200)
@@ -23,28 +29,28 @@ class Menu(BaseWidget):
     def setupWidget(self):
         # setup buttons
         # - status
-        self.btnStatus = MainMenuButton('Status')
+        self.btnStatus = MainMenuButton(_('Status'))
         self.btnStatus.setIcon(QIcon(':/icons/btnStatus.png'))
         # - invoices
-        self.btnInvoices = MainMenuButton('Invoices')
+        self.btnInvoices = MainMenuButton(_('Invoices'))
         self.btnInvoices.setIcon(QIcon(':/icons/btnInvoices.png'))
         # - woocommerce
-        self.btnWooCommerce = MainMenuButton('WooCommerce')
+        self.btnWooCommerce = MainMenuButton(_('WooCommerce'))
         self.btnWooCommerce.setIcon(QIcon(':/icons/btnWooCommerce.png'))
         # - settings
-        self.btnSettings = MainMenuButton('Settings')
+        self.btnSettings = MainMenuButton(_('Settings'))
         self.btnSettings.setIcon(QIcon(':/icons/btnSettings.png'))
         # - logs
-        self.btnLogs = MainMenuButton('Logs')
+        self.btnLogs = MainMenuButton(_('Logs'))
         self.btnLogs.setIcon(QIcon(':/icons/btnLogs.png'))
         # - help
-        self.btnHelp = MainMenuButton('Help')
+        self.btnHelp = MainMenuButton(_('Help'))
         self.btnHelp.setIcon(QIcon(':/icons/btnHelp.png'))
         # - about
-        self.btnAbout = MainMenuButton('About')
+        self.btnAbout = MainMenuButton(_('About'))
         self.btnAbout.setIcon(QIcon(':/icons/btnAbout.png'))
         # register buttons
-        buttons = [
+        self.buttons = [
             self.btnStatus,
             self.btnInvoices,
             self.btnWooCommerce,
@@ -53,11 +59,16 @@ class Menu(BaseWidget):
             self.btnHelp,
             self.btnAbout
         ]
-        for btn in buttons:
+        for btn in self.buttons:
             btn.setIconSize(QSize(24, 24))
             self.generalLayout.addWidget(btn)
         # add stretch at the end
         self.generalLayout.addStretch(1)
+
+    def setFoucus(self, index):
+        for btn in self.buttons:
+            btn.setDefault(False)
+        self.buttons[index].setDefault(True)
 
 
 ############
@@ -229,49 +240,62 @@ class WooCommerceTab(BaseTab):
 class SettingsTab(BaseTab):
     """Settings Tab"""
     def setupWidget(self):
-        # tabs
-        self.tabs = Tab()
-        self.generalLayout.addWidget(self.tabs)
+        # scrollable area
+        self.scrollableArea = ScrollArea()
+        self.generalLayout.addWidget(self.scrollableArea)
+        # settings layout
+        self.settingsLayout = QVBoxLayout()
+        self.settingsLayout.setSpacing(20)
+        self.scrollableArea.setLayout(self.settingsLayout)
+        # general settings
+        self.general = GpBox(' General ')
+        self.settingsLayout.addWidget(self.general)
+        self.generalForm = QFormLayout()
+        self.general.setLayout(self.generalForm)
+        # - language
+        self.language = SMCombo()
+        self.language.addItems(['English', 'Persian'])
+        self.generalForm.addRow(QLabel('Language'), self.language)
         # moein settings
+        self.moein = GpBox(' Moein ')
+        self.settingsLayout.addWidget(self.moein)
         self.moeinForm = QFormLayout()
-        moeinFormFrame = QFrame()
-        moeinFormFrame.setLayout(self.moeinForm)
-        self.tabs.addTab(moeinFormFrame, 'Moein')
+        self.moein.setLayout(self.moeinForm)
         # - server
         self.server = SMEdit()
-        self.moeinForm.addRow(QLabel('Server'), self.server,)
+        self.moeinForm.addRow(QLabel('Server'), self.server)
         # - username
         self.username = SMEdit()
         self.moeinForm.addRow(QLabel('Username'), self.username)
         # - password
         self.password = SMEdit(password=True)
-        self.moeinForm.addRow(QLabel('Password'), self.password)
+        self.moeinForm.addRow('Password', self.password)
         # - database
         self.database = SMEdit()
-        self.moeinForm.addRow(QLabel('DataBase'), self.database)
+        self.moeinForm.addRow(QLabel('Database'), self.database)
         # woocommerce settings
-        self.wcForm = QFormLayout()
-        wcFormFrame = QFrame()
-        wcFormFrame.setLayout(self.wcForm)
-        self.tabs.addTab(wcFormFrame, 'WooCommerce')
+        self.woocommerce = GpBox(' WooCommerce ')
+        self.settingsLayout.addWidget(self.woocommerce)
+        self.woocommerceForm = QFormLayout()
+        self.woocommerce.setLayout(self.woocommerceForm)
         # - url
         self.url = SMEdit()
-        self.wcForm.addRow(QLabel('URL'), self.url)
+        self.woocommerceForm.addRow(QLabel('URL'), self.url)
         # - consumer key
         self.ckey = SMEdit()
-        self.wcForm.addRow(QLabel('Consumer Key'), self.ckey)
+        self.woocommerceForm.addRow(QLabel('Consumer key'), self.ckey)
         # - secret key
         self.skey = SMEdit()
-        self.wcForm.addRow(QLabel('Secret Key'), self.skey)
+        self.woocommerceForm.addRow(QLabel('Secret key'), self.skey)
         # - version
         self.version = SMCombo()
         self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
-        self.wcForm.addRow(QLabel('Version'), self.version)
-        # invoices settings
+        self.woocommerceForm.addRow(QLabel('Version'), self.version)
+        # invoice settings
+        self.invoices = GpBox(' Invoices ')
+        self.settingsLayout.addWidget(self.invoices)
         self.invoicesForm = QFormLayout()
-        invoicesFormFrame = QFrame()
-        invoicesFormFrame.setLayout(self.invoicesForm)
-        self.tabs.addTab(invoicesFormFrame, 'Invoices')
+        self.invoices.setLayout(self.invoicesForm)
         # - status
         # -- options
         self.cbxPending = QCheckBox('Pending')
@@ -324,7 +348,15 @@ class SettingsTab(BaseTab):
         self.invoicesForm.addRow(QLabel('Before'), self.before)
         # - guest
         self.guest = SMSpin()
-        self.invoicesForm.addRow(QLabel('Guest Customer ID'), self.guest)
+        self.invoicesForm.addRow(QLabel('Guest customer'), self.guest)
+        # - repository
+        self.repository = SMCombo()
+        self.invoicesForm.addRow(QLabel('Products repository'), self.repository)
+        # - price level
+        self.priceLevel = SMCombo()
+        self.invoicesForm.addRow(QLabel('Products Price-level'), self.priceLevel)
+        # add stretch at end
+        self.settingsLayout.addStretch(1)
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
@@ -344,6 +376,9 @@ class SettingsTab(BaseTab):
 
     def get(self):
         return {
+            'general': {
+                'language': self.language.currentText()
+            },
             'wc': {
                 'url': self.url.text(),
                 'ckey': self.ckey.text(),
@@ -365,6 +400,9 @@ class SettingsTab(BaseTab):
         }
 
     def set(self, settings):
+        # general
+        general = settings.get('general')
+        self.language.setCurrentText(general.get('language'))
         # woocommerce
         wc = settings.get('wc')
         self.url.setText(wc.get('url')),
@@ -427,6 +465,7 @@ class Contents(BaseWidget):
 
     def __init__(self, parent=None):
         self.tabs = []
+        self.main = parent
         super().__init__(parent)
 
     def bootstrap(self):
@@ -464,9 +503,12 @@ class Contents(BaseWidget):
             self.generalLayout.addWidget(tab)
 
     def showTab(self, tabId):
+        # show current tab
         for tab in self.tabs:
             tab.hide()
         self.tabs[tabId].show()
+        # set focus on current menu button
+        self.main.menu.setFoucus(tabId)
 
 
 ###############

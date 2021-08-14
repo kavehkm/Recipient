@@ -7,5 +7,6 @@ from .progress import Progress
 from .table_list import TableList
 from .tab import Tab
 from .scroll_area import ScrollArea
+from .groupbox import GpBox
 from .buttons import *
 from .inputs import *
