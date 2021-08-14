@@ -335,15 +335,17 @@ class Category(Mappable):
             return self.hierarchy_name(parent) + '___' + category['name']
 
     def wc_hierarchy_name(self, category, categories):
+        # detect name
+        name = category.get('_name') or category['name']
         # check for parent
         if not category['parent']:
-            return category['name']
+            return name
         parent = None
         for cat in categories:
             if cat['id'] == category['parent']:
                 parent = cat
                 break
-        return self.wc_hierarchy_name(parent, categories) + '___' + category['name'] if parent else category['name']
+        return self.wc_hierarchy_name(parent, categories) + '___' + name if parent else name
 
     def hierarchify(self, categories, woocommerce=False):
         for category in categories:
