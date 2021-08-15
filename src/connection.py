@@ -15,7 +15,8 @@ class Connection(object):
         # pyodbc connection
         self._connection = None
 
-    def _driver(self):
+    @staticmethod
+    def _driver():
         return [d for d in pyodbc.drivers() if d.find('SQL') != -1][0]
 
     def _dsn(self):
