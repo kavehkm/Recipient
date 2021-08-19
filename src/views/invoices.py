@@ -1,6 +1,5 @@
 # internal
 from src import connection
-from src import settings as s
 from src.models import Invoice
 from src.ui.components import Message, Confirm
 
@@ -47,12 +46,7 @@ class Invoices(object):
             conn = connection.get()
             self.invoice.set_connection(conn)
             try:
-                settings = s.get('invoices')
-                raw_orders = self.invoice.orders(
-                    settings['status'],
-                    settings['after'],
-                    settings['before']
-                )
+                raw_orders = self.invoice.orders()
             except Exception as e:
                 msg = Message(self.ui, Message.ERROR, 'Cannot get orders from WooCommerce.', str(e))
                 msg.show()
@@ -62,14 +56,10 @@ class Invoices(object):
                 for order in raw_orders:
                     orders[order['number']] = order
                     # generate summary
-                    fname = order['billing']['first_name'] or order['shipping']['first_name']
-                    lname = order['billing']['last_name'] or order['shipping']['last_name']
-                    key = '#{} {} {}'.format(order['id'], fname, lname)
-                    created_date = order['created_date'].strftime('%Y-%m-%d @ %H:%M:%S')
                     summary.append([
                         order['id'],
-                        key,
-                        created_date,
+                        '#{} {} {}'.format(order['id'], order['first_name'], order['last_name']),
+                        order['created_date'].strftime('%Y-%m-%d @ %H:%M:%S'),
                         order['status'],
                         order['total']
                     ])
@@ -103,7 +93,7 @@ class Invoices(object):
                 'totals': {
                     'order': order['total'],
                     'tax': order['total_tax'],
-                    'items': order['items_total'],
+                    'items': order['items_subtotal'],
                     'shipping': order['shipping_total'],
                     'discount': order['discount_total']
                 },
@@ -206,34 +196,36 @@ class Invoices(object):
                 msg.show()
 
     def save_all_confirm(self):
-        # keep track of saves
+        error = False
         saves = 0
         conn = connection.get()
         self.invoice.set_connection(conn)
-        try:
-            for order in self._current['completed']:
-                order_number = order['number']
+        for order in self._current['completed']:
+            order_number = order['number']
+            try:
                 self.invoice.save(order)
-                # commit changes and increase saves number
+            except Exception as e:
+                conn.rollback()
+                error = True
+                message = 'Save progress interrupt by order #{}.'.format(order_number)
+                msg = Message(self.ui, Message.ERROR, message, str(e))
+                msg.show()
+                break
+            else:
                 conn.commit()
                 saves += 1
-                # remove saved order from cached orders
                 del self._orders[order_number]
                 index = self.orders_table.findRecord(order_number)
                 if index is not None:
                     self.orders_table.removeRecord(index)
-        except Exception as e:
-            conn.rollback()
-            message = 'Save progress interrupt by order #{}.'.format(order_number)
-            msg = Message(self.ui, Message.ERROR, message, str(e))
-            msg.show()
-        else:
+        # close connection
+        conn.close()
+        # check for error
+        if not error:
             plural = 's' if saves > 1 else ''
             message = '{} order{} saved successfully.'.format(saves, plural)
             msg = Message(self.ui, Message.SUCCESS, message)
             msg.show()
-        finally:
-            conn.close()
 
     def get_saved(self):
         conn = connection.get()
@@ -244,14 +236,11 @@ class Invoices(object):
             msg = Message(self.ui, Message.ERROR, 'Cannot load saved invoices.', str(e))
             msg.show()
         else:
-            records = []
+            records = list()
             for invoice in saved:
-                cid = invoice['customer_id']
-                cfname = invoice['customer_firstname']
-                clname = invoice['customer_lastname']
                 records.append([
-                    invoice['id'],
-                    '{} {} {}'.format(cid, cfname, clname),
+                    invoice['No'],
+                    '{} {}'.format(invoice['customer_code'], invoice['customer_name']),
                     invoice['order_id'],
                     invoice['saved_date'].strftime('%Y-%m-%d @ %H:%M:%S')
                 ])
@@ -260,20 +249,4 @@ class Invoices(object):
             conn.close()
 
     def remove(self):
-        index = self.invoices_table.getCurrentRecordIndex()
-        if index is not None:
-            conn = connection.get()
-            self.invoice.set_connection(conn)
-            try:
-                record = self.invoices_table.getRecord(index)
-                self.invoice.remove(record[2])
-            except Exception as e:
-                conn.rollback()
-                msg = Message(self.ui, Message.ERROR, 'Cannot remove invoice.', str(e))
-                msg.show()
-            else:
-                conn.commit()
-                # update ui
-                self.invoices_table.removeRecord(index)
-            finally:
-                conn.close()
+        pass
