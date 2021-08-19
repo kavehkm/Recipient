@@ -1,5 +1,3 @@
-# standard
-from datetime import datetime
 # internal
 from src import messages
 from src import connection
@@ -100,7 +98,7 @@ class ObjectView(object):
             moeinid = int(self.form.getId())
             wcid = int(self.form.getWcid())
             if index is None:
-                new_map = self.model.add_map(moeinid, wcid, datetime.now())
+                new_map = self.model.add_map(moeinid, wcid)
                 self.table.addRecord([
                     new_map['id'],
                     new_map['name'],
