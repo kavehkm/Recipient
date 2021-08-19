@@ -2,17 +2,18 @@
 from datetime import datetime
 # internal
 from src import wc
-from src import table
 from src import wc_api
 from src import settings as s
+from src.table import DoesNotExists, Table
+# jalali datetime
+from jdatetime import datetime as jdatetime
 
 
-##############
-# Exceptions #
-##############
-class DoesNotExists(Exception):
-    """Does Not Exists Exception"""
-    pass
+REPOSITORY = 1
+PRICE_LEVEL = 1
+BUY_PRICE_TYPE = 1
+SELL_PRICE_TYPE = 2
+INVOICE_TYPE = 0
 
 
 ##############
@@ -25,90 +26,6 @@ class Model(object):
 
     def set_connection(self, connection):
         self._connection = connection
-
-    def execute(self, sql, parameters=(), method=None):
-        results = None
-        cursor = self._connection.cursor()
-        cursor.execute(sql, parameters)
-        if method:
-            results = getattr(cursor, method)()
-        cursor.close()
-        return results
-
-    def max(self, table, column):
-        sql = 'SELECT MAX({}) FROM {}'.format(column, table)
-        return self.execute(sql, method='fetchval')
-
-
-#############
-# Map Model #
-#############
-class Map(Model):
-    """Recipient Map"""
-    def __init__(self, table, mappable_name):
-        super().__init__()
-        self.table = table
-        self.mappable_name = mappable_name
-
-    @staticmethod
-    def where(conditions):
-        params = list()
-        sql = " WHERE "
-        for column, value in conditions.items():
-            sql += "{} = ? AND ".format(column)
-            params.append(value)
-        return sql.rstrip(" AND "), params
-
-    def get(self, **conditions):
-        sql = "SELECT * FROM {}".format(self.table)
-        _sql, params = self.where(conditions)
-        sql += _sql
-        obj = self.execute(sql, params, method='fetchone')
-        if obj is None:
-            msg = 'Map for {} with '.format(self.mappable_name)
-            for column, value in conditions.items():
-                msg += '{} `{}`, '.format(column, value)
-            msg = msg.rstrip(', ')
-            msg += ' does not exists.'
-            raise DoesNotExists(msg)
-        return obj
-
-    def all(self):
-        sql = "SELECT * FROM {}".format(self.table)
-        return self.execute(sql, method='fetchall')
-
-    def filter(self, **conditions):
-        sql = "SELECT * FROM {}".format(self.table)
-        _sql, params = self.where(conditions)
-        sql += _sql
-        return self.execute(sql, params, method='fetchall')
-
-    def create(self, mid, wcid, last_update=None):
-        last_update = last_update or datetime.now()
-        params = [mid, wcid, last_update]
-        sql = "INSERT INTO {}(id, wcid, last_update) VALUES (?, ?, ?)".format(self.table)
-        self.execute(sql, params)
-
-    def update(self, fields, **conditions):
-        params = list()
-        sql = "UPDATE {} SET ".format(self.table)
-        for column, value in fields.items():
-            sql += "{} = ?, ".format(column)
-            params.append(value)
-        sql = sql.rstrip(', ')
-        if conditions:
-            _sql, _params = self.where(conditions)
-            sql += _sql
-            params.extend(_params)
-        return self.execute(sql, params)
-
-    def delete(self, **conditions):
-        params = list()
-        sql = "DELETE FROM {}".format(self.table)
-        if conditions:
-            _sql, params = self.where(conditions)
-            sql += _sql
-        return self.execute(sql, params)
 
 
 ##################
@@ -131,7 +48,7 @@ class Mappable(Model):
     def wc_mapped_update(self, mapped):
         pass
 
-    def add_map(self, moeinid, wcid, last_update):
+    def add_map(self, moeinid, wcid):
         pass
 
     def edit_map(self, moeinid, new_moeinid, new_wcid):
@@ -154,22 +71,28 @@ class Product(Mappable):
     """Recipient Product Model"""
     def __init__(self):
         super().__init__()
-        self.map = Map('ProductMap', 'product')
-        self.category_map = Map('CategoryMap', 'category')
+        # tables
+        self.product = Table('KalaList', 'Product')
+        self.product_map = Table('ProductMap')
+        self.category_map = Table('CategoryMap')
+        self.price_level = Table('PriceLevel')
+        self.product_price = Table('KalaPrice', 'ProductPrice')
+        self.product_repository = Table('MojodiList', 'ProductRepository')
+        # woocommerce api
         self.woocommerce = wc.get(wc_api.get(), 'products')
-
-        self.repository =   1
-        self.price_level =  1
-        self.price_type =   2
 
     def set_connection(self, connection):
         super().set_connection(connection)
-        self.map.set_connection(connection)
-        self.category_map.set_connection(connection)
+        self.product.connection = connection
+        self.product_map.connection = connection
+        self.category_map.connection = connection
+        self.price_level.connection = connection
+        self.product_price.connection = connection
+        self.product_repository.connection = connection
 
     def mapped(self):
         mapped = list()
-        params = [self.repository, self.price_type, self.price_level]
+        params = [REPOSITORY, SELL_PRICE_TYPE, PRICE_LEVEL]
         sql = """
             SELECT
                 P.ID, P.Name, P.GroupID, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
@@ -184,12 +107,14 @@ class Product(Mappable):
             WHERE
                 KP.Type = ? AND KP.PriceID = ?
         """
-        for row in self.execute(sql, params, method='fetchall'):
+        for row in self.product.custom_sql(sql, params, method='fetchall'):
+            quantity = row.Mojoodi or 0
+            price = str(row.FinalPrice) if row.FinalPrice else '0'
             mapped.append({
                 'id': row.ID,
                 'name': row.Name,
-                'price': row.FinalPrice,
-                'quantity': row.Mojoodi,
+                'quantity': quantity,
+                'price': price,
                 'category_id': row.GroupID,
                 'wcid': row.wcid,
                 'last_update': row.last_update,
@@ -199,7 +124,7 @@ class Product(Mappable):
 
     def unmapped(self):
         unmapped = list()
-        params = [self.repository, self.price_type, self.price_level]
+        params = [REPOSITORY, SELL_PRICE_TYPE, PRICE_LEVEL]
         sql = """
             SELECT
                 P.ID, P.Name, P.GroupID, KP.FinalPrice, MA.Mojoodi
@@ -214,36 +139,40 @@ class Product(Mappable):
             WHERE
                 PM.id IS NULL AND KP.Type = ? AND KP.PriceID = ?
         """
-        for row in self.execute(sql, params, method='fetchall'):
+        for row in self.product.custom_sql(sql, params, method='fetchall'):
+            quantity = row.Mojoodi or 0
+            price = str(row.FinalPrice) if row.FinalPrice else '0'
             unmapped.append({
                 'id': row.ID,
                 'name': row.Name,
-                'price': row.FinalPrice,
-                'quantity': row.Mojoodi,
+                'price': price,
+                'quantity': quantity,
                 'category_id': row.GroupID,
             })
         return unmapped
 
     def wc_mapped(self):
         return [
-            {'id': product_map.wcid}
-            for product_map in self.map.all()
+            {'wcid': product_map.wcid}
+            for product_map in self.product_map.all('wcid')
         ]
 
     def wc_unmapped(self):
-        ids = [product_map.wcid for product_map in self.map.all()]
-        return self.woocommerce.all(excludes=ids)
+        ids = [product_map.wcid for product_map in self.product_map.all('wcid')]
+        return self.woocommerce.all(excludes=ids, status=['publish'])
 
-    def add_map(self, moeinid, wcid, last_update):
+    def add_map(self, moeinid, wcid):
         # check product
-        sql = "SELECT Name FROM KalaList WHERE ID = ?"
-        product = self.execute(sql, [moeinid], method='fetchone')
-        if product is None:
-            raise DoesNotExists('Product with id {} does not exists.'.format(moeinid))
+        product = self.product.get('Name', ID=moeinid)
         # check woocommerce product
         self.woocommerce.get(wcid)
         # everything is ok, lets create map
-        self.map.create(moeinid, wcid, last_update)
+        last_update = datetime.now()
+        self.product_map.create({
+            'id': moeinid,
+            'wcid': wcid,
+            'last_update': last_update
+        })
         return {
             'id': moeinid,
             'wcid': wcid,
@@ -252,14 +181,11 @@ class Product(Mappable):
 
     def edit_map(self, moeinid, new_moeinid, new_wcid):
         # check product
-        sql = "SELECT Name FROM KalaList WHERE ID = ?"
-        new_product = self.execute(sql, [new_moeinid], method='fetchone')
-        if new_moeinid is None:
-            raise DoesNotExists('Product with id {} does not exists'.format(new_moeinid))
+        new_product = self.product.get('Name', ID=new_moeinid)
         # check woocommerce product
         self.woocommerce.get(new_wcid)
         # everything is ok, lets update current map
-        self.map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
+        self.product_map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
         return {
             'id': new_moeinid,
             'wcid': new_wcid,
@@ -268,40 +194,104 @@ class Product(Mappable):
 
     def remove_map(self, moeinid):
         # check for map
-        self.map.get(id=moeinid)
+        self.product_map.get(id=moeinid)
         # map exists, lets delete it
-        self.map.delete(id=moeinid)
+        self.product_map.delete(id=moeinid)
 
     def wc_mapped_update(self, mapped):
         category_map = self.category_map.get(id=mapped['category_id'])
         data = {
             'name': mapped['name'],
             'categories': [{'id': category_map.wcid}],
-            'regular_price': str(mapped['price']),
-            'stock_quantity': mapped['quantity'] or 0
+            'regular_price': mapped['price'],
+            'stock_quantity': mapped['quantity']
         }
         # update woocommerce product
         self.woocommerce.update(mapped['wcid'], data)
         # update product map
-        self.map.update({'last_update': datetime.now()}, id=mapped['id'])
+        self.product_map.update({'last_update': datetime.now()}, id=mapped['id'])
 
     def export2wc(self, product):
         category_map = self.category_map.get(id=product['category_id'])
         data = {
             'name': product['name'],
             'categories': [{'id': category_map.wcid}],
-            'regular_price': str(product['price']),
-            'manage_stock': True,
-            'stock_quantity': product['quantity'] or 0,
+            'regular_price': product['price'],
+            'stock_quantity': product['quantity'],
+            'manage_stock': True if product['quantity'] else False,
             'status': 'publish' if product['quantity'] else 'draft'
         }
         # create woocommerce product
         wc_product = self.woocommerce.create(data)
         # create product map
-        self.map.create(product['id'], wc_product['id'])
+        self.product_map.create({
+            'id': product['id'],
+            'wcid': wc_product['id'],
+            'last_update': datetime.now()
+        })
 
     def import2moein(self, wc_product):
-        pass
+        regular_price = int(wc_product['regular_price']) if wc_product['regular_price'] else 0
+        quantity = wc_product['stock_quantity'] if wc_product['stock_quantity'] else 0
+        category = self.category_map.get(wcid=wc_product['categories'][0]['id'])
+        # - create product
+        self.product.create({
+            'Name': wc_product['name'],
+            'GroupID': category.id,
+            'SellPrice': regular_price,
+            'Code': self.product.max('Code') + 1,
+            'MenuOrder': self.product.max('MenuOrder') + 1,
+            'Unit2': 'عدد',
+            'BuyPrice': 0,
+            'SefareshPoint': 0,
+            'ShortCut': 0,
+            'Active': 1,
+            'Maliat': 1,
+            'UnitType': 0,
+            'Info': '',
+            'Weight': 0,
+            'IncPerc': 0,
+            'IncPrice': 0,
+            'ValueCalcType': 0
+        })
+        product_id = self.product.max('ID')
+        # - set price levels
+        for pl in self.price_level.all():
+            self.product_price.create({
+                'PriceID': pl.ID,
+                'KalaID': product_id,
+                'Type': BUY_PRICE_TYPE,
+                'Price': 0,
+                '[Percent]': 0,
+                'FinalPrice': 0,
+                'Takhfif': 0
+            })
+            self.product_price.create({
+                'PriceID': pl.ID,
+                'KalaID': product_id,
+                'Type': SELL_PRICE_TYPE,
+                'Price': regular_price,
+                '[Percent]': 0,
+                'FinalPrice': regular_price,
+                'Takhfif': 0
+            })
+        # - quantity
+        if quantity:
+            self.product_repository.create({
+                'idKala': product_id,
+                'Tedad': quantity,
+                'SumPrice': regular_price * quantity,
+                'Price': regular_price,
+                'Anbar': REPOSITORY,
+                'Tedad1': 0,
+                'Tedad2': 0
+            })
+        # - create map
+        self.product_map.create({
+            'id': product_id,
+            'wcid': wc_product['id'],
+            'last_update': datetime.now()
+        })
 
 
 ##################
@@ -311,20 +301,24 @@ class Category(Mappable):
     """Recipient Category Model"""
     def __init__(self):
         super().__init__()
-        self.map = Map('CategoryMap', 'category')
+        # tables
+        self.category = Table('GroupKala', 'Category')
+        self.category_map = Table('CategoryMap')
+        # woocommerce api
         self.woocommerce = wc.get(wc_api.get(), 'products/categories')
 
     def set_connection(self, connection):
         super().set_connection(connection)
-        self.map.set_connection(connection)
+        self.category.connection = connection
+        self.category_map.connection = connection
 
     def hierarchy_name(self, category):
         # check for parent
         if not category['parent']:
             return category['name']
-        sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
-        parent = self.execute(sql, [category['parent']], method='fetchone')
-        if parent is None:
+        try:
+            parent = self.category.get(ID=category['parent'])
+        except DoesNotExists:
             return category['name']
         else:
             parent = {
@@ -332,7 +326,7 @@ class Category(Mappable):
                 'name': parent.GroupKala,
                 'parent': parent.ParentID
             }
-            return self.hierarchy_name(parent) + '___' + category['name']
+            return self.hierarchy_name(parent) + ' > ' + category['name']
 
     def wc_hierarchy_name(self, category, categories):
         # detect name
@@ -345,7 +339,7 @@ class Category(Mappable):
             if cat['id'] == category['parent']:
                 parent = cat
                 break
-        return self.wc_hierarchy_name(parent, categories) + '___' + name if parent else name
+        return self.wc_hierarchy_name(parent, categories) + ' > ' + name if parent else name
 
     def hierarchify(self, categories, woocommerce=False):
         for category in categories:
@@ -366,7 +360,7 @@ class Category(Mappable):
             INNER JOIN
                 CategoryMap AS CM ON C.ID = CM.id
         """
-        for row in self.execute(sql, method='fetchall'):
+        for row in self.category.custom_sql(sql, method='fetchall'):
             mapped.append({
                 'id': row.ID,
                 'name': row.GroupKala,
@@ -390,7 +384,7 @@ class Category(Mappable):
             WHERE
                 CM.id IS NULL
         """
-        for row in self.execute(sql, method='fetchall'):
+        for row in self.category.custom_sql(sql, method='fetchall'):
             unmapped.append({
                 'id': row.ID,
                 'name': row.GroupKala,
@@ -401,13 +395,13 @@ class Category(Mappable):
 
     def wc_mapped(self):
         return [
-            {'id': category_map.wcid}
-            for category_map in self.map.all()
+            {'wcid': category_map.wcid}
+            for category_map in self.category_map.all('wcid')
         ]
 
     def wc_unmapped(self):
         unmapped = list()
-        ids = [category_map.wcid for category_map in self.map.all()]
+        ids = [category_map.wcid for category_map in self.category_map.all('wcid')]
         categories = self.woocommerce.all()
         self.hierarchify(categories, woocommerce=True)
         for category in categories:
@@ -415,14 +409,11 @@ class Category(Mappable):
                 unmapped.append(category)
         return unmapped
 
-    def add_map(self, moeinid, wcid, last_update):
+    def add_map(self, moeinid, wcid):
         # check category and parent
-        sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
-        category = self.execute(sql, [moeinid], method='fetchone')
-        if category is None:
-            raise DoesNotExists('Category with id {} does not exists.'.format(moeinid))
+        category = self.category.get(ID=moeinid)
         if category.ParentID:
-            self.map.get(id=category.ParentID)
+            self.category_map.get(id=category.ParentID)
         category = {
             'id': category.ID,
             'name': category.GroupKala,
@@ -431,7 +422,12 @@ class Category(Mappable):
         # check woocommerce category
         self.woocommerce.get(wcid)
         # everything is ok, lets create map
-        self.map.create(moeinid, wcid, last_update)
+        last_update = datetime.now()
+        self.category_map.create({
+            'id': moeinid,
+            'wcid': wcid,
+            'last_update': last_update
+        })
         return {
             'id': moeinid,
             'wcid': wcid,
@@ -441,12 +437,9 @@ class Category(Mappable):
 
     def edit_map(self, moeinid, new_moeinid, new_wcid):
         # check new category and parent
-        sql = "SELECT ID, GroupKala, ParentID FROM GroupKala WHERE ID = ?"
-        new_category = self.execute(sql, [new_moeinid], method='fetchone')
-        if new_category is None:
-            raise DoesNotExists('Category with id {} does not exists.'.format(new_moeinid))
+        new_category = self.category.get(ID=moeinid)
         if new_category.ParentID:
-            self.map.get(id=new_category.ParentID)
+            self.category_map.get(id=new_category.ParentID)
         new_category = {
             'id': new_category.ID,
             'name': new_category.GroupKala,
@@ -455,7 +448,7 @@ class Category(Mappable):
         # check for new woocommerce category
         self.woocommerce.get(new_wcid)
         # everything is ok, lets update current map
-        self.map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
+        self.category_map.update({'id': new_moeinid, 'wcid': new_wcid}, id=moeinid)
         return {
             'id': new_moeinid,
             'wcid': new_wcid,
@@ -464,20 +457,23 @@ class Category(Mappable):
 
     def remove_map(self, moeinid):
         # check for map
-        self.map.get(id=moeinid)
+        self.category_map.get(id=moeinid)
         # map exists, lets delete it
-        self.map.delete(id=moeinid)
+        self.category_map.delete(id=moeinid)
 
     def wc_mapped_update(self, mapped):
-        data = {'name': mapped['_name']}
+        data = {
+            'name': mapped['_name'],
+            'parent': mapped['parent']
+        }
         # check for parent
         if mapped['parent']:
-            parent = self.map.get(id=mapped['parent'])
+            parent = self.category_map.get(id=mapped['parent'])
             data['parent'] = parent.wcid
         # update woocommerce category
         self.woocommerce.update(mapped['wcid'], data)
         # update category map
-        self.map.update({'last_update': datetime.now()}, id=mapped['id'])
+        self.category_map.update({'last_update': datetime.now()}, id=mapped['id'])
 
     def export2wc(self, category):
         data = {
@@ -486,157 +482,289 @@ class Category(Mappable):
         }
         # check for parent
         if category['parent']:
-            parent = self.map.get(id=category['parent'])
+            parent = self.category_map.get(id=category['parent'])
             data['parent'] = parent.wcid
         # create woocommerce category
         wc_category = self.woocommerce.create(data)
-        self.map.create(category['id'], wc_category['id'])
+        self.category_map.create({
+            'id': category['id'],
+            'wcid': wc_category['id'],
+            'last_update': datetime.now()
+        })
 
     def import2moein(self, wc_category):
         # check for parent
         if wc_category['parent']:
-            parent = self.map.get(wcid=wc_category['parent'])
+            parent = self.category_map.get(wcid=wc_category['parent'])
             parent_id = parent.id
         else:
             parent_id = 0
         # create category
-        sql = "INSERT INTO GroupKala(GroupKala, ParentID) VALUES (?, ?)"
-        self.execute(sql, [wc_category['_name'], parent_id])
+        self.category.create({
+            'GroupKala': wc_category['_name'],
+            'ParentID': parent_id
+        })
         # create map
-        self.map.create(self.max('GroupKala', 'ID'), wc_category['id'])
+        self.category_map.create({
+            'id': self.category.max('ID'),
+            'wcid': wc_category['id'],
+            'last_update': datetime.now()
+        })
 
 
+#################
+# Invoice Model #
+#################
 class Invoice(Model):
     """Recipient Invoice Model"""
     def __init__(self):
         super().__init__()
-        # invoice models
-        self.i = table.get('Invoice', 'id')
-        # invlice map models
-        self.im = table.get('InvoiceMap', 'id')
-        # item-line models
-        self.il = table.get('ItemLine', 'invoice_id')
-        # customer models
-        self.cs = table.get('Customer', 'id')
-        # customer map models
-        self.csm = table.get('CustomerMap', 'id')
-        # product models
-        self.p = table.get('Product', 'id')
-        # product map models
-        self.pm = table.get('ProductMap', 'id')
-        # line-item models
-        self.line_item = table.get('LineItem', 'invoice_id')
-        # wc order
-        api = wc_api.get()
-        self.wco = wc.get(api, 'orders')
+        # tables
+        self.invoice = Table('Factor1', 'Invoice')
+        self.invoice_map = Table('InvoiceMap')
+        self.customer = Table('AshkhasList', 'Customer')
+        self.customer_map = Table('CustomerMap')
+        self.product = Table('KalaList', 'Product')
+        self.product_map = Table('ProductMap')
+        self.line_item = Table('Faktor2', 'LineItem')
+        # woocommerce
+        self.woocommerce = wc.get(wc_api.get(), 'orders')
 
     def set_connection(self, connection):
         super().set_connection(connection)
-        self.i.set_connection(connection)
-        self.im.set_connection(connection)
-        self.il.set_connection(connection)
-        self.cs.set_connection(connection)
-        self.csm.set_connection(connection)
-        self.p.set_connection(connection)
-        self.pm.set_connection(connection)
-        self.line_item.set_connection(connection)
+        self.invoice.connection = connection
+        self.invoice_map.connection = connection
+        self.customer.connection = connection
+        self.customer_map.connection = connection
+        self.product.connection = connection
+        self.product_map.connection = connection
+        self.line_item.connection = connection
 
-    def _items(self, line_items):
-        items = []
+    def items(self, line_items):
+        items = list()
         for item in line_items:
-            moeinid = self.pm.get('id', wcid=item['product_id']).id
-            product = self.p.get('id', 'name', id=moeinid)
+            # get map
+            product_map = self.product_map.get(wcid=item['product_id'])
+            # get mapped product
+            product = self.product.get('ID', 'Name', ID=product_map.id)
+            # calculate required details
+            price = int(item['price'])              # price = regular_price - discount
+            quantity = item['quantity']             # quantity
+            subtotal = int(item['subtotal'])        # subtotal = regular_price * quantity
+            total = int(item['total'])              # total = price * quantity
+            regular_price = subtotal // quantity    # regular_price = subtotal // quantity
+            discount = subtotal - total             # discount = subtotal = total
             items.append({
-                'id': product.id,
-                'name': product.name,
-                'price': item['price'],
-                'quantity': item['quantity'],
-                'subtotal': item['subtotal'],
-                'total': item['total']
+                'id': product.ID,
+                'name': product.Name,
+                'quantity': quantity,
+                'price': price,
+                'regular_price': regular_price,
+                'subtotal': subtotal,
+                'total': total,
+                'discount': discount
             })
         return items
 
-    def _items_total(self, line_items):
+    @staticmethod
+    def items_subtotal(line_items):
+        subtotal = 0
+        for item in line_items:
+            subtotal += int(item['subtotal'])
+        return subtotal
+
+    @staticmethod
+    def items_total(line_items):
         total = 0
         for item in line_items:
-            total += int(item['subtotal'])
+            total += int(item['total'])
         return total
 
-    def orders(self, status, after, before):
-        orders = []
-        ids = [row.wcid for row in self.im.all('wcid')]
-        rows = self.wco.all(excludes=ids, status=status, after=after, before=before)
-        for row in rows:
-            row['created_date'] = datetime.fromisoformat(row['date_created_gmt'])
-            row['items'] = self._items(row['line_items'])
-            row['items_total'] = self._items_total(row['line_items'])
-            orders.append(row)
+    @staticmethod
+    def items_discount(line_items):
+        discount = 0
+        for item in line_items:
+            discount += int(item['subtotal']) - int(item['total'])
+        return discount
+
+    def orders(self):
+        invoices_settings = s.get('invoices')
+        status = invoices_settings['status']
+        after = invoices_settings['after']
+        before = invoices_settings['before']
+        ids = [invoice_map.wcid for invoice_map in self.invoice_map.all()]
+        orders = self.woocommerce.all(excludes=ids, status=status, after=after, before=before)
+        for order in orders:
+            order['created_date'] = datetime.fromisoformat(order['date_created_gmt'])
+            order['items'] = self.items(order['line_items'])
+            order['items_subtotal'] = self.items_subtotal(order['line_items'])
+            order['items_total'] = self.items_total(order['line_items'])
+            order['items_discount'] = self.items_discount(order['line_items'])
+            order['discount'] = int(order['discount_total']) - self.items_discount(order['line_items'])
+            order['first_name'] = order['billing']['first_name'] or order['shipping']['first_name']
+            order['last_name'] = order['billing']['last_name'] or order['shipping']['last_name']
         return orders
 
     def update_order(self, order_id, data):
-        self.wco.update(order_id, data)
+        self.woocommerce.update(order_id, data)
 
     def saved(self):
-        saved = []
-        rows = self.i.inner_join(
-            self.im,
-            'id',
-            'id',
-            [],
-            ['wcid', 'last_update']
-        )
-        for row in rows:
-            customer = self.cs.get('id', 'firstname', 'lastname', id=row.customer_id)
+        saved = list()
+        sql = """
+            SELECT
+                I.ID, I.FactorNo, I.Date, I.Time, IM.wcid, IM.last_update, C.Code, C.Name
+            FROM
+                Factor1 AS I
+            INNER JOIN
+                InvoiceMap AS IM ON IM.id = I.ID
+            INNER JOIN
+                AshkhasList as C ON C.ID = I.IDShakhs
+        """
+        for row in self.invoice.custom_sql(sql, method='fetchall'):
             saved.append({
-                'id': row.id,
-                'created_date': row.created_date,
-                'customer_id': customer.id,
-                'customer_firstname': customer.firstname,
-                'customer_lastname': customer.lastname,
+                'id': row.ID,
+                'No': row.FactorNo,
+                'date': row.Date,
+                'time': row.Time,
                 'order_id': row.wcid,
-                'saved_date': row.last_update
+                'saved_date': row.last_update,
+                'customer_code': row.Code,
+                'customer_name': row.Name
             })
         return saved
 
     def save(self, order):
+        # current date and time in jalali calendar
+        date_frmt = '%Y/%m/%d'
+        time_frmt = '%H:%M:%S'
+        current_date = jdatetime.now().date().strftime(date_frmt)
+        current_time = jdatetime.now().date().strftime(time_frmt)
+        # order date and time in jalali calendar
+        order_datetime = jdatetime.fromgregorian(datetime=order['created_date'])
+        order_date = order_datetime.date().strftime(date_frmt)
+        order_time = order_datetime.time().strftime(time_frmt)
+        # get settings
+        invoices_settings = s.get('invoices')
         # detect customer
-        wc_customer_id = order['customer_id']
-        if wc_customer_id == 0:
-            # customer is guest
-            # get moein's guest customer id from settings
-            customer_id = s.get('invoices')['guest']
+        if not order['customer_id']:
+            customer_id = invoices_settings['guest']
         else:
             try:
-                customer_id = self.csm.get('id', wcid=wc_customer_id).id
-            except table.DoesNotExistsError:
-                # customer does not exists, lets create
-                fname = order['billing']['first_name'] or order['shipping']['first_name']
-                lname = order['billing']['last_name'] or order['shipping']['last_name']
-                self.cs.create({
-                    'firstname': fname,
-                    'lastname': lname
+                customer_map = self.customer_map.get(wcid=order['customer_id'])
+                customer_id = customer_map.id
+            except DoesNotExists:
+                self.customer.create({
+                    'Code': self.customer.max('Code') + 1,
+                    'Fname': order['first_name'],
+                    'LName': order['last_name'],
+                    'Name': '{} {}'.format(order['first_name'], order['last_name']),
+                    'BuyPriceLevel': PRICE_LEVEL,
+                    'SellPriceLevel': PRICE_LEVEL,
+                    'StartDate': current_date,
+                    'Prefix': '',
+                    'ShiftTo': '23:59:59',
+                    'ShiftFrom': '00:00:00',
+                    'Visitor': 0,
+                    'CarryPrice': 0,
+                    'VisitorBed': 0,
+                    'EtebarNaghd': 0,
+                    'VisitorPerc': 0,
+                    'EtebarCheque': 0,
+                    'MablaghAvalDore': 0,
                 })
-                customer_id = self.cs.max_pk()
-                self.csm.create({
+                customer_id = self.customer.max('ID')
+                self.customer_map.create({
                     'id': customer_id,
-                    'wcid': wc_customer_id,
+                    'wcid': order['customer_id'],
                     'last_update': datetime.now()
                 })
+        # get next invoice No
+        invoice_no = self.invoice.custom_sql("SELECT dbo.NewFactorNo(?)", [INVOICE_TYPE], method='fetchval')
+        # prepare invoice fields
+        fields = {
+            'FactorNo': invoice_no,
+            'FishNo': invoice_no,
+            'Type': INVOICE_TYPE,
+            'IDShakhs': customer_id,
+            'UserID': 1,
+            'Date': order_date,
+            'Time': order_time,
+            'PaymentDate': order_date,
+            'DeliverDate': order_date,
+            'InsertDate': current_date,
+            'InsertTime': current_time,
+            'Info': '',
+            'JamKol': int(order['total']),
+            'GmeFactor': order['items_subtotal'],
+            'MandeFactor': int(order['total']),
+            'Maliat': int(order['total_tax']),
+            'Takhfif': order['discount'],
+            'TakhfifItem': order['items_discount'],
+            'CarryPrice': int(order['shipping_total']),
+            'CarryType': 0,
+            'Nagd': 0,
+            'Nagd2': 0,
+            'Naseh': 0,
+            'Naseh2': 0,
+            'Chek': 0,
+            'Chek2': 0,
+            'Anbar': 0,
+            'Confirmed': 0,
+            'VisitorPrice': 0,
+            'VisitorPerc': 0,
+            'PaymentValue': 0,
+            'PaymentType': 0,
+            'Tmp': 0,
+            'Converted': 0,
+            'MaliatPerc': 0,
+            'ServicePerc': 0,
+            'ServicePrice': 0
+        }
+        # check for info
+        if fields['CarryPrice']:
+            fields['Info'] = 'Carry Price: {}'.format(fields['CarryPrice'])
         # create invoice
-        self.i.create({
-            'customer_id': customer_id,
-            'created_date': order['created_date']
-        })
-        # get created invoice's id
-        invoice_id = self.i.max_pk()
-        for item in order['items']:
+        self.invoice.create(fields)
+        invoice_id = self.invoice.max('ID')
+        # insert items
+        for i, item in enumerate(order['items'], 1):
             self.line_item.create({
-                'invoice_id': invoice_id,
-                'product_id': item['id'],
-                'quantity': item['quantity']
+                'FactorID': invoice_id,
+                'IDKala': item['id'],
+                'Tedad': item['quantity'],
+                'Tedad1': 0,
+                'Tedad2': item['quantity'],
+                'TedadStr': str(item['quantity']),
+                'Price': item['regular_price'],
+                'SumPrice': int(item['total']),
+                'Takhfif': item['discount'],
+                'TakhfifPerc': 0,
+                'TakhfifPerItem': 0,
+                'TakhfifIsGift': 0,
+                'Anbar': REPOSITORY,
+                'Info': '',
+                'Row': i,
+                'VisitorPrice': 0,
+                'VisitorPerc': 0,
+                'PaymentValue': 0,
+                'PaymentType': 0,
+                'PaymentDate': order_date,
+                'JozDarKol': 0,
+                'Maliat': 0,
+                'Height': 0,
+                'Width': 0,
+                'Thick': 0,
+                'Density': 0,
+                'UnitType': 0,
+                'Amount': 0,
+                'Overhead': 0,
+                'Gift': 0,
+                'Value': 0,
+                'PriceLevelID': PRICE_LEVEL,
+                'ValueEdited': 0
             })
-        # map invoice to wc_order
-        self.im.create({
+        # create map
+        self.invoice_map.create({
             'id': invoice_id,
             'wcid': order['id'],
             'last_update': datetime.now()
@@ -644,10 +772,7 @@ class Invoice(Model):
 
     def remove(self, order_id):
         # find invoice id
-        invoice_id = self.im.get('id', wcid=order_id).id
         # remove related items to invoice
-        self.line_item.delete(invoice_id=invoice_id)
         # remove invoice
-        self.i.delete(id=invoice_id)
         # remove map
-        self.im.delete(id=invoice_id)
+        pass
