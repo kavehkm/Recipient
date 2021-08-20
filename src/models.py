@@ -9,13 +9,6 @@ from src.table import DoesNotExists, Table
 from jdatetime import datetime as jdatetime
 
 
-REPOSITORY = 1
-PRICE_LEVEL = 1
-BUY_PRICE_TYPE = 1
-SELL_PRICE_TYPE = 2
-INVOICE_TYPE = 0
-
-
 ##############
 # Base Model #
 ##############
@@ -92,7 +85,8 @@ class Product(Mappable):
 
     def mapped(self):
         mapped = list()
-        params = [REPOSITORY, SELL_PRICE_TYPE, PRICE_LEVEL]
+        settings = s.get('invoices')
+        params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
         sql = """
             SELECT
                 P.ID, P.Name, P.GroupID, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
@@ -124,7 +118,8 @@ class Product(Mappable):
 
     def unmapped(self):
         unmapped = list()
-        params = [REPOSITORY, SELL_PRICE_TYPE, PRICE_LEVEL]
+        settings = s.get('invoices')
+        params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
         sql = """
             SELECT
                 P.ID, P.Name, P.GroupID, KP.FinalPrice, MA.Mojoodi
@@ -260,7 +255,7 @@ class Product(Mappable):
             self.product_price.create({
                 'PriceID': pl.ID,
                 'KalaID': product_id,
-                'Type': BUY_PRICE_TYPE,
+                'Type': s.INVOICES_BUY_PRICE_TYPE,
                 'Price': 0,
                 '[Percent]': 0,
                 'FinalPrice': 0,
@@ -269,7 +264,7 @@ class Product(Mappable):
             self.product_price.create({
                 'PriceID': pl.ID,
                 'KalaID': product_id,
-                'Type': SELL_PRICE_TYPE,
+                'Type': s.INVOICES_SELL_PRICE_TYPE,
                 'Price': regular_price,
                 '[Percent]': 0,
                 'FinalPrice': regular_price,
@@ -282,7 +277,7 @@ class Product(Mappable):
                 'Tedad': quantity,
                 'SumPrice': regular_price * quantity,
                 'Price': regular_price,
-                'Anbar': REPOSITORY,
+                'Anbar': s.get('invoices')['repository'],
                 'Tedad1': 0,
                 'Tedad2': 0
             })
@@ -588,12 +583,14 @@ class Invoice(Model):
         return discount
 
     def orders(self):
-        invoices_settings = s.get('invoices')
-        status = invoices_settings['status']
-        after = invoices_settings['after']
-        before = invoices_settings['before']
         ids = [invoice_map.wcid for invoice_map in self.invoice_map.all()]
-        orders = self.woocommerce.all(excludes=ids, status=status, after=after, before=before)
+        settings = s.get('invoices')
+        orders = self.woocommerce.all(
+            excludes=ids,
+            status=settings['status'],
+            after=settings['after'],
+            before=settings['before']
+        )
         for order in orders:
             order['created_date'] = datetime.fromisoformat(order['date_created_gmt'])
             order['items'] = self.items(order['line_items'])
@@ -634,6 +631,8 @@ class Invoice(Model):
         return saved
 
     def save(self, order):
+        # get settings
+        settings = s.get('invoices')
         # current date and time in jalali calendar
         date_frmt = '%Y/%m/%d'
         time_frmt = '%H:%M:%S'
@@ -643,11 +642,9 @@ class Invoice(Model):
         order_datetime = jdatetime.fromgregorian(datetime=order['created_date'])
         order_date = order_datetime.date().strftime(date_frmt)
         order_time = order_datetime.time().strftime(time_frmt)
-        # get settings
-        invoices_settings = s.get('invoices')
         # detect customer
         if not order['customer_id']:
-            customer_id = invoices_settings['guest']
+            customer_id = settings['guest']
         else:
             try:
                 customer_map = self.customer_map.get(wcid=order['customer_id'])
@@ -658,8 +655,8 @@ class Invoice(Model):
                     'Fname': order['first_name'],
                     'LName': order['last_name'],
                     'Name': '{} {}'.format(order['first_name'], order['last_name']),
-                    'BuyPriceLevel': PRICE_LEVEL,
-                    'SellPriceLevel': PRICE_LEVEL,
+                    'BuyPriceLevel': settings['price_level'],
+                    'SellPriceLevel': settings['price_level'],
                     'StartDate': current_date,
                     'Prefix': '',
                     'ShiftTo': '23:59:59',
@@ -679,12 +676,12 @@ class Invoice(Model):
                     'last_update': datetime.now()
                 })
         # get next invoice No
-        invoice_no = self.invoice.custom_sql("SELECT dbo.NewFactorNo(?)", [INVOICE_TYPE], method='fetchval')
+        invoice_no = self.invoice.custom_sql("SELECT dbo.NewFactorNo(?)", [settings['type']], method='fetchval')
         # prepare invoice fields
         fields = {
             'FactorNo': invoice_no,
             'FishNo': invoice_no,
-            'Type': INVOICE_TYPE,
+            'Type': settings['type'],
             'IDShakhs': customer_id,
             'UserID': 1,
             'Date': order_date,
@@ -722,7 +719,7 @@ class Invoice(Model):
         }
         # check for info
         if fields['CarryPrice']:
-            fields['Info'] = 'Carry Price: {}'.format(fields['CarryPrice'])
+            fields['Info'] = 'carry price: {}'.format(fields['CarryPrice'])
         # create invoice
         self.invoice.create(fields)
         invoice_id = self.invoice.max('ID')
@@ -741,7 +738,7 @@ class Invoice(Model):
                 'TakhfifPerc': 0,
                 'TakhfifPerItem': 0,
                 'TakhfifIsGift': 0,
-                'Anbar': REPOSITORY,
+                'Anbar': settings['repository'],
                 'Info': '',
                 'Row': i,
                 'VisitorPrice': 0,
@@ -760,7 +757,7 @@ class Invoice(Model):
                 'Overhead': 0,
                 'Gift': 0,
                 'Value': 0,
-                'PriceLevelID': PRICE_LEVEL,
+                'PriceLevelID': settings['price_level'],
                 'ValueEdited': 0
             })
         # create map

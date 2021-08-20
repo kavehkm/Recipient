@@ -46,9 +46,9 @@ class Connection(object):
 
 
 def get(server=None, username=None, password=None, database=None, autocommit=False):
-    db_settings = s.get('moein', {})
-    server = server or db_settings.get('server')
-    username = username or db_settings.get('username')
-    password = password or db_settings.get('password')
-    database = database or db_settings.get('database')
+    db_settings = s.get('moein')
+    server = server or db_settings['server']
+    username = username or db_settings['username']
+    password = password or db_settings['password']
+    database = database or db_settings['database']
     return Connection(server, username, password, database, autocommit)

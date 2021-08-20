@@ -291,6 +291,9 @@ class SettingsTab(BaseTab):
         self.version = SMCombo()
         self.version.addItems(['wc/v3', 'wc/v2', 'wc/v1'])
         self.woocommerceForm.addRow(QLabel('Version'), self.version)
+        # - timeout
+        self.timeout = SMSpin()
+        self.woocommerceForm.addRow(QLabel('Timeout'), self.timeout)
         # invoice settings
         self.invoices = GpBox(' Invoices ')
         self.settingsLayout.addWidget(self.invoices)
@@ -350,11 +353,14 @@ class SettingsTab(BaseTab):
         self.guest = SMSpin()
         self.invoicesForm.addRow(QLabel('Guest customer'), self.guest)
         # - repository
-        self.repository = SMCombo()
+        self.repository = SMSpin()
         self.invoicesForm.addRow(QLabel('Products repository'), self.repository)
         # - price level
-        self.priceLevel = SMCombo()
-        self.invoicesForm.addRow(QLabel('Products Price-level'), self.priceLevel)
+        self.priceLevel = SMSpin()
+        self.invoicesForm.addRow(QLabel('Products price-level'), self.priceLevel)
+        # type
+        self.type = SMSpin()
+        self.invoicesForm.addRow(QLabel('Invoice type'), self.type)
         # add stretch at end
         self.settingsLayout.addStretch(1)
         # controls
@@ -383,7 +389,8 @@ class SettingsTab(BaseTab):
                 'url': self.url.text(),
                 'ckey': self.ckey.text(),
                 'skey': self.skey.text(),
-                'version': self.version.currentText()
+                'version': self.version.currentText(),
+                'timeout': self.timeout.value()
             },
             'moein': {
                 'server': self.server.text(),
@@ -395,33 +402,40 @@ class SettingsTab(BaseTab):
                 'status': [option for option, cbx in self.statusOptions.items() if cbx.isChecked()],
                 'after': self.after.getDateTime(),
                 'before': self.before.getDateTime(),
-                'guest': self.guest.value()
+                'guest': self.guest.value(),
+                'repository': self.repository.value(),
+                'price_level': self.priceLevel.value(),
+                'type': self.type.value()
             }
         }
 
     def set(self, settings):
         # general
-        general = settings.get('general')
-        self.language.setCurrentText(general.get('language'))
+        general = settings['general']
+        self.language.setCurrentText(general['language'])
         # woocommerce
-        wc = settings.get('wc')
-        self.url.setText(wc.get('url')),
-        self.ckey.setText(wc.get('ckey'))
-        self.skey.setText(wc.get('skey'))
-        self.version.setCurrentText(wc.get('version'))
+        wc = settings['wc']
+        self.url.setText(wc['url']),
+        self.ckey.setText(wc['ckey'])
+        self.skey.setText(wc['skey'])
+        self.version.setCurrentText(wc['version'])
+        self.timeout.setValue(wc['timeout'])
         # moein
-        moein = settings.get('moein')
-        self.server.setText(moein.get('server'))
-        self.username.setText(moein.get('username'))
-        self.password.setText(moein.get('password'))
-        self.database.setText(moein.get('database'))
+        moein = settings['moein']
+        self.server.setText(moein['server'])
+        self.username.setText(moein['username'])
+        self.password.setText(moein['password'])
+        self.database.setText(moein['database'])
         # invoices
-        invoices = settings.get('invoices')
-        for option in invoices.get('status'):
+        invoices = settings['invoices']
+        for option in invoices['status']:
             self.statusOptions[option].setChecked(True)
-        self.after.setDateTime(invoices.get('after'))
-        self.before.setDateTime(invoices.get('before'))
-        self.guest.setValue(invoices.get('guest'))
+        self.after.setDateTime(invoices['after'])
+        self.before.setDateTime(invoices['before'])
+        self.guest.setValue(invoices['guest'])
+        self.repository.setValue(invoices['repository'])
+        self.priceLevel.setValue(invoices['price_level'])
+        self.type.setValue(invoices['type'])
 
     def clear(self):
         # woocommerce
