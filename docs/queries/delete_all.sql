@@ -1,9 +1,9 @@
-DELETE FROM Category;
-DELETE FROM CategoryMap;
-DELETE FROM Product;
-DELETE FROM ProductMap;
-DELETE FROM Customer WHERE id > 1;
-DELETE FROM CustomerMap;
-DELETE FROM Invoice;
+DELETE FROM Factor1;
+DELETE FROM Faktor2;
 DELETE FROM InvoiceMap;
-DELETE FROM LineItem;
+DELETE FROM AshkhasList WHERE Code > 1;
+DELETE FROM CustomerMap;
+DELETE FROM KalaList WHERE Code > 1;
+DELETE FROM ProductMap;
+DELETE FROM GroupKala;
+DELETE FROM CategoryMap;
