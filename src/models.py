@@ -106,7 +106,7 @@ class Product(Mappable):
             sql += " AND PM.update_required = 1"
         for row in self.product.custom_sql(sql, params, method='fetchall'):
             quantity = row.Mojoodi or 0
-            price = str(row.FinalPrice) if row.FinalPrice else '0'
+            price = str(int(row.FinalPrice)) if row.FinalPrice else '0'
             mapped.append({
                 'id': row.ID,
                 'name': row.Name,
@@ -139,7 +139,7 @@ class Product(Mappable):
         """
         for row in self.product.custom_sql(sql, params, method='fetchall'):
             quantity = row.Mojoodi or 0
-            price = str(row.FinalPrice) if row.FinalPrice else '0'
+            price = str(int(row.FinalPrice)) if row.FinalPrice else '0'
             unmapped.append({
                 'id': row.ID,
                 'name': row.Name,
@@ -229,7 +229,7 @@ class Product(Mappable):
         })
 
     def import2moein(self, wc_product):
-        regular_price = int(wc_product['regular_price']) if wc_product['regular_price'] else 0
+        regular_price = int(float(wc_product['regular_price'])) if wc_product['regular_price'] else 0
         quantity = wc_product['stock_quantity'] if wc_product['stock_quantity'] else 0
         category = self.category_map.get(wcid=wc_product['categories'][0]['id'])
         # - create product
