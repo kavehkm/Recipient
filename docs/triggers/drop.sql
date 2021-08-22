@@ -1,0 +1,11 @@
+DROP TRIGGER RecipientTrgGroupKala;
+DROP TRIGGER RecipientTrgKalaList;
+DROP TRIGGER RecipientTrgKalaPrice;
+DROP TRIGGER RecipientTrgFaktor2;
+DROP TRIGGER RecipientTrgTamirat3;
+DROP TRIGGER RecipientTrgMojodiList;
+DROP TRIGGER RecipientTrgResid2;
+DROP TRIGGER RecipientTrgTolidKala;
+DROP TRIGGER RecipientTrgHavale2;
+DROP TRIGGER RecipientTrgAnbarGardani2;
+DROP TRIGGER RecipientTrgAnbarResid2;
