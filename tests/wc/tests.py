@@ -64,9 +64,9 @@ class TestWC(unittest.TestCase):
         self.assertEqual(len(self.product_ids), len(result))
 
     def test_all_excludes(self):
-        excludes = self.product_ids[:3]
-        result = self.wc_product.all(excludes=excludes)
-        self.assertEqual(len(self.product_ids) - len(excludes), len(result))
+        ids = self.product_ids[:3]
+        result = self.wc_product.all(exclude=','.join([str(i) for i in self.product_ids[:3]]))
+        self.assertEqual(len(self.product_ids) - len(ids), len(result))
 
     def test_create(self):
         name = 'New Unittest Product'

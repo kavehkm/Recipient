@@ -26,7 +26,7 @@ class Model(object):
 ##################
 class Mappable(Model):
     """Recipient Mappable"""
-    def mapped(self):
+    def mapped(self, update_required=False):
         pass
 
     def unmapped(self):
@@ -83,7 +83,7 @@ class Product(Mappable):
         self.product_price.connection = connection
         self.product_repository.connection = connection
 
-    def mapped(self):
+    def mapped(self, update_required=False):
         mapped = list()
         settings = s.get('invoices')
         params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
@@ -101,6 +101,9 @@ class Product(Mappable):
             WHERE
                 KP.Type = ? AND KP.PriceID = ?
         """
+        # check for update required
+        if update_required:
+            sql += " AND PM.update_required = 1"
         for row in self.product.custom_sql(sql, params, method='fetchall'):
             quantity = row.Mojoodi or 0
             price = str(row.FinalPrice) if row.FinalPrice else '0'
@@ -153,8 +156,8 @@ class Product(Mappable):
         ]
 
     def wc_unmapped(self):
-        ids = [product_map.wcid for product_map in self.product_map.all('wcid')]
-        return self.woocommerce.all(excludes=ids, status=['publish'])
+        ids = ','.join([str(pm.wcid) for pm in self.product_map.all('wcid')])
+        return self.woocommerce.all(exclude=ids, status='publish')
 
     def add_map(self, moeinid, wcid):
         # check product
@@ -204,7 +207,7 @@ class Product(Mappable):
         # update woocommerce product
         self.woocommerce.update(mapped['wcid'], data)
         # update product map
-        self.product_map.update({'last_update': datetime.now()}, id=mapped['id'])
+        self.product_map.update({'last_update': datetime.now(), 'update_required': False}, id=mapped['id'])
 
     def export2wc(self, product):
         category_map = self.category_map.get(id=product['category_id'])
@@ -273,7 +276,7 @@ class Product(Mappable):
         # - quantity
         if quantity:
             self.product_repository.create({
-                'idKala': product_id,
+                'IdKala': product_id,
                 'Tedad': quantity,
                 'SumPrice': regular_price * quantity,
                 'Price': regular_price,
@@ -345,7 +348,7 @@ class Category(Mappable):
                 category['name'] = self.hierarchy_name(category)
         categories.sort(key=lambda c: c['parent'])
 
-    def mapped(self):
+    def mapped(self, update_required=False):
         mapped = list()
         sql = """
             SELECT
@@ -355,6 +358,9 @@ class Category(Mappable):
             INNER JOIN
                 CategoryMap AS CM ON C.ID = CM.id
         """
+        # check for update required
+        if update_required:
+            sql += " WHERE CM.update_required = 1"
         for row in self.category.custom_sql(sql, method='fetchall'):
             mapped.append({
                 'id': row.ID,
@@ -468,7 +474,7 @@ class Category(Mappable):
         # update woocommerce category
         self.woocommerce.update(mapped['wcid'], data)
         # update category map
-        self.category_map.update({'last_update': datetime.now()}, id=mapped['id'])
+        self.category_map.update({'last_update': datetime.now(), 'update_required': False}, id=mapped['id'])
 
     def export2wc(self, category):
         data = {
@@ -583,11 +589,10 @@ class Invoice(Model):
         return discount
 
     def orders(self):
-        ids = [invoice_map.wcid for invoice_map in self.invoice_map.all()]
         settings = s.get('invoices')
         orders = self.woocommerce.all(
-            excludes=ids,
-            status=settings['status'],
+            exclude=','.join([str(im.wcid) for im in self.invoice_map.all()]),
+            status=','.join(settings['status']),
             after=settings['after'],
             before=settings['before']
         )

@@ -199,7 +199,7 @@ class ObjectView(object):
         conn = connection.get()
         self.model.set_connection(conn)
         try:
-            mapped = self.model.mapped()
+            mapped = self.model.mapped(update_required=True)
         except Exception as e:
             msg = Message(self.ui, Message.ERROR, self.messages[4], str(e))
             msg.show()

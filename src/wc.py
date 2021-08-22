@@ -81,12 +81,6 @@ class WC(object):
         page = 1
         per_page = 100
         params['per_page'] = per_page
-        # excludes
-        excludes = params.pop('excludes', [])
-        # order status
-        status = params.pop('status', None)
-        if status:
-            params['status'] = ','.join(status)
         while True:
             params['page'] = page
             objects = self._request('get', self.endpoint, None, params)
@@ -94,8 +88,6 @@ class WC(object):
             if not objects or len(objects) < per_page:
                 break
             page += 1
-        if excludes:
-            results = list(filter(lambda obj: obj['id'] not in excludes, results))
         return results
 
     def create(self, data):
