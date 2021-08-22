@@ -9,7 +9,7 @@ from src.ui.components import (BaseWidget, Table, Tab, MainMenuButton, ScrollAre
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame, QHBoxLayout,
-                             QVBoxLayout, QFormLayout, QLabel, QCheckBox)
+                             QVBoxLayout, QFormLayout, QLabel, QCheckBox, QRadioButton)
 
 
 ########
@@ -358,9 +358,32 @@ class SettingsTab(BaseTab):
         # - price level
         self.priceLevel = SMSpin()
         self.invoicesForm.addRow(QLabel('Products price-level'), self.priceLevel)
-        # type
+        # - type
         self.type = SMSpin()
         self.invoicesForm.addRow(QLabel('Invoice type'), self.type)
+        # engine settings
+        self.engine = GpBox(' Updater Engine ')
+        self.settingsLayout.addWidget(self.engine)
+        self.engineForm = QFormLayout()
+        self.engine.setLayout(self.engineForm)
+        # - start
+        startOptionsLayout = QHBoxLayout()
+        self.autoStart = QRadioButton('Auto')
+        self.manualStart = QRadioButton('Manual')
+        self.manualStart.setChecked(True)
+        startOptionsLayout.addWidget(self.autoStart)
+        startOptionsLayout.addWidget(self.manualStart)
+        self.engineForm.addRow(QLabel('Start type'), startOptionsLayout)
+        # - tasks
+        tasksOptionsLayout = QHBoxLayout()
+        self.wcUpdate = QCheckBox('Update woocommerce')
+        self.orders2invoices = QCheckBox('Convert orders')
+        tasksOptionsLayout.addWidget(self.wcUpdate)
+        tasksOptionsLayout.addWidget(self.orders2invoices)
+        self.engineForm.addRow(QLabel('Tasks'), tasksOptionsLayout)
+        # - interval
+        self.engineInterval = SMSpin()
+        self.engineForm.addRow(QLabel('Interval'), self.engineInterval)
         # add stretch at end
         self.settingsLayout.addStretch(1)
         # controls
