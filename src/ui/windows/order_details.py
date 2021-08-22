@@ -1,5 +1,5 @@
 # internal
-from src.ui.components import BaseDialog, Table, ScrollArea, MDButton, MDCombo
+from src.ui.components import BaseDialog, Table, ScrollArea, MDCombo, CancelMDButton, SaveMDButton, SyncMDButton
 # pyqt
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QLabel
 
@@ -297,13 +297,13 @@ class OrderDetails(BaseDialog):
         self.comboStatus = MDCombo()
         self.comboStatus.addItems(self.STATUSES)
         # update button
-        self.btnUpdate = MDButton('Update')
+        self.btnUpdate = SyncMDButton('Update')
         # save button
-        self.btnSave = MDButton('Save')
+        self.btnSave = SaveMDButton('Save')
         # - hide save button as default
         self.btnSave.hide()
         # cancel button
-        self.btnCancel = MDButton('Cancel')
+        self.btnCancel = CancelMDButton('Cancel')
         # register combo and buttons
         self.controlLayout.addWidget(self.comboStatus)
         self.controlLayout.addWidget(self.btnUpdate)

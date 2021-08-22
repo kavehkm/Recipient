@@ -21,6 +21,18 @@
         <file alias="infoDialog.png">icons8-info-squared-40.png</file>
         <file alias="warningDialog.png">icons8-error-40.png</file>
         <file alias="errorDialog.png">icons8-cancel-40.png</file>
-
+        <!-- buttons -->
+        <file alias="btnAdd.png">plus.png</file>
+        <file alias="btnDelete.png">minus.png</file>
+        <file alias="btnEdit.png">pencil.png</file>
+        <file alias="btnSync.png">arrow-curve-090.png</file>
+        <file alias="btnSave.png">disk-black.png</file>
+        <file alias="btnSaveAll.png">disks-black.png</file>
+        <file alias="btnRefresh.png">arrow-circle-double.png</file>
+        <file alias="btnClear.png">broom.png</file>
+        <file alias="btnStart.png">control-180.png</file>
+        <file alias="btnStop.png">control-stop-square.png</file>
+        <file alias="btnOK.png">tick.png</file>
+        <file alias="btnCancel.png">cross.png</file>
     </qresource>
 </RCC>

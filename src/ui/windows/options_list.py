@@ -1,12 +1,12 @@
 # internal
-from src.ui.components import TableList, SMButton
+from src.ui.components import TableList, AddSMButton, CancelSMButton
 
 
 class OptionsList(TableList):
     """Options List"""
     def setupControl(self):
-        self.btnAddAll = SMButton('Add all')
-        self.btnCancel = SMButton('Cancel')
+        self.btnAddAll = AddSMButton('Add all')
+        self.btnCancel = CancelSMButton('Cancel')
         self.controlLayout.addWidget(self.btnAddAll)
         self.controlLayout.addWidget(self.btnCancel)
 

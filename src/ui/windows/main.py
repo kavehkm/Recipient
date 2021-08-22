@@ -3,8 +3,11 @@
 from src.ui.resources import icons
 from src.translation import _
 from .order_details import OrderDetails
-from src.ui.components import (BaseWidget, Table, Tab, MainMenuButton, ScrollArea,
-                               GpBox, MDButton, SMEdit, SMDateTimeEdit, SMCombo, SMSpin)
+from src.ui.components import (BaseWidget, Table, Tab, ScrollArea, GpBox, SMEdit, SMDateTimeEdit, SMCombo, SMSpin,
+                               MainMenuButton, AddMDButton, EditMDButton, DeleteMDButton, SyncMDButton, SaveMDButton,
+                               SaveAllMDButton, RefreshMDButton, ClearMDButton, StartMDButton, StopMDButton)
+
+
 # pyqt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
@@ -111,8 +114,8 @@ class StatusTab(BaseTab):
         self.serviceLayout.addLayout(serviceStateLayout)
         # service control
         serviceControlLayout = QHBoxLayout()
-        self.btnStart = MDButton('Start')
-        self.btnStop = MDButton('Stop')
+        self.btnStart = StartMDButton('Start')
+        self.btnStop = StopMDButton('Stop')
         serviceControlLayout.addWidget(self.btnStart)
         serviceControlLayout.addWidget(self.btnStop)
         serviceControlLayout.addStretch(1)
@@ -182,9 +185,9 @@ class InvoicesTab(BaseTab):
         self.controlLayout = QHBoxLayout()
         self.controlLayout.addStretch(1)
         self.generalLayout.addLayout(self.controlLayout)
-        self.btnRefresh = MDButton('Refresh')
-        self.btnSaveAll = MDButton('Save all')
-        self.btnRemove = MDButton('Remove')
+        self.btnRefresh = RefreshMDButton('Refresh')
+        self.btnSaveAll = SaveAllMDButton('Save all')
+        self.btnRemove = DeleteMDButton('Remove')
         self.btnRemove.setHidden(True)
         self.controlLayout.addWidget(self.btnRefresh)
         self.controlLayout.addWidget(self.btnSaveAll)
@@ -226,10 +229,10 @@ class WooCommerceTab(BaseTab):
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
-        self.btnAdd = MDButton('Add')
-        self.btnEdit = MDButton('Edit')
-        self.btnRemove = MDButton('Remove')
-        self.btnUpdate = MDButton('Update')
+        self.btnAdd = AddMDButton('Add')
+        self.btnEdit = EditMDButton('Edit')
+        self.btnRemove = DeleteMDButton('Remove')
+        self.btnUpdate = SyncMDButton('Update')
         controlLayout.addWidget(self.btnAdd)
         controlLayout.addWidget(self.btnEdit)
         controlLayout.addWidget(self.btnRemove)
@@ -389,8 +392,8 @@ class SettingsTab(BaseTab):
         # controls
         controlLayout = QHBoxLayout()
         controlLayout.addStretch(1)
-        self.btnClear = MDButton('Clear')
-        self.btnSave = MDButton('Save')
+        self.btnClear = ClearMDButton('Clear')
+        self.btnSave = SaveMDButton('Save')
         controlLayout.addWidget(self.btnClear)
         controlLayout.addWidget(self.btnSave)
         self.generalLayout.addLayout(controlLayout)

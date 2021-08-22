@@ -1,5 +1,5 @@
 # internal
-from .buttons import SMButton
+from .buttons import OKSMButton
 from .base_dialog import BaseDialog
 # pyqt
 from PyQt5.QtGui import QPixmap
@@ -62,7 +62,7 @@ class Message(BaseDialog):
         contentsLayout.addStretch(1)
 
     def setupControl(self):
-        self.btnOk = SMButton('OK')
+        self.btnOk = OKSMButton('OK')
         self.controlLayout.addWidget(self.btnOk)
 
     def setStyles(self):
