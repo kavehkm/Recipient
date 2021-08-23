@@ -18,7 +18,8 @@ class Settings(object):
             'general': s.get('general'),
             'wc': s.get('wc'),
             'moein': s.get('moein'),
-            'invoices': s.get('invoices')
+            'invoices': s.get('invoices'),
+            'engine': s.get('engine')
         })
         self.ui.contents.showTab(self.ui.contents.SETTINGS)
 
@@ -29,6 +30,7 @@ class Settings(object):
             s.set('wc', settings['wc'])
             s.set('moein', settings['moein'])
             s.set('invoices', settings['invoices'])
+            s.set('engine', settings['engine'])
             s.save()
         except Exception as e:
             lvl = Message.ERROR

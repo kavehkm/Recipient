@@ -380,9 +380,9 @@ class SettingsTab(BaseTab):
         # - tasks
         tasksOptionsLayout = QHBoxLayout()
         self.wcUpdate = QCheckBox('Update woocommerce')
-        self.orders2invoices = QCheckBox('Convert orders')
+        self.convertOrders = QCheckBox('Convert orders')
         tasksOptionsLayout.addWidget(self.wcUpdate)
-        tasksOptionsLayout.addWidget(self.orders2invoices)
+        tasksOptionsLayout.addWidget(self.convertOrders)
         self.engineForm.addRow(QLabel('Tasks'), tasksOptionsLayout)
         # - interval
         self.engineInterval = SMSpin()
@@ -432,6 +432,12 @@ class SettingsTab(BaseTab):
                 'repository': self.repository.value(),
                 'price_level': self.priceLevel.value(),
                 'type': self.type.value()
+            },
+            'engine': {
+                'auto_start': self.autoStart.isChecked(),
+                'wc_update': self.wcUpdate.isChecked(),
+                'convert_orders': self.convertOrders.isChecked(),
+                'interval': self.engineInterval.value()
             }
         }
 
@@ -462,6 +468,12 @@ class SettingsTab(BaseTab):
         self.repository.setValue(invoices['repository'])
         self.priceLevel.setValue(invoices['price_level'])
         self.type.setValue(invoices['type'])
+        # engine
+        engine = settings['engine']
+        self.autoStart.setChecked(engine['auto_start'])
+        self.wcUpdate.setChecked(engine['wc_update'])
+        self.convertOrders.setChecked(engine['convert_orders'])
+        self.engineInterval.setValue(engine['interval'])
 
     def clear(self):
         # woocommerce

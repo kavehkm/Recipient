@@ -83,6 +83,13 @@ INVOICES_BUY_PRICE_TYPE = 1
 INVOICES_SELL_PRICE_TYPE = 2
 
 
+# engine settings
+ENGINE_AUTO_START = False
+ENGINE_WC_UPDATE = True
+ENGINE_CONVERT_ORDERS = False
+ENGINE_INTERVAL = 30
+
+
 #####################################
 # application customizable settings #
 #####################################
@@ -111,6 +118,12 @@ CUSTOMIZABLE_SETTINGS = {
         'repository': INVOICES_REPOSITORY,
         'price_level': INVOICES_PRICE_LEVEL,
         'type': INVOICES_TYPE
+    },
+    'engine': {
+        'auto_start': ENGINE_AUTO_START,
+        'wc_update': ENGINE_WC_UPDATE,
+        'convert_orders': ENGINE_CONVERT_ORDERS,
+        'interval': ENGINE_INTERVAL
     }
 }
 
