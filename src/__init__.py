@@ -1,5 +1,6 @@
 # internal
 from src import views
+from src import settings as s
 
 
 class Controller(object):
@@ -14,3 +15,10 @@ class Controller(object):
         self.logs = views.Logs(self.ui)
         self.help = views.Help(self.ui)
         self.about = views.About(self.ui)
+        # bootstrap
+        self._bootstrap()
+
+    def _bootstrap(self):
+        # check for engine auto start
+        if s.get('engine')['auto_start']:
+            self.status.start()

@@ -1,6 +1,4 @@
 # standard
-import time
-import random
 from threading import Event
 # internal
 from src import settings as s
@@ -18,9 +16,11 @@ class RecipientEngineSignals(QObject):
 
 class RecipientEngine(QThread):
     """Recipient Engine"""
-    def __init__(self, interval):
+    def __init__(self, interval, wc_update, convert_orders):
         super().__init__()
         self._interval = interval
+        self.wc_update = wc_update
+        self.convert_orders = convert_orders
         # events
         # - stop
         self.stop_event = Event()
@@ -50,13 +50,12 @@ class RecipientEngine(QThread):
         self.resume_event.set()
 
     def _do(self):
-        time.sleep(2)
-        random_int = random.randint(1, 1000)
-        print(random_int)
-        if random_int < 300:
-            raise ConnectionsError()
-        elif random_int > 800:
-            raise Exception('So many tears')
+        # check for orders
+        if self.convert_orders:
+            print('convert orders')
+        # check for wc models update
+        if self.wc_update:
+            print('wc update')
 
     def run(self):
         # do-while(stop_event is not set)
@@ -76,13 +75,17 @@ class RecipientEngine(QThread):
 class Status(object):
     """Status View"""
     def __init__(self, ui):
+        # get settings
+        settings = s.get('engine')
+        # recipient engine
+        self.engine = RecipientEngine(
+            settings['interval'],
+            settings['wc_update'],
+            settings['convert_orders']
+        )
         # ui
         self.ui = ui
         self.tab = ui.contents.status
-
-        # recipient engine
-        self.engine = RecipientEngine(10)
-
         # connect signals
         # - ui
         self.ui.menu.btnStatus.clicked.connect(self.tab_handler)
