@@ -1,13 +1,18 @@
 # pyqt
 from PyQt5 import Qt
-from PyQt5.QtWidgets import QHeaderView, QAbstractItemView, QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 
 class Table(QTableWidget):
     """Base Table"""
-    def __init__(self, columns, parent=None):
+    def __init__(self, columns, sizes=None, parent=None):
         super().__init__(parent)
         self.columns = columns
+        # if sizes not specify, set all column size equal
+        if sizes is None:
+            sizes = [1 for _ in columns]
+        self.sizes = sizes
+        # bootstrap table
         self.bootstrap()
 
     def bootstrap(self):
@@ -17,13 +22,23 @@ class Table(QTableWidget):
     def setupTable(self):
         self.setColumnCount(len(self.columns))
         self.setHorizontalHeaderLabels(self.columns)
+        self.setLayoutDirection(Qt.Qt.RightToLeft)
         self.setAlternatingRowColors(True)
-        self.horizontalHeader().setStretchLastSection(True)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setFocusPolicy(Qt.Qt.NoFocus)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        self._setColumnsSize()
+
+    def _setColumnsSize(self):
+        # compute base width
+        base = self.horizontalHeader().width() // sum(self.sizes)
+        # resize each column
+        for i, size in enumerate(self.sizes):
+            self.setColumnWidth(i, size * base)
 
     def setStyles(self):
         self.setStyleSheet("""

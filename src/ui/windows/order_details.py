@@ -255,7 +255,7 @@ class OrderDetails(BaseDialog):
         self.itemsTitle = QLabel('Items', objectName='SectionTitle')
         self.layout2.addWidget(self.itemsTitle)
         # table
-        self.itemsTable = Table(['ID', 'Name', 'Cost', 'Quantity', 'Total'])
+        self.itemsTable = Table(['ID', 'Name', 'Cost', 'Quantity', 'Total'], [1, 3, 1, 1, 1])
         self.itemsTable.setMinimumHeight(200)
         self.layout2.addWidget(self.itemsTable)
 

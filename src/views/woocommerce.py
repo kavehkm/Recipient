@@ -75,7 +75,7 @@ class ObjectView(object):
             msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
             msg.show()
         else:
-            self.options_list = OptionsList(self.form, columns)
+            self.options_list = OptionsList(self.form, columns, [1, 3])
             self.options_list.setWindowTitle(title)
             self.options_list.setList(options)
             self.options_list.btnAddAll.clicked.connect(lambda: self.add_all(subject))

@@ -330,7 +330,7 @@ class Category(Mappable):
                 'name': parent.GroupKala,
                 'parent': parent.ParentID
             }
-            return self.hierarchy_name(parent) + ' > ' + category['name']
+            return self.hierarchy_name(parent) + '___' + category['name']
 
     def wc_hierarchy_name(self, category, categories):
         # detect name
@@ -343,7 +343,7 @@ class Category(Mappable):
             if cat['id'] == category['parent']:
                 parent = cat
                 break
-        return self.wc_hierarchy_name(parent, categories) + ' > ' + name if parent else name
+        return self.wc_hierarchy_name(parent, categories) + '___' + name if parent else name
 
     def hierarchify(self, categories, woocommerce=False):
         for category in categories:

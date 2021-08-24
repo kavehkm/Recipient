@@ -176,10 +176,10 @@ class InvoicesTab(BaseTab):
         self.tabs = Tab()
         self.generalLayout.addWidget(self.tabs)
         # - orders
-        self.ordersTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'])
+        self.ordersTable = Table(['ID', 'Order', 'Date', 'Status', 'Total'], [1, 3, 2, 1, 1])
         self.tabs.addTab(self.ordersTable, 'Orders')
         # - invoices
-        self.invoicesTable = Table(['ID', 'Customer', 'OrderID', 'SavedDate'])
+        self.invoicesTable = Table(['ID', 'Customer', 'OrderID', 'SavedDate'], [1, 3, 1, 2])
         self.tabs.addTab(self.invoicesTable, 'Invoices')
         # controls
         self.controlLayout = QHBoxLayout()
@@ -220,11 +220,12 @@ class WooCommerceTab(BaseTab):
         # tabs
         self.tabs = Tab()
         self.generalLayout.addWidget(self.tabs)
+        _sizes = [1, 3, 1, 2]
         # - products
-        self.productsTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'])
+        self.productsTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'], _sizes)
         self.tabs.addTab(self.productsTable, 'Products')
         # - categories
-        self.categoriesTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'])
+        self.categoriesTable = Table(['ID', 'Name', 'WCID', 'LastUpdate'], _sizes)
         self.tabs.addTab(self.categoriesTable, 'Categories')
         # controls
         controlLayout = QHBoxLayout()
