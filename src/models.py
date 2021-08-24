@@ -229,13 +229,19 @@ class Product(Mappable):
         })
 
     def import2moein(self, wc_product):
+        # check for category
+        try:
+            category = wc_product['categories'][0]
+        except IndexError:
+            raise Exception('Product {} does not have any category.'.format(wc_product['name']))
+        category_map = self.category_map.get(wcid=category['id'])
+        # clean regular price and quantity
         regular_price = int(float(wc_product['regular_price'])) if wc_product['regular_price'] else 0
         quantity = wc_product['stock_quantity'] if wc_product['stock_quantity'] else 0
-        category = self.category_map.get(wcid=wc_product['categories'][0]['id'])
         # - create product
         self.product.create({
             'Name': wc_product['name'],
-            'GroupID': category.id,
+            'GroupID': category_map.id,
             'SellPrice': regular_price,
             'Code': self.product.max('Code') + 1,
             'MenuOrder': self.product.max('MenuOrder') + 1,
@@ -494,6 +500,9 @@ class Category(Mappable):
         })
 
     def import2moein(self, wc_category):
+        # check for category name
+        if len(wc_category['_name']) > 50:
+            raise Exception('Category {} name is too long.'.format(wc_category['_name']))
         # check for parent
         if wc_category['parent']:
             parent = self.category_map.get(wcid=wc_category['parent'])

@@ -181,7 +181,7 @@ class Invoices(object):
             completed = list()
             for order in self._orders.values():
                 if order['status'] == 'completed':
-                    completed.append(order)
+                    completed.insert(0, order)
             if completed:
                 # cache completed orders
                 self._current['completed'] = completed
