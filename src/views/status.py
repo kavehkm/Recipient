@@ -1,10 +1,12 @@
 # standard
 from threading import Event
 # internal
+from src import connection
 from src import settings as s
 from src.wc import ConnectionsError
 from src.ui.components import Message
 from src.worker import NetworkChecker
+from src.models import Category, Product, Invoice
 # pyqt
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, QThreadPool
 
@@ -21,6 +23,11 @@ class RecipientEngine(QThread):
         self._interval = interval
         self.wc_update = wc_update
         self.convert_orders = convert_orders
+        # models
+        self.category = Category()
+        self.product = Product()
+        self.invoice = Invoice()
+        self.update_models = [self.category, self.product]
         # events
         # - stop
         self.stop_event = Event()
@@ -49,13 +56,67 @@ class RecipientEngine(QThread):
         # set resume event
         self.resume_event.set()
 
+    def __wc_upate(self):
+        error = None
+        conn = connection.get()
+        for model in self.update_models:
+            model.set_connection(conn)
+            try:
+                for mapped in model.mapped(update_required=True):
+                    model.wc_mapped_update(mapped)
+                    conn.commit()
+                    # print updated mapped for test purposes
+                    print(mapped)
+            except Exception as e:
+                conn.rollback()
+                error = e
+                break
+        # close connection
+        conn.close()
+        # check for error
+        if error:
+            raise error
+
+    def __convert_orders(self):
+        error = None
+        completed = list()
+        conn = connection.get()
+        self.invoice.set_connection(conn)
+        try:
+            # check for completed orders
+            for order in self.invoice.orders():
+                if order['status'] == 'completed':
+                    completed.insert(0, order)
+            # if completed orders available, convert them to invoice
+            for order in completed:
+                try:
+                    self.invoice.save(order)
+                    # print saved order for test purposes
+                    print(order)
+                except Exception as e:
+                    # rollback changes
+                    conn.rollback()
+                    # and reraise error
+                    raise e
+                else:
+                    # commit changes
+                    conn.commit()
+        except Exception as e:
+            error = e
+        # close connection
+        conn.close()
+        # check for error
+        if error:
+            raise error
+
     def _do(self):
         # check for orders
         if self.convert_orders:
-            print('convert orders')
+            self.__convert_orders()
+
         # check for wc models update
         if self.wc_update:
-            print('wc update')
+            self.__wc_upate()
 
     def run(self):
         # do-while(stop_event is not set)
