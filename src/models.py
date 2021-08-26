@@ -83,6 +83,13 @@ class Product(Mappable):
         self.product_price.connection = connection
         self.product_repository.connection = connection
 
+    @staticmethod
+    def _int(value, default=0):
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return default
+
     def mapped(self, update_required=False):
         mapped = list()
         settings = s.get('invoices')
@@ -105,13 +112,11 @@ class Product(Mappable):
         if update_required:
             sql += " AND PM.update_required = 1"
         for row in self.product.custom_sql(sql, params, method='fetchall'):
-            quantity = row.Mojoodi or 0
-            price = str(int(row.FinalPrice)) if row.FinalPrice else '0'
             mapped.append({
                 'id': row.ID,
                 'name': row.Name,
-                'quantity': quantity,
-                'price': price,
+                'quantity': self._int(row.Mojoodi),
+                'price': self._int(row.FinalPrice),
                 'category_id': row.GroupID,
                 'wcid': row.wcid,
                 'last_update': row.last_update,
@@ -138,13 +143,11 @@ class Product(Mappable):
                 PM.id IS NULL AND KP.Type = ? AND KP.PriceID = ?
         """
         for row in self.product.custom_sql(sql, params, method='fetchall'):
-            quantity = row.Mojoodi or 0
-            price = str(int(row.FinalPrice)) if row.FinalPrice else '0'
             unmapped.append({
                 'id': row.ID,
                 'name': row.Name,
-                'price': price,
-                'quantity': quantity,
+                'price': self._int(row.FinalPrice),
+                'quantity': self._int(row.Mojoodi),
                 'category_id': row.GroupID,
             })
         return unmapped
@@ -201,7 +204,7 @@ class Product(Mappable):
         data = {
             'name': mapped['name'],
             'categories': [{'id': category_map.wcid}],
-            'regular_price': mapped['price'],
+            'regular_price': str(mapped['price']),
             'stock_quantity': mapped['quantity']
         }
         # update woocommerce product
@@ -214,9 +217,9 @@ class Product(Mappable):
         data = {
             'name': product['name'],
             'categories': [{'id': category_map.wcid}],
-            'regular_price': product['price'],
+            'regular_price': str(product['price']),
             'stock_quantity': product['quantity'],
-            'manage_stock': True if product['quantity'] else False,
+            'manage_stock': True,
             'status': 'publish' if product['quantity'] else 'draft'
         }
         # create woocommerce product
