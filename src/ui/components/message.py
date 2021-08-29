@@ -1,4 +1,5 @@
 # internal
+from src.translation import _
 from .buttons import OKSMButton
 from .base_dialog import BaseDialog
 # pyqt
@@ -16,10 +17,10 @@ class Message(BaseDialog):
     DEFAULT_LEVEL = INFO
     # level related titles
     TITLES = {
-        SUCCESS:    'success',
-        INFO:       'information',
-        WARNING:    'warning',
-        ERROR:      'error'
+        SUCCESS:    _('success'),
+        INFO:       _('information'),
+        WARNING:    _('warning'),
+        ERROR:      _('error')
     }
     # level related icons
     ICONS = {
@@ -62,7 +63,7 @@ class Message(BaseDialog):
         contentsLayout.addStretch(1)
 
     def setupControl(self):
-        self.btnOk = OKSMButton('OK')
+        self.btnOk = OKSMButton(_('OK'))
         self.controlLayout.addWidget(self.btnOk)
 
     def setStyles(self):

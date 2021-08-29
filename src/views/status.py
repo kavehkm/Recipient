@@ -3,6 +3,7 @@ from threading import Event
 # internal
 from src import connection
 from src import settings as s
+from src.translation import _
 from src.wc import ConnectionsError
 from src.ui.components import Message
 from src.worker import NetworkChecker
@@ -179,7 +180,7 @@ class Status(object):
             QThreadPool.globalInstance().start(nc)
         else:
             self.engine.stop()
-            msg = Message(self.ui, Message.ERROR, 'Engine stop working.', str(error))
+            msg = Message(self.ui, Message.ERROR, _('Engine stop working.'), str(error))
             msg.show()
 
     def nc_connected_handler(self):

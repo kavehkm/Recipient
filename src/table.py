@@ -1,3 +1,7 @@
+# internal
+from src.translation import _
+
+
 ##############
 # Exceptions #
 ##############
@@ -8,10 +12,10 @@ class DoesNotExists(Exception):
         self.conditions = conditions
 
     def __str__(self):
-        msg = '{} with '.format(self.name)
+        msg = '{} {} '.format(self.name, _('with'))
         for column, value in self.conditions.items():
             msg += '{}:{}, '.format(column, value)
-        return msg.rstrip(', ') + ' does not exists.'
+        return msg.rstrip(', ') + _(' does not exists.')
 
 
 ##################

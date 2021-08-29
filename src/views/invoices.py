@@ -1,5 +1,6 @@
 # internal
 from src import connection
+from src.translation import _
 from src.models import Invoice
 from src.ui.components import Message, Confirm
 
@@ -48,7 +49,7 @@ class Invoices(object):
             try:
                 raw_orders = self.invoice.orders()
             except Exception as e:
-                msg = Message(self.ui, Message.ERROR, 'Cannot get orders from WooCommerce.', str(e))
+                msg = Message(self.ui, Message.ERROR, _('Cannot get orders from WooCommerce.'), str(e))
                 msg.show()
             else:
                 orders = dict()
@@ -99,7 +100,7 @@ class Invoices(object):
                 },
                 'general': {
                     'status': order['status'],
-                    'customer': order['customer_id'] or 'Guest',
+                    'customer': order['customer_id'] or _('Guest'),
                     'date': order['created_date'].strftime('%Y-%m-%d @ %H:%M:%S')
                 },
                 'billing': {
@@ -138,7 +139,7 @@ class Invoices(object):
         try:
             self.invoice.update_order(self._current['number'], {'status': status})
         except Exception as e:
-            msg = Message(self.details, Message.ERROR, 'Cannot update order.', str(e))
+            msg = Message(self.details, Message.ERROR, _('Cannot update order.'), str(e))
             msg.show()
         else:
             # update cached orders
@@ -149,7 +150,7 @@ class Invoices(object):
             record = self.orders_table.getRecord(self._current['index'])
             record[3] = status
             self.orders_table.updateRecord(self._current['index'], record)
-            msg = Message(self.details, Message.SUCCESS, 'Order updated successfully.')
+            msg = Message(self.details, Message.SUCCESS, _('Order updated successfully.'))
             msg.show()
 
     def save(self):
@@ -161,7 +162,7 @@ class Invoices(object):
         except Exception as e:
             # rollback all changes
             conn.rollback()
-            msg = Message(self.details, Message.ERROR, 'Cannot save order.', str(e))
+            msg = Message(self.details, Message.ERROR, _('Cannot save order.'), str(e))
             msg.show()
         else:
             # commit all changes
@@ -170,7 +171,7 @@ class Invoices(object):
             del self._orders[self._current['number']]
             self.orders_table.removeRecord(self._current['index'])
             # show success message
-            msg = Message(self.details, Message.SUCCESS, 'Order saved successfully.')
+            msg = Message(self.details, Message.SUCCESS, _('Order saved successfully.'))
             msg.btnOk.clicked.connect(self.details.close)
             msg.show()
         finally:
@@ -186,13 +187,13 @@ class Invoices(object):
                 # cache completed orders
                 self._current['completed'] = completed
                 # create confirm dialog
-                plural = 's' if len(completed) > 1 else ''
-                details = '{} order{} will be save.'.format(len(completed), plural)
-                confirm = Confirm(self.ui, Confirm.WARNING, 'Are you sure?', details)
+                plural = _('s ') if len(completed) > 1 else ' '
+                details = _('{} order{}will be save.').format(len(completed), plural)
+                confirm = Confirm(self.ui, Confirm.WARNING, _('Are you sure?'), details)
                 confirm.btnOk.clicked.connect(self.save_all_confirm)
                 confirm.show()
             else:
-                msg = Message(self.ui, Message.ERROR, 'Order with completed status not found.')
+                msg = Message(self.ui, Message.ERROR, _('Order with completed status not found.'))
                 msg.show()
 
     def save_all_confirm(self):
@@ -207,7 +208,7 @@ class Invoices(object):
             except Exception as e:
                 conn.rollback()
                 error = True
-                message = 'Save progress interrupt by order #{}.'.format(order_number)
+                message = _('Save progress interrupt by order #{}.').format(order_number)
                 msg = Message(self.ui, Message.ERROR, message, str(e))
                 msg.show()
                 break
@@ -222,8 +223,8 @@ class Invoices(object):
         conn.close()
         # check for error
         if not error:
-            plural = 's' if saves > 1 else ''
-            message = '{} order{} saved successfully.'.format(saves, plural)
+            plural = _('s ') if saves > 1 else ' '
+            message = _('{} order{}saved successfully.').format(saves, plural)
             msg = Message(self.ui, Message.SUCCESS, message)
             msg.show()
 
@@ -233,7 +234,7 @@ class Invoices(object):
         try:
             saved = self.invoice.saved()
         except Exception as e:
-            msg = Message(self.ui, Message.ERROR, 'Cannot load saved invoices.', str(e))
+            msg = Message(self.ui, Message.ERROR, _('Cannot load saved invoices.'), str(e))
             msg.show()
         else:
             records = list()

@@ -2,6 +2,7 @@
 from src import messages
 from src import connection
 from src.worker import Worker
+from src.translation import _
 from src.models import Category, Product
 from src.ui.windows import RegisterForm, OptionsList
 from src.ui.components import Message, Confirm, Progress
@@ -64,11 +65,11 @@ class ObjectView(object):
         self.model.set_connection(conn)
         try:
             if subject == self.form.ID:
-                columns = ['ID', 'Name']
+                columns = [_('ID'), _('Name')]
                 title = self.messages[1]
                 options = [[um['id'], um['name']] for um in self.model.unmapped()]
             else:
-                columns = ['WCID', 'Name']
+                columns = [_('WCID'), _('Name')]
                 title = self.messages[0]
                 options = [[um['id'], um['name']] for um in self.model.wc_unmapped()]
         except Exception as e:

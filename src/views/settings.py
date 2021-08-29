@@ -1,5 +1,6 @@
 # internal
 from src import settings as s
+from src.translation import _
 from src.ui.components import Message
 
 
@@ -34,11 +35,11 @@ class Settings(object):
             s.save()
         except Exception as e:
             lvl = Message.ERROR
-            msg_txt = 'Cannot Save Settings'
+            msg_txt = _('Cannot Save Settings.')
             details = str(e)
         else:
             lvl = Message.SUCCESS
-            msg_txt = 'Settings Saved Successfully.'
+            msg_txt = _('Settings Saved Successfully.')
             details = None
         msg = Message(self.ui, lvl, msg_txt, details)
         msg.show()

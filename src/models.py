@@ -4,6 +4,7 @@ from datetime import datetime
 from src import wc
 from src import wc_api
 from src import settings as s
+from src.translation import _
 from src.table import DoesNotExists, Table
 # jalali datetime
 from jdatetime import datetime as jdatetime
@@ -65,12 +66,12 @@ class Product(Mappable):
     def __init__(self):
         super().__init__()
         # tables
-        self.product = Table('KalaList', 'Product')
-        self.product_map = Table('ProductMap')
-        self.category_map = Table('CategoryMap')
-        self.price_level = Table('PriceLevel')
-        self.product_price = Table('KalaPrice', 'ProductPrice')
-        self.product_repository = Table('MojodiList', 'ProductRepository')
+        self.product = Table('KalaList', _('Product'))
+        self.product_map = Table('ProductMap', _('ProductMap'))
+        self.category_map = Table('CategoryMap', _('CategoryMap'))
+        self.price_level = Table('PriceLevel', _('PriceLevel'))
+        self.product_price = Table('KalaPrice', _('ProductPrice'))
+        self.product_repository = Table('MojodiList', _('ProductRepository'))
         # woocommerce api
         self.woocommerce = wc.get(wc_api.get(), 'products')
 
@@ -236,7 +237,7 @@ class Product(Mappable):
         try:
             category = wc_product['categories'][0]
         except IndexError:
-            raise Exception('Product {} does not have any category.'.format(wc_product['name']))
+            raise Exception(_('Product {} does not have any category.').format(wc_product['name']))
         category_map = self.category_map.get(wcid=category['id'])
         # clean regular price and quantity
         regular_price = int(float(wc_product['regular_price'])) if wc_product['regular_price'] else 0
@@ -309,8 +310,8 @@ class Category(Mappable):
     def __init__(self):
         super().__init__()
         # tables
-        self.category = Table('GroupKala', 'Category')
-        self.category_map = Table('CategoryMap')
+        self.category = Table('GroupKala', _('Category'))
+        self.category_map = Table('CategoryMap', _('CategoryMap'))
         # woocommerce api
         self.woocommerce = wc.get(wc_api.get(), 'products/categories')
 
@@ -505,7 +506,7 @@ class Category(Mappable):
     def import2moein(self, wc_category):
         # check for category name
         if len(wc_category['_name']) > 50:
-            raise Exception('Category {} name is too long.'.format(wc_category['_name']))
+            raise Exception(_('Category {} name is too long.').format(wc_category['_name']))
         # check for parent
         if wc_category['parent']:
             parent = self.category_map.get(wcid=wc_category['parent'])
@@ -533,13 +534,13 @@ class Invoice(Model):
     def __init__(self):
         super().__init__()
         # tables
-        self.invoice = Table('Factor1', 'Invoice')
-        self.invoice_map = Table('InvoiceMap')
-        self.customer = Table('AshkhasList', 'Customer')
-        self.customer_map = Table('CustomerMap')
-        self.product = Table('KalaList', 'Product')
-        self.product_map = Table('ProductMap')
-        self.line_item = Table('Faktor2', 'LineItem')
+        self.invoice = Table('Factor1', _('Invoice'))
+        self.invoice_map = Table('InvoiceMap', _('InvoiceMap'))
+        self.customer = Table('AshkhasList', _('Customer'))
+        self.customer_map = Table('CustomerMap', _('CustomerMap'))
+        self.product = Table('KalaList', _('Product'))
+        self.product_map = Table('ProductMap', _('ProductMap'))
+        self.line_item = Table('Faktor2', _('LineItem'))
         # woocommerce
         self.woocommerce = wc.get(wc_api.get(), 'orders')
 
@@ -736,7 +737,7 @@ class Invoice(Model):
         }
         # check for info
         if fields['CarryPrice']:
-            fields['Info'] = 'carry price: {}'.format(fields['CarryPrice'])
+            fields['Info'] = _('carry price: {}').format(fields['CarryPrice'])
         # create invoice
         self.invoice.create(fields)
         invoice_id = self.invoice.max('ID')

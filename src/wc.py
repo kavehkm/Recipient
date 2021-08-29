@@ -1,6 +1,10 @@
+# internal
+from src.translation import _
+
+
 class WCBaseError(Exception):
     """WooCommerce Base Error"""
-    message = 'WooCommerce base error'
+    message = _('WooCommerce base error')
 
     def __init__(self, *args, details=''):
         super().__init__(*args)
@@ -12,27 +16,27 @@ class WCBaseError(Exception):
 
 class ConnectionsError(WCBaseError):
     """WooCommerce Connections Error"""
-    message = 'Connections error'
+    message = _('Connections error')
 
 
 class BadRequestError(WCBaseError):
     """WooCommerce 400 Bad Request Error"""
-    message = 'Invalid request'
+    message = _('Invalid request')
 
 
 class UnauthorizedError(WCBaseError):
     """WooCommerce 401 Unauthorized Error"""
-    message = 'Authentication error'
+    message = _('Authentication error')
 
 
 class InternalServerError(WCBaseError):
     """WooCommerce Internal Server Error"""
-    message = 'Server internal error'
+    message = _('Server internal error')
 
 
 class NotFoundError(WCBaseError):
     """WooCommerce 404 Not Found Error"""
-    message = 'Requests to resources that dont exist or are missing'
+    message = _('Requests to resources that dont exist or are missing')
 
 
 class WC(object):

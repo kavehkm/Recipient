@@ -1,4 +1,5 @@
 # internal
+from src.translation import _
 from src.ui.components import BaseDialog, SMButton, SMEdit, SaveSMButton, CancelSMButton
 # pyqt
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -29,7 +30,7 @@ class RegisterForm(BaseDialog):
         idLayout = QHBoxLayout()
         idLayout.addWidget(self.id)
         idLayout.addWidget(self.idOptions)
-        self.form.addRow(QLabel('ID'), idLayout)
+        self.form.addRow(QLabel(_('ID')), idLayout)
         # wcid
         self.wcid = SMEdit()
         self.wcidOptions = SMButton('...')
@@ -37,11 +38,11 @@ class RegisterForm(BaseDialog):
         wcidLayout = QHBoxLayout()
         wcidLayout.addWidget(self.wcid)
         wcidLayout.addWidget(self.wcidOptions)
-        self.form.addRow(QLabel('WCID'), wcidLayout)
+        self.form.addRow(QLabel(_('WCID')), wcidLayout)
 
     def setupControl(self):
-        self.btnSave = SaveSMButton('Save')
-        self.btnCancel = CancelSMButton('Cancel')
+        self.btnSave = SaveSMButton(_('Save'))
+        self.btnCancel = CancelSMButton(_('Cancel'))
         self.controlLayout.addWidget(self.btnSave)
         self.controlLayout.addWidget(self.btnCancel)
 
