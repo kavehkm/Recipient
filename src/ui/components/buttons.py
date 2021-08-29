@@ -19,6 +19,8 @@ class BaseButton(QPushButton):
     ICON_SIZE = 16
     # alignment
     TEXT_ALIGN = 'center'
+    # chars
+    CHARS = 10
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,24 +42,34 @@ class BaseButton(QPushButton):
             padding-bottom: {self.PADDING_BOTTOM}px;
         """
         self.setStyleSheet(styleSheet)
+        # adjust width
+        self.adjustWidth()
+
+    def adjustWidth(self):
+        diff = len(self.text()) - self.CHARS
+        if diff > 0:
+            self.setFixedWidth(self.WIDTH + diff * 5)
 
 
 class SMButton(BaseButton):
     """Recipeint Small Button"""
     WIDTH = 60
     HEIGHT = 20
+    CHARS = 5
 
 
 class MDButton(BaseButton):
     """Recipient Medium Button"""
     WIDTH = 90
     HEIGHT = 30
+    CHARS = 10
 
 
 class LGButton(BaseButton):
     """Recipeint Large Button"""
     WIDTH = 120
     HEIGHT = 40
+    CHARS = 15
 
 
 class MainMenuButton(BaseButton):
@@ -67,6 +79,7 @@ class MainMenuButton(BaseButton):
     TEXT_ALIGN = 'left'
     PADDING_LEFT = 20
     ICON_SIZE = 24
+    CHARS = 20
 
 
 class AddSMButton(SMButton):
