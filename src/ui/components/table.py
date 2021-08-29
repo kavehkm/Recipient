@@ -28,6 +28,9 @@ class Table(QTableWidget):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setFocusPolicy(Qt.Qt.NoFocus)
+        # stretch last section
+        horizontalHeader = self.horizontalHeader()
+        horizontalHeader.setStretchLastSection(True)
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
