@@ -1,42 +1,753 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2021-08-14 11:22+0430\n"
-"PO-Revision-Date: 2021-08-14 11:30+0430\n"
-"Last-Translator: \n"
+"POT-Creation-Date: 2021-08-29 16:39+0430\n"
+"PO-Revision-Date: 2021-08-29 16:43+0430\n"
 "Language-Team: \n"
-"Language: fa_IR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.4.2\n"
-"X-Poedit-Basepath: .\n"
+"Last-Translator: \n"
 "Plural-Forms: nplurals=2; plural=(n==0 || n==1);\n"
+"Language: fa_IR\n"
 
-#: .\src\ui\windows\main.py:27
+#: .\src\messages.py:9
+msgid "WooCommerce Products"
+msgstr "کالاهای ووکامرس"
+
+#: .\src\messages.py:10
+msgid "Moein Products"
+msgstr "کالاهای معین"
+
+#: .\src\messages.py:11
+msgid "Product not found."
+msgstr "کالا پیدا نشد."
+
+#: .\src\messages.py:12 .\src\messages.py:34
+msgid "Cannot load options."
+msgstr "گزینه ها را نمی توان بارگذاری کرد."
+
+#: .\src\messages.py:13
+msgid "Cannot load registered Products."
+msgstr "محصولات ثبت شده را نمیتوان بارگذاری کرد."
+
+#: .\src\messages.py:14
+msgid "Cannot load unregistered Products."
+msgstr "محصولات ثبت نشده را نمیتوان بارگذاری کرد."
+
+#: .\src\messages.py:15
+msgid "Edit Product"
+msgstr "ویرایش کالا"
+
+#: .\src\messages.py:16
+msgid "Add new Product"
+msgstr "افزودن کالای جدید"
+
+#: .\src\messages.py:17
+msgid "Add all Products..."
+msgstr "افزودن تمامیه کالاها..."
+
+#: .\src\messages.py:18
+msgid "Update all Products..."
+msgstr "بروزرسانی تمامیه کالاها..."
+
+#: .\src\messages.py:19
+msgid "Cannot add all Products."
+msgstr "افزودن کالاها با خطا مواجه شد."
+
+#: .\src\messages.py:20
+msgid "All Products added successfully."
+msgstr "کالاها با موفقیت اضافه شدند."
+
+#: .\src\messages.py:21
+msgid "Cannot update all Products."
+msgstr "بروزرسانی کالاها با خطا مواجه شد."
+
+#: .\src\messages.py:22
+msgid "All Products updated successfully."
+msgstr "کالاها با موفقیت بروز شدند."
+
+#: .\src\messages.py:23
+msgid "Cannot save Product."
+msgstr "ثبت کالا امکان پذیر نیست."
+
+#: .\src\messages.py:24
+msgid "Product saved successfully."
+msgstr "کالا با موفقیت ثبت شد."
+
+#: .\src\messages.py:25
+msgid "Are your sure?"
+msgstr "آیا مطمئن هستید؟"
+
+#: .\src\messages.py:26
+msgid "Cannot remove Product."
+msgstr "حذف کالا با خطا مواجه شد."
+
+#: .\src\messages.py:27
+msgid "Product removed successfully."
+msgstr "کالا با موفقیت حذف شد."
+
+#: .\src\messages.py:31
+msgid "WooCommerce Categories"
+msgstr "دسته بندی های ووکامرس"
+
+#: .\src\messages.py:32
+msgid "Moein Categories"
+msgstr "دسته بندی های معین"
+
+#: .\src\messages.py:33
+msgid "Category not found."
+msgstr "دسته بندی پیدا نشد."
+
+#: .\src\messages.py:35
+msgid "Cannot load registered Categories."
+msgstr "دسته بندی های ثبت شده را نمیتوان بارگذاری کرد."
+
+#: .\src\messages.py:36
+msgid "Cannot load unregistered Categories."
+msgstr "دسته بندی های ثبت نشده را نمیتوان بارگذاری کرد."
+
+#: .\src\messages.py:37
+msgid "Edit Category"
+msgstr "ویرایش دسته بندی"
+
+#: .\src\messages.py:38
+msgid "Add New Category"
+msgstr "افزودن دسته بندی جدید"
+
+#: .\src\messages.py:39
+msgid "Add all Categories..."
+msgstr "افزودن تمامیه دسته بندی ها..."
+
+#: .\src\messages.py:40
+msgid "Update all Categories..."
+msgstr "بروزرسانی تمامیه دسته بندی ها..."
+
+#: .\src\messages.py:41
+msgid "Cannot add all Categories."
+msgstr "افزودن دسته بندی ها با خطا مواجه شد."
+
+#: .\src\messages.py:42
+msgid "All Categories added successfully."
+msgstr "دسته بندی ها با موفقیت اضافه شدند."
+
+#: .\src\messages.py:43
+msgid "Cannot update all Categories."
+msgstr "بروزرسانی دسته بندی ها با خطا مواجه شد."
+
+#: .\src\messages.py:44
+msgid "All Categories updated successfully."
+msgstr "دسته بندی ها با موفقیت بروز شدند."
+
+#: .\src\messages.py:45
+msgid "Cannot save Category."
+msgstr "ثبت دسته بندی امکان پذیر نیست."
+
+#: .\src\messages.py:46
+msgid "Category saved successfully."
+msgstr "دسته بندی با موفقیت ثبت شد."
+
+#: .\src\messages.py:47 .\src\views\invoices.py:192
+msgid "Are you sure?"
+msgstr "آیا مطمئن هستید؟"
+
+#: .\src\messages.py:48
+msgid "Cannot remove Category."
+msgstr "حذف دسته بندی با خطا مواجه شد."
+
+#: .\src\messages.py:49
+msgid "Category removed successfully."
+msgstr "دسته بندی با موفقیت حذف شد."
+
+#: .\src\models.py:69 .\src\models.py:541
+msgid "Product"
+msgstr "کالا"
+
+#: .\src\models.py:70 .\src\models.py:542
+msgid "ProductMap"
+msgstr "مپ کالا"
+
+#: .\src\models.py:71 .\src\models.py:314
+msgid "CategoryMap"
+msgstr "مپ دسته بندی"
+
+#: .\src\models.py:72
+msgid "PriceLevel"
+msgstr "سطوح قیمتی"
+
+#: .\src\models.py:73
+msgid "ProductPrice"
+msgstr "قیمت کالا"
+
+#: .\src\models.py:74
+msgid "ProductRepository"
+msgstr "انبار کالا"
+
+#: .\src\models.py:240
+msgid "Product {} does not have any category."
+msgstr "کالا {} دارای دسته بندی نمیباشد."
+
+#: .\src\models.py:313
+msgid "Category"
+msgstr "دسته بندی"
+
+#: .\src\models.py:509
+msgid "Category {} name is too long."
+msgstr "تعداد کاراکتر های دسته بندی {} بیش از حد مجاز است."
+
+#: .\src\models.py:537
+msgid "Invoice"
+msgstr "فاکتور"
+
+#: .\src\models.py:538
+msgid "InvoiceMap"
+msgstr "مپ فاکتور"
+
+#: .\src\models.py:539 .\src\ui\windows\main.py:179
+#: .\src\ui\windows\order_details.py:70
+msgid "Customer"
+msgstr "مشتری"
+
+#: .\src\models.py:540
+msgid "CustomerMap"
+msgstr "مپ مشتری"
+
+#: .\src\models.py:543
+msgid "LineItem"
+msgstr "جزئیات فاکتور"
+
+#: .\src\models.py:740
+msgid "carry price: {}"
+msgstr "کرایه حمل: {}"
+
+#: .\src\table.py:15
+msgid "with"
+msgstr "با"
+
+#: .\src\table.py:18
+msgid " does not exists."
+msgstr " وجود ندارد."
+
+#: .\src\ui\components\confirm.py:11
+msgid "Cencel"
+msgstr "انصراف"
+
+#: .\src\ui\components\message.py:20
+msgid "success"
+msgstr "موفق"
+
+#: .\src\ui\components\message.py:21
+msgid "information"
+msgstr "اطلاع"
+
+#: .\src\ui\components\message.py:22
+msgid "warning"
+msgstr "اخطار"
+
+#: .\src\ui\components\message.py:23
+msgid "error"
+msgstr "خطا"
+
+#: .\src\ui\components\message.py:66
+msgid "OK"
+msgstr "تایید"
+
+#: .\src\ui\windows\main.py:35 .\src\ui\windows\main.py:176
+#: .\src\ui\windows\main.py:346 .\src\ui\windows\order_details.py:74
 msgid "Status"
 msgstr "وضعیت"
 
-#: .\src\ui\windows\main.py:30
+#: .\src\ui\windows\main.py:38 .\src\ui\windows\main.py:180
+#: .\src\ui\windows\main.py:299
 msgid "Invoices"
 msgstr "فاکتورها"
 
-#: .\src\ui\windows\main.py:33
+#: .\src\ui\windows\main.py:41 .\src\ui\windows\main.py:278
 msgid "WooCommerce"
 msgstr "ووکامرس"
 
-#: .\src\ui\windows\main.py:36
+#: .\src\ui\windows\main.py:44
 msgid "Settings"
 msgstr "تنظیمات"
 
-#: .\src\ui\windows\main.py:39
+#: .\src\ui\windows\main.py:47
 msgid "Logs"
-msgstr "لاگ ها"
+msgstr "لاگ"
 
-#: .\src\ui\windows\main.py:42
+#: .\src\ui\windows\main.py:50
 msgid "Help"
 msgstr "راهنما"
 
-#: .\src\ui\windows\main.py:45
+#: .\src\ui\windows\main.py:53
 msgid "About"
 msgstr "درباره"
+
+#: .\src\ui\windows\main.py:103
+msgid "Recipient Engine"
+msgstr "موتور بروزرسانی"
+
+#: .\src\ui\windows\main.py:114
+msgid "Start"
+msgstr "شروع"
+
+#: .\src\ui\windows\main.py:115
+msgid "Stop"
+msgstr "توقف"
+
+#: .\src\ui\windows\main.py:141
+msgid "running"
+msgstr "درحال اجرا"
+
+#: .\src\ui\windows\main.py:148
+msgid "stopped"
+msgstr "متوقف شده"
+
+#: .\src\ui\windows\main.py:155
+msgid "connecting"
+msgstr "درحال اتصال"
+
+#: .\src\ui\windows\main.py:162
+msgid "Connecting after {} seconds..."
+msgstr "تلاش برای اتصال مجدد بعد از {} ثانیه..."
+
+#: .\src\ui\windows\main.py:176
+msgid "Date"
+msgstr "تاریخ"
+
+#: .\src\ui\windows\main.py:176
+msgid "Order"
+msgstr "سفارش"
+
+#: .\src\ui\windows\main.py:176 .\src\ui\windows\main.py:179
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+#: .\src\ui\windows\order_details.py:259 .\src\ui\windows\register_form.py:33
+#: .\src\views\woocommerce.py:68
+msgid "ID"
+msgstr "شناسه"
+
+#: .\src\ui\windows\main.py:176 .\src\ui\windows\order_details.py:259
+msgid "Total"
+msgstr "جمع کل"
+
+#: .\src\ui\windows\main.py:177
+msgid "Orders"
+msgstr "سفارشات"
+
+#: .\src\ui\windows\main.py:179
+msgid "OrderID"
+msgstr "شناسه سفارش"
+
+#: .\src\ui\windows\main.py:179
+msgid "SavedDate"
+msgstr "تاریخ ثبت"
+
+#: .\src\ui\windows\main.py:185
+msgid "Refresh"
+msgstr "بررسی مجدد"
+
+#: .\src\ui\windows\main.py:186
+msgid "Save all"
+msgstr "ثبت همه"
+
+#: .\src\ui\windows\main.py:187 .\src\ui\windows\main.py:232
+msgid "Remove"
+msgstr "حذف"
+
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+msgid "LastUpdate"
+msgstr "آخرین بروزرسانی"
+
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+#: .\src\ui\windows\order_details.py:259 .\src\views\woocommerce.py:68
+#: .\src\views\woocommerce.py:72
+msgid "Name"
+msgstr "عنوان"
+
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+#: .\src\ui\windows\register_form.py:41 .\src\views\woocommerce.py:72
+msgid "WCID"
+msgstr "شناسه وو"
+
+#: .\src\ui\windows\main.py:223
+msgid "Products"
+msgstr "کالاها"
+
+#: .\src\ui\windows\main.py:226
+msgid "Categories"
+msgstr "دسته بندی ها"
+
+#: .\src\ui\windows\main.py:230
+msgid "Add"
+msgstr "افزودن"
+
+#: .\src\ui\windows\main.py:231
+msgid "Edit"
+msgstr "ویرایش"
+
+#: .\src\ui\windows\main.py:233 .\src\ui\windows\order_details.py:301
+msgid "Update"
+msgstr "بروزرسانی"
+
+#: .\src\ui\windows\main.py:252 .\src\ui\windows\order_details.py:62
+msgid "General"
+msgstr "عمومی"
+
+#: .\src\ui\windows\main.py:259
+msgid "Language"
+msgstr "زبان"
+
+#: .\src\ui\windows\main.py:261
+msgid "Moein"
+msgstr "معین"
+
+#: .\src\ui\windows\main.py:267
+msgid "Server"
+msgstr "سرور"
+
+#: .\src\ui\windows\main.py:270
+msgid "Username"
+msgstr "نام کاربری"
+
+#: .\src\ui\windows\main.py:273
+msgid "Password"
+msgstr "رمز عبور"
+
+#: .\src\ui\windows\main.py:276
+msgid "Database"
+msgstr "پایگاه داده"
+
+#: .\src\ui\windows\main.py:284
+msgid "URL"
+msgstr "آدرس"
+
+#: .\src\ui\windows\main.py:287
+msgid "Consumer key"
+msgstr "کلید مصرف کننده"
+
+#: .\src\ui\windows\main.py:290
+msgid "Secret key"
+msgstr "رمز مصرف کننده"
+
+#: .\src\ui\windows\main.py:294
+msgid "Version"
+msgstr "نسخه"
+
+#: .\src\ui\windows\main.py:297
+msgid "Timeout"
+msgstr "تایم اوت"
+
+#: .\src\ui\windows\main.py:305
+msgid "Pending"
+msgstr "در انتظار پرداخت"
+
+#: .\src\ui\windows\main.py:306
+msgid "Processing"
+msgstr "درحال انجام"
+
+#: .\src\ui\windows\main.py:307
+msgid "On Hold"
+msgstr "در انتظار بررسی"
+
+#: .\src\ui\windows\main.py:308
+msgid "Completed"
+msgstr "تکمیل شده"
+
+#: .\src\ui\windows\main.py:309
+msgid "Cancelled"
+msgstr "لغو شده"
+
+#: .\src\ui\windows\main.py:310
+msgid "Refunded"
+msgstr "مسترد شده"
+
+#: .\src\ui\windows\main.py:311
+msgid "Failed"
+msgstr "ناموفق"
+
+#: .\src\ui\windows\main.py:312
+msgid "Trash"
+msgstr "حذف شده"
+
+#: .\src\ui\windows\main.py:313
+msgid "Any"
+msgstr "همه"
+
+#: .\src\ui\windows\main.py:349
+msgid "After"
+msgstr "بعد از"
+
+#: .\src\ui\windows\main.py:352
+msgid "Before"
+msgstr "قبل از"
+
+#: .\src\ui\windows\main.py:355
+msgid "Guest customer"
+msgstr "افراد متفرقه"
+
+#: .\src\ui\windows\main.py:358
+msgid "Products repository"
+msgstr "انبار کالا"
+
+#: .\src\ui\windows\main.py:361
+msgid "Products price-level"
+msgstr "سطوح قیمتی"
+
+#: .\src\ui\windows\main.py:364
+msgid "Invoice type"
+msgstr "نوع فاکتور"
+
+#: .\src\ui\windows\main.py:366
+msgid "Updater Engine"
+msgstr "موتور بروزرسانی"
+
+#: .\src\ui\windows\main.py:372
+msgid "Auto"
+msgstr "خودکار"
+
+#: .\src\ui\windows\main.py:373
+msgid "Manual"
+msgstr "دستی"
+
+#: .\src\ui\windows\main.py:377
+msgid "Start type"
+msgstr "شروع به کار"
+
+#: .\src\ui\windows\main.py:380
+msgid "Update woocommerce"
+msgstr "بروزرسانی ووکامرس"
+
+#: .\src\ui\windows\main.py:381
+msgid "Convert orders"
+msgstr "تبدیل سفارشات"
+
+#: .\src\ui\windows\main.py:384
+msgid "Tasks"
+msgstr "وظایف"
+
+#: .\src\ui\windows\main.py:387
+msgid "Interval"
+msgstr "فاصله زمانی"
+
+#: .\src\ui\windows\main.py:393
+msgid "Clear"
+msgstr "پاک کردن"
+
+#: .\src\ui\windows\main.py:394 .\src\ui\windows\order_details.py:303
+#: .\src\ui\windows\register_form.py:44
+msgid "Save"
+msgstr "ذخیره"
+
+#: .\src\ui\windows\main.py:585
+msgid "Recipient"
+msgstr "Recipient"
+
+#: .\src\ui\windows\options_list.py:9
+msgid "Add all"
+msgstr "افزودن همه"
+
+#: .\src\ui\windows\options_list.py:10 .\src\ui\windows\order_details.py:307
+#: .\src\ui\windows\register_form.py:45
+msgid "Cancel"
+msgstr "انصراف"
+
+#: .\src\ui\windows\order_details.py:32
+msgid "Order details"
+msgstr "جزئیات سفارش"
+
+#: .\src\ui\windows\order_details.py:66
+msgid "Date created"
+msgstr "تاریخ سفارش"
+
+#: .\src\ui\windows\order_details.py:84
+msgid "Billing"
+msgstr "صورت حساب"
+
+#: .\src\ui\windows\order_details.py:95 .\src\ui\windows\order_details.py:191
+msgid "First name"
+msgstr "نام"
+
+#: .\src\ui\windows\order_details.py:99 .\src\ui\windows\order_details.py:195
+msgid "Last name"
+msgstr "نام خانوادگی"
+
+#: .\src\ui\windows\order_details.py:103 .\src\ui\windows\order_details.py:199
+msgid "Company"
+msgstr "شرکت"
+
+#: .\src\ui\windows\order_details.py:114
+msgid "Email"
+msgstr "ایمیل"
+
+#: .\src\ui\windows\order_details.py:118
+msgid "Phone"
+msgstr "تلفن"
+
+#: .\src\ui\windows\order_details.py:129 .\src\ui\windows\order_details.py:210
+msgid "Country"
+msgstr "کشور"
+
+#: .\src\ui\windows\order_details.py:133 .\src\ui\windows\order_details.py:214
+msgid "State"
+msgstr "استان"
+
+#: .\src\ui\windows\order_details.py:144 .\src\ui\windows\order_details.py:225
+msgid "City"
+msgstr "شهر"
+
+#: .\src\ui\windows\order_details.py:148 .\src\ui\windows\order_details.py:229
+msgid "PostCode"
+msgstr "کد پستی"
+
+#: .\src\ui\windows\order_details.py:152 .\src\ui\windows\order_details.py:233
+msgid "Address line 1"
+msgstr "آدرس۱"
+
+#: .\src\ui\windows\order_details.py:156 .\src\ui\windows\order_details.py:237
+msgid "Address line 2"
+msgstr "آدرس۲"
+
+#: .\src\ui\windows\order_details.py:166
+msgid "Cash on delivery"
+msgstr "پرداخت در محل"
+
+#: .\src\ui\windows\order_details.py:167
+msgid "Payment method"
+msgstr "روش پرداخت"
+
+#: .\src\ui\windows\order_details.py:171
+msgid "Transaction ID"
+msgstr "شناسه تراکنش"
+
+#: .\src\ui\windows\order_details.py:180
+msgid "Shipping"
+msgstr "حمل و نقل"
+
+#: .\src\ui\windows\order_details.py:241
+msgid "Customer provided note"
+msgstr "توضیحات مشتری"
+
+#: .\src\ui\windows\order_details.py:256
+msgid "Items"
+msgstr "کالاها"
+
+#: .\src\ui\windows\order_details.py:259
+msgid "Cost"
+msgstr "مبلغ"
+
+#: .\src\ui\windows\order_details.py:259
+msgid "Quantity"
+msgstr "تعداد"
+
+#: .\src\ui\windows\order_details.py:273
+msgid "Totals"
+msgstr "مجموع"
+
+#: .\src\ui\windows\order_details.py:282
+msgid "Items total"
+msgstr "کالاها"
+
+#: .\src\ui\windows\order_details.py:285
+msgid "Total tax"
+msgstr "مالیات"
+
+#: .\src\ui\windows\order_details.py:288
+msgid "Shipping total"
+msgstr "حمل و نقل"
+
+#: .\src\ui\windows\order_details.py:291
+msgid "Discount total"
+msgstr "تخفیف"
+
+#: .\src\ui\windows\order_details.py:294
+msgid "Order total"
+msgstr "مجموع سفارش"
+
+#: .\src\views\invoices.py:52
+msgid "Cannot get orders from WooCommerce."
+msgstr "امکان بارگذاری سفارشات وجود ندارد."
+
+#: .\src\views\invoices.py:103
+msgid "Guest"
+msgstr "متفرقه"
+
+#: .\src\views\invoices.py:142
+msgid "Cannot update order."
+msgstr "بروزرسانی سفارش با خطا مواجه شد."
+
+#: .\src\views\invoices.py:153
+msgid "Order updated successfully."
+msgstr "سفارش با موفقیت بروز شد."
+
+#: .\src\views\invoices.py:165
+msgid "Cannot save order."
+msgstr "ثبت سفارش امکان پذیر نیست."
+
+#: .\src\views\invoices.py:174
+msgid "Order saved successfully."
+msgstr "سفارش با موفقیت ثبت شد."
+
+#: .\src\views\invoices.py:190 .\src\views\invoices.py:226
+msgid "s "
+msgstr " "
+
+#: .\src\views\invoices.py:191
+msgid "{} order{}will be save."
+msgstr "{} سفارش{} ثبت خواهد شد."
+
+#: .\src\views\invoices.py:196
+msgid "Order with completed status not found."
+msgstr "سفارشی با وضعیت تکمیل شده وجود ندارد."
+
+#: .\src\views\invoices.py:211
+msgid "Save progress interrupt by order #{}."
+msgstr "پروسه ثبت در سفارش {} متوقف شد."
+
+#: .\src\views\invoices.py:227
+msgid "{} order{}saved successfully."
+msgstr "{} سفارش{}با موفقیت ثبت شد."
+
+#: .\src\views\invoices.py:237
+msgid "Cannot load saved invoices."
+msgstr "امکان بازیابی فاکتورها  وجود ندارد."
+
+#: .\src\views\settings.py:38
+msgid "Cannot Save Settings."
+msgstr "ذخیره تنظیمات با خطا مواجه شد."
+
+#: .\src\views\settings.py:42
+msgid "Settings Saved Successfully."
+msgstr "تنظیمات با موفقیت ذخیره شد."
+
+#: .\src\views\status.py:183
+msgid "Engine stop working."
+msgstr "موتور بروزرسانی متوقف شد."
+
+#: .\src\wc.py:7
+msgid "WooCommerce base error"
+msgstr "خطای ووکامرس"
+
+#: .\src\wc.py:19
+msgid "Connections error"
+msgstr "خطای ارتباط با سرور"
+
+#: .\src\wc.py:24
+msgid "Invalid request"
+msgstr "درخواست نامعتبر"
+
+#: .\src\wc.py:29
+msgid "Authentication error"
+msgstr "خطای احراز هویت"
+
+#: .\src\wc.py:34
+msgid "Server internal error"
+msgstr "خطای داخلی سرور"
+
+#: .\src\wc.py:39
+msgid "Requests to resources that dont exist or are missing"
+msgstr "خطای 404 سرور"

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2021-08-14 11:22+0430\n"
+"POT-Creation-Date: 2021-08-29 16:39+0430\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,31 +15,738 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: .\src\ui\windows\main.py:27
+#: .\src\messages.py:9
+msgid "WooCommerce Products"
+msgstr ""
+
+#: .\src\messages.py:10
+msgid "Moein Products"
+msgstr ""
+
+#: .\src\messages.py:11
+msgid "Product not found."
+msgstr ""
+
+#: .\src\messages.py:12 .\src\messages.py:34
+msgid "Cannot load options."
+msgstr ""
+
+#: .\src\messages.py:13
+msgid "Cannot load registered Products."
+msgstr ""
+
+#: .\src\messages.py:14
+msgid "Cannot load unregistered Products."
+msgstr ""
+
+#: .\src\messages.py:15
+msgid "Edit Product"
+msgstr ""
+
+#: .\src\messages.py:16
+msgid "Add new Product"
+msgstr ""
+
+#: .\src\messages.py:17
+msgid "Add all Products..."
+msgstr ""
+
+#: .\src\messages.py:18
+msgid "Update all Products..."
+msgstr ""
+
+#: .\src\messages.py:19
+msgid "Cannot add all Products."
+msgstr ""
+
+#: .\src\messages.py:20
+msgid "All Products added successfully."
+msgstr ""
+
+#: .\src\messages.py:21
+msgid "Cannot update all Products."
+msgstr ""
+
+#: .\src\messages.py:22
+msgid "All Products updated successfully."
+msgstr ""
+
+#: .\src\messages.py:23
+msgid "Cannot save Product."
+msgstr ""
+
+#: .\src\messages.py:24
+msgid "Product saved successfully."
+msgstr ""
+
+#: .\src\messages.py:25
+msgid "Are your sure?"
+msgstr ""
+
+#: .\src\messages.py:26
+msgid "Cannot remove Product."
+msgstr ""
+
+#: .\src\messages.py:27
+msgid "Product removed successfully."
+msgstr ""
+
+#: .\src\messages.py:31
+msgid "WooCommerce Categories"
+msgstr ""
+
+#: .\src\messages.py:32
+msgid "Moein Categories"
+msgstr ""
+
+#: .\src\messages.py:33
+msgid "Category not found."
+msgstr ""
+
+#: .\src\messages.py:35
+msgid "Cannot load registered Categories."
+msgstr ""
+
+#: .\src\messages.py:36
+msgid "Cannot load unregistered Categories."
+msgstr ""
+
+#: .\src\messages.py:37
+msgid "Edit Category"
+msgstr ""
+
+#: .\src\messages.py:38
+msgid "Add New Category"
+msgstr ""
+
+#: .\src\messages.py:39
+msgid "Add all Categories..."
+msgstr ""
+
+#: .\src\messages.py:40
+msgid "Update all Categories..."
+msgstr ""
+
+#: .\src\messages.py:41
+msgid "Cannot add all Categories."
+msgstr ""
+
+#: .\src\messages.py:42
+msgid "All Categories added successfully."
+msgstr ""
+
+#: .\src\messages.py:43
+msgid "Cannot update all Categories."
+msgstr ""
+
+#: .\src\messages.py:44
+msgid "All Categories updated successfully."
+msgstr ""
+
+#: .\src\messages.py:45
+msgid "Cannot save Category."
+msgstr ""
+
+#: .\src\messages.py:46
+msgid "Category saved successfully."
+msgstr ""
+
+#: .\src\messages.py:47 .\src\views\invoices.py:192
+msgid "Are you sure?"
+msgstr ""
+
+#: .\src\messages.py:48
+msgid "Cannot remove Category."
+msgstr ""
+
+#: .\src\messages.py:49
+msgid "Category removed successfully."
+msgstr ""
+
+#: .\src\models.py:69 .\src\models.py:541
+msgid "Product"
+msgstr ""
+
+#: .\src\models.py:70 .\src\models.py:542
+msgid "ProductMap"
+msgstr ""
+
+#: .\src\models.py:71 .\src\models.py:314
+msgid "CategoryMap"
+msgstr ""
+
+#: .\src\models.py:72
+msgid "PriceLevel"
+msgstr ""
+
+#: .\src\models.py:73
+msgid "ProductPrice"
+msgstr ""
+
+#: .\src\models.py:74
+msgid "ProductRepository"
+msgstr ""
+
+#: .\src\models.py:240
+msgid "Product {} does not have any category."
+msgstr ""
+
+#: .\src\models.py:313
+msgid "Category"
+msgstr ""
+
+#: .\src\models.py:509
+msgid "Category {} name is too long."
+msgstr ""
+
+#: .\src\models.py:537
+msgid "Invoice"
+msgstr ""
+
+#: .\src\models.py:538
+msgid "InvoiceMap"
+msgstr ""
+
+#: .\src\models.py:539 .\src\ui\windows\main.py:179
+#: .\src\ui\windows\order_details.py:70
+msgid "Customer"
+msgstr ""
+
+#: .\src\models.py:540
+msgid "CustomerMap"
+msgstr ""
+
+#: .\src\models.py:543
+msgid "LineItem"
+msgstr ""
+
+#: .\src\models.py:740
+msgid "carry price: {}"
+msgstr ""
+
+#: .\src\table.py:15
+msgid "with"
+msgstr ""
+
+#: .\src\table.py:18
+msgid " does not exists."
+msgstr ""
+
+#: .\src\ui\components\confirm.py:11
+msgid "Cencel"
+msgstr ""
+
+#: .\src\ui\components\message.py:20
+msgid "success"
+msgstr ""
+
+#: .\src\ui\components\message.py:21
+msgid "information"
+msgstr ""
+
+#: .\src\ui\components\message.py:22
+msgid "warning"
+msgstr ""
+
+#: .\src\ui\components\message.py:23
+msgid "error"
+msgstr ""
+
+#: .\src\ui\components\message.py:66
+msgid "OK"
+msgstr ""
+
+#: .\src\ui\windows\main.py:35 .\src\ui\windows\main.py:176
+#: .\src\ui\windows\main.py:346 .\src\ui\windows\order_details.py:74
 msgid "Status"
 msgstr ""
 
-#: .\src\ui\windows\main.py:30
+#: .\src\ui\windows\main.py:38 .\src\ui\windows\main.py:180
+#: .\src\ui\windows\main.py:299
 msgid "Invoices"
 msgstr ""
 
-#: .\src\ui\windows\main.py:33
+#: .\src\ui\windows\main.py:41 .\src\ui\windows\main.py:278
 msgid "WooCommerce"
 msgstr ""
 
-#: .\src\ui\windows\main.py:36
+#: .\src\ui\windows\main.py:44
 msgid "Settings"
 msgstr ""
 
-#: .\src\ui\windows\main.py:39
+#: .\src\ui\windows\main.py:47
 msgid "Logs"
 msgstr ""
 
-#: .\src\ui\windows\main.py:42
+#: .\src\ui\windows\main.py:50
 msgid "Help"
 msgstr ""
 
-#: .\src\ui\windows\main.py:45
+#: .\src\ui\windows\main.py:53
 msgid "About"
+msgstr ""
+
+#: .\src\ui\windows\main.py:103
+msgid "Recipient Engine"
+msgstr ""
+
+#: .\src\ui\windows\main.py:114
+msgid "Start"
+msgstr ""
+
+#: .\src\ui\windows\main.py:115
+msgid "Stop"
+msgstr ""
+
+#: .\src\ui\windows\main.py:141
+msgid "running"
+msgstr ""
+
+#: .\src\ui\windows\main.py:148
+msgid "stopped"
+msgstr ""
+
+#: .\src\ui\windows\main.py:155
+msgid "connecting"
+msgstr ""
+
+#: .\src\ui\windows\main.py:162
+msgid "Connecting after {} seconds..."
+msgstr ""
+
+#: .\src\ui\windows\main.py:176
+msgid "Date"
+msgstr ""
+
+#: .\src\ui\windows\main.py:176
+msgid "Order"
+msgstr ""
+
+#: .\src\ui\windows\main.py:176 .\src\ui\windows\main.py:179
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+#: .\src\ui\windows\order_details.py:259 .\src\ui\windows\register_form.py:33
+#: .\src\views\woocommerce.py:68
+msgid "ID"
+msgstr ""
+
+#: .\src\ui\windows\main.py:176 .\src\ui\windows\order_details.py:259
+msgid "Total"
+msgstr ""
+
+#: .\src\ui\windows\main.py:177
+msgid "Orders"
+msgstr ""
+
+#: .\src\ui\windows\main.py:179
+msgid "OrderID"
+msgstr ""
+
+#: .\src\ui\windows\main.py:179
+msgid "SavedDate"
+msgstr ""
+
+#: .\src\ui\windows\main.py:185
+msgid "Refresh"
+msgstr ""
+
+#: .\src\ui\windows\main.py:186
+msgid "Save all"
+msgstr ""
+
+#: .\src\ui\windows\main.py:187 .\src\ui\windows\main.py:232
+msgid "Remove"
+msgstr ""
+
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+msgid "LastUpdate"
+msgstr ""
+
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+#: .\src\ui\windows\order_details.py:259 .\src\views\woocommerce.py:68
+#: .\src\views\woocommerce.py:72
+msgid "Name"
+msgstr ""
+
+#: .\src\ui\windows\main.py:222 .\src\ui\windows\main.py:225
+#: .\src\ui\windows\register_form.py:41 .\src\views\woocommerce.py:72
+msgid "WCID"
+msgstr ""
+
+#: .\src\ui\windows\main.py:223
+msgid "Products"
+msgstr ""
+
+#: .\src\ui\windows\main.py:226
+msgid "Categories"
+msgstr ""
+
+#: .\src\ui\windows\main.py:230
+msgid "Add"
+msgstr ""
+
+#: .\src\ui\windows\main.py:231
+msgid "Edit"
+msgstr ""
+
+#: .\src\ui\windows\main.py:233 .\src\ui\windows\order_details.py:301
+msgid "Update"
+msgstr ""
+
+#: .\src\ui\windows\main.py:252 .\src\ui\windows\order_details.py:62
+msgid "General"
+msgstr ""
+
+#: .\src\ui\windows\main.py:259
+msgid "Language"
+msgstr ""
+
+#: .\src\ui\windows\main.py:261
+msgid "Moein"
+msgstr ""
+
+#: .\src\ui\windows\main.py:267
+msgid "Server"
+msgstr ""
+
+#: .\src\ui\windows\main.py:270
+msgid "Username"
+msgstr ""
+
+#: .\src\ui\windows\main.py:273
+msgid "Password"
+msgstr ""
+
+#: .\src\ui\windows\main.py:276
+msgid "Database"
+msgstr ""
+
+#: .\src\ui\windows\main.py:284
+msgid "URL"
+msgstr ""
+
+#: .\src\ui\windows\main.py:287
+msgid "Consumer key"
+msgstr ""
+
+#: .\src\ui\windows\main.py:290
+msgid "Secret key"
+msgstr ""
+
+#: .\src\ui\windows\main.py:294
+msgid "Version"
+msgstr ""
+
+#: .\src\ui\windows\main.py:297
+msgid "Timeout"
+msgstr ""
+
+#: .\src\ui\windows\main.py:305
+msgid "Pending"
+msgstr ""
+
+#: .\src\ui\windows\main.py:306
+msgid "Processing"
+msgstr ""
+
+#: .\src\ui\windows\main.py:307
+msgid "On Hold"
+msgstr ""
+
+#: .\src\ui\windows\main.py:308
+msgid "Completed"
+msgstr ""
+
+#: .\src\ui\windows\main.py:309
+msgid "Cancelled"
+msgstr ""
+
+#: .\src\ui\windows\main.py:310
+msgid "Refunded"
+msgstr ""
+
+#: .\src\ui\windows\main.py:311
+msgid "Failed"
+msgstr ""
+
+#: .\src\ui\windows\main.py:312
+msgid "Trash"
+msgstr ""
+
+#: .\src\ui\windows\main.py:313
+msgid "Any"
+msgstr ""
+
+#: .\src\ui\windows\main.py:349
+msgid "After"
+msgstr ""
+
+#: .\src\ui\windows\main.py:352
+msgid "Before"
+msgstr ""
+
+#: .\src\ui\windows\main.py:355
+msgid "Guest customer"
+msgstr ""
+
+#: .\src\ui\windows\main.py:358
+msgid "Products repository"
+msgstr ""
+
+#: .\src\ui\windows\main.py:361
+msgid "Products price-level"
+msgstr ""
+
+#: .\src\ui\windows\main.py:364
+msgid "Invoice type"
+msgstr ""
+
+#: .\src\ui\windows\main.py:366
+msgid "Updater Engine"
+msgstr ""
+
+#: .\src\ui\windows\main.py:372
+msgid "Auto"
+msgstr ""
+
+#: .\src\ui\windows\main.py:373
+msgid "Manual"
+msgstr ""
+
+#: .\src\ui\windows\main.py:377
+msgid "Start type"
+msgstr ""
+
+#: .\src\ui\windows\main.py:380
+msgid "Update woocommerce"
+msgstr ""
+
+#: .\src\ui\windows\main.py:381
+msgid "Convert orders"
+msgstr ""
+
+#: .\src\ui\windows\main.py:384
+msgid "Tasks"
+msgstr ""
+
+#: .\src\ui\windows\main.py:387
+msgid "Interval"
+msgstr ""
+
+#: .\src\ui\windows\main.py:393
+msgid "Clear"
+msgstr ""
+
+#: .\src\ui\windows\main.py:394 .\src\ui\windows\order_details.py:303
+#: .\src\ui\windows\register_form.py:44
+msgid "Save"
+msgstr ""
+
+#: .\src\ui\windows\main.py:585
+msgid "Recipient"
+msgstr ""
+
+#: .\src\ui\windows\options_list.py:9
+msgid "Add all"
+msgstr ""
+
+#: .\src\ui\windows\options_list.py:10 .\src\ui\windows\order_details.py:307
+#: .\src\ui\windows\register_form.py:45
+msgid "Cancel"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:32
+msgid "Order details"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:66
+msgid "Date created"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:84
+msgid "Billing"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:95 .\src\ui\windows\order_details.py:191
+msgid "First name"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:99 .\src\ui\windows\order_details.py:195
+msgid "Last name"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:103 .\src\ui\windows\order_details.py:199
+msgid "Company"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:114
+msgid "Email"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:118
+msgid "Phone"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:129 .\src\ui\windows\order_details.py:210
+msgid "Country"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:133 .\src\ui\windows\order_details.py:214
+msgid "State"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:144 .\src\ui\windows\order_details.py:225
+msgid "City"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:148 .\src\ui\windows\order_details.py:229
+msgid "PostCode"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:152 .\src\ui\windows\order_details.py:233
+msgid "Address line 1"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:156 .\src\ui\windows\order_details.py:237
+msgid "Address line 2"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:166
+msgid "Cash on delivery"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:167
+msgid "Payment method"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:171
+msgid "Transaction ID"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:180
+msgid "Shipping"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:241
+msgid "Customer provided note"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:256
+msgid "Items"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:259
+msgid "Cost"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:259
+msgid "Quantity"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:273
+msgid "Totals"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:282
+msgid "Items total"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:285
+msgid "Total tax"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:288
+msgid "Shipping total"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:291
+msgid "Discount total"
+msgstr ""
+
+#: .\src\ui\windows\order_details.py:294
+msgid "Order total"
+msgstr ""
+
+#: .\src\views\invoices.py:52
+msgid "Cannot get orders from WooCommerce."
+msgstr ""
+
+#: .\src\views\invoices.py:103
+msgid "Guest"
+msgstr ""
+
+#: .\src\views\invoices.py:142
+msgid "Cannot update order."
+msgstr ""
+
+#: .\src\views\invoices.py:153
+msgid "Order updated successfully."
+msgstr ""
+
+#: .\src\views\invoices.py:165
+msgid "Cannot save order."
+msgstr ""
+
+#: .\src\views\invoices.py:174
+msgid "Order saved successfully."
+msgstr ""
+
+#: .\src\views\invoices.py:190 .\src\views\invoices.py:226
+msgid "s "
+msgstr ""
+
+#: .\src\views\invoices.py:191
+msgid "{} order{}will be save."
+msgstr ""
+
+#: .\src\views\invoices.py:196
+msgid "Order with completed status not found."
+msgstr ""
+
+#: .\src\views\invoices.py:211
+msgid "Save progress interrupt by order #{}."
+msgstr ""
+
+#: .\src\views\invoices.py:227
+msgid "{} order{}saved successfully."
+msgstr ""
+
+#: .\src\views\invoices.py:237
+msgid "Cannot load saved invoices."
+msgstr ""
+
+#: .\src\views\settings.py:38
+msgid "Cannot Save Settings."
+msgstr ""
+
+#: .\src\views\settings.py:42
+msgid "Settings Saved Successfully."
+msgstr ""
+
+#: .\src\views\status.py:183
+msgid "Engine stop working."
+msgstr ""
+
+#: .\src\wc.py:7
+msgid "WooCommerce base error"
+msgstr ""
+
+#: .\src\wc.py:19
+msgid "Connections error"
+msgstr ""
+
+#: .\src\wc.py:24
+msgid "Invalid request"
+msgstr ""
+
+#: .\src\wc.py:29
+msgid "Authentication error"
+msgstr ""
+
+#: .\src\wc.py:34
+msgid "Server internal error"
+msgstr ""
+
+#: .\src\wc.py:39
+msgid "Requests to resources that dont exist or are missing"
 msgstr ""
 
