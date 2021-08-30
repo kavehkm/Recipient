@@ -634,6 +634,8 @@ class Invoice(Model):
                 InvoiceMap AS IM ON IM.id = I.ID
             INNER JOIN
                 AshkhasList as C ON C.ID = I.IDShakhs
+            WHERE
+                I.Tmp = 0 AND Converted = 0
         """
         for row in self.invoice.custom_sql(sql, method='fetchall'):
             saved.append({
@@ -787,7 +789,10 @@ class Invoice(Model):
 
     def remove(self, order_id):
         # find invoice id
+        invoice = self.invoice_map.get(wcid=order_id)
         # remove related items to invoice
+        self.line_item.delete(FactorID=invoice.id)
         # remove invoice
+        self.invoice.delete(ID=invoice.id)
         # remove map
-        pass
+        self.invoice_map.delete(id=invoice.id)

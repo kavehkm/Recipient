@@ -250,4 +250,21 @@ class Invoices(object):
             conn.close()
 
     def remove(self):
-        pass
+        index = self.invoices_table.getCurrentRecordIndex()
+        if index is not None:
+            conn = connection.get()
+            self.invoice.set_connection(conn)
+            try:
+                order_id = int(self.invoices_table.getRecord(index)[2])
+                self.invoice.remove(order_id)
+            except Exception as e:
+                conn.rollback()
+                msg = Message(self.ui, Message.ERROR, _('Cannot remove invoice.'), str(e))
+                msg.show()
+            else:
+                conn.commit()
+                self.invoices_table.removeRecord(index)
+                msg = Message(self.ui, Message.SUCCESS, _('Invoice removed successfully.'))
+                msg.show()
+            finally:
+                conn.close()
