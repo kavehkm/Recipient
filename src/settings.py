@@ -29,6 +29,9 @@ SETTINGS_FILE_PATH = os.path.join(
 APP_NAME = 'recipient'
 APP_VERSION = 1.0
 APP_AUTHOR = 'Kaveh Mehrbanian'
+APP_CONTRIBUTORS = [
+    'Amin Eidgahian'
+]
 
 
 # network check settings
