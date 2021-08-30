@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2021-08-29 16:39+0430\n"
+"POT-Creation-Date: 2021-08-30 12:30+0430\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -220,7 +220,7 @@ msgstr ""
 msgid "LineItem"
 msgstr ""
 
-#: .\src\models.py:740
+#: .\src\models.py:742
 msgid "carry price: {}"
 msgstr ""
 
@@ -712,6 +712,14 @@ msgstr ""
 
 #: .\src\views\invoices.py:237
 msgid "Cannot load saved invoices."
+msgstr ""
+
+#: .\src\views\invoices.py:262
+msgid "Cannot remove invoice."
+msgstr ""
+
+#: .\src\views\invoices.py:267
+msgid "Invoice removed successfully."
 msgstr ""
 
 #: .\src\views\settings.py:38

@@ -5,17 +5,17 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2021-08-29 16:39+0430\n"
-"PO-Revision-Date: 2021-08-29 16:43+0430\n"
+"POT-Creation-Date: 2021-08-30 12:30+0430\n"
+"PO-Revision-Date: 2021-08-30 12:34+0430\n"
+"Last-Translator: \n"
 "Language-Team: \n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.4.2\n"
-"Last-Translator: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Language: en\n"
 
 #: .\src\messages.py:9
 msgid "WooCommerce Products"
@@ -222,7 +222,7 @@ msgstr ""
 msgid "LineItem"
 msgstr ""
 
-#: .\src\models.py:740
+#: .\src\models.py:742
 msgid "carry price: {}"
 msgstr ""
 
@@ -714,6 +714,14 @@ msgstr ""
 
 #: .\src\views\invoices.py:237
 msgid "Cannot load saved invoices."
+msgstr ""
+
+#: .\src\views\invoices.py:262
+msgid "Cannot remove invoice."
+msgstr ""
+
+#: .\src\views\invoices.py:267
+msgid "Invoice removed successfully."
 msgstr ""
 
 #: .\src\views\settings.py:38
