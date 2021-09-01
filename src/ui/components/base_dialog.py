@@ -1,3 +1,5 @@
+# internal
+from src.translation import _
 # pyqt
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout
@@ -43,5 +45,5 @@ class BaseDialog(QDialog):
         pass
 
     def setWindowTitle(self, a0: str) -> None:
-        title = 'Recipient-{}'.format(a0)
+        title = _('Recipient-{}').format(a0)
         super().setWindowTitle(title)

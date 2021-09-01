@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2021-08-30 12:30+0430\n"
+"POT-Creation-Date: 2021-09-01 15:52+0430\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -230,6 +230,10 @@ msgstr ""
 
 #: .\src\table.py:18
 msgid " does not exists."
+msgstr ""
+
+#: .\src\ui\components\base_dialog.py:48
+msgid "Recipient-{}"
 msgstr ""
 
 #: .\src\ui\components\confirm.py:11

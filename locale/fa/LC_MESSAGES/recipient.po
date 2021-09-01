@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2021-08-30 12:30+0430\n"
-"PO-Revision-Date: 2021-08-30 12:33+0430\n"
+"POT-Creation-Date: 2021-09-01 15:52+0430\n"
+"PO-Revision-Date: 2021-09-01 15:54+0430\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fa_IR\n"
@@ -233,6 +233,10 @@ msgstr "با"
 #: .\src\table.py:18
 msgid " does not exists."
 msgstr " وجود ندارد."
+
+#: .\src\ui\components\base_dialog.py:48
+msgid "Recipient-{}"
+msgstr "افزونه اتصال سایت به نرم افزار حسابداری معین-{}"
 
 #: .\src\ui\components\confirm.py:11
 msgid "Cencel"
@@ -545,7 +549,7 @@ msgstr "ذخیره"
 
 #: .\src\ui\windows\main.py:585
 msgid "Recipient"
-msgstr "Recipient"
+msgstr "افزونه اتصال سایت به نرم افزار حسابداری معین"
 
 #: .\src\ui\windows\options_list.py:9
 msgid "Add all"
