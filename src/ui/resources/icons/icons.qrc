@@ -2,12 +2,12 @@
 <RCC version="1.0">
     <qresource prefix="icons">
         <!-- windowIcon -->
-        <file alias="windowIcon16.png">icons8-jenkins-16.png</file>
-        <file alias="windowIcon24.png">icons8-jenkins-24.png</file>
-        <file alias="windowIcon32.png">icons8-jenkins-32.png</file>
-        <file alias="windowIcon48.png">icons8-jenkins-48.png</file>
-        <file alias="windowIcon96.png">icons8-jenkins-96.png</file>
-        <file alias="windowIcon256.png">icons8-jenkins-256.png</file>
+        <file alias="windowIcon16.png">recipient16.png</file>
+        <file alias="windowIcon24.png">recipient24.png</file>
+        <file alias="windowIcon32.png">recipient32.png</file>
+        <file alias="windowIcon48.png">recipient48.png</file>
+        <file alias="windowIcon96.png">recipient96.png</file>
+        <file alias="windowIcon256.png">recipient256.png</file>
         <!-- menu icons -->
         <file alias="btnStatus.png">icons8-final-state-24.png</file>
         <file alias="btnInvoices.png">icons8-invoice-24.png</file>
