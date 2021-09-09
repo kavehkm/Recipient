@@ -134,6 +134,8 @@ class Product(Mappable):
                 P.ID, P.Name, P.GroupID, KP.FinalPrice, MA.Mojoodi
             FROM
                 KalaList AS P
+            INNER JOIN
+                CategoryMap AS CM ON P.GroupID = CM.id
             LEFT JOIN
                 ProductMap AS PM ON P.ID = PM.id
             INNER JOIN
@@ -160,8 +162,9 @@ class Product(Mappable):
         ]
 
     def wc_unmapped(self):
-        ids = ','.join([str(pm.wcid) for pm in self.product_map.all('wcid')])
-        return self.woocommerce.all(exclude=ids, status='publish')
+        exclude = ','.join([str(pm.wcid) for pm in self.product_map.all('wcid')])
+        category = ','.join([str(cm.wcid) for cm in self.category_map.all('wcid')])
+        return self.woocommerce.all(exclude=exclude, category=category, status='publish')
 
     def add_map(self, moeinid, wcid):
         # check product
@@ -635,7 +638,7 @@ class Invoice(Model):
             INNER JOIN
                 AshkhasList as C ON C.ID = I.IDShakhs
             WHERE
-                I.Tmp = 0 AND Converted = 0
+                I.Tmp = 0 AND Converted = 0 AND Type = 0
         """
         for row in self.invoice.custom_sql(sql, method='fetchall'):
             saved.append({

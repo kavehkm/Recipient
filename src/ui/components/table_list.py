@@ -12,14 +12,15 @@ class TableListSignals(QObject):
 
 class TableList(BaseDialog):
     """Table List"""
-    def __init__(self, parent, columns, sizes=None):
+    def __init__(self, parent, columns, sizes=None, checkable=False):
         self.columns = columns
         self.sizes = sizes
+        self.checkable = checkable
         self.signals = TableListSignals()
         super().__init__(parent)
 
     def setupDialog(self):
-        self.table = Table(self.columns, self.sizes)
+        self.table = Table(self.columns, self.sizes, self.checkable)
         self.dialogLayout.addWidget(self.table)
 
     def connectSignals(self):
@@ -27,6 +28,9 @@ class TableList(BaseDialog):
 
     def setList(self, items):
         self.table.setRecords(items)
+
+    def getChecked(self):
+        return self.table.getCheckedRecords()
 
     def selectHandler(self):
         item_index = self.table.getCurrentRecordIndex()

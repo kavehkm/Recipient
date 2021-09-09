@@ -23,6 +23,8 @@ class ObjectView(object):
         self.ui = self.parent.ui
         self.tab = self.parent.tab
         self.messages = messages.get(self.message_slice)
+        # current
+        self._current = dict()
 
     def get(self):
         # create and set connection
@@ -67,11 +69,15 @@ class ObjectView(object):
             if subject == self.form.ID:
                 columns = [_('ID'), _('Name')]
                 title = self.messages[1]
-                options = [[um['id'], um['name']] for um in self.model.unmapped()]
+                # cache unmapped
+                self._current['unmapped'] = self.model.unmapped()
+                options = [[um['id'], um['name']] for um in self._current['unmapped']]
             else:
                 columns = [_('WCID'), _('Name')]
                 title = self.messages[0]
-                options = [[um['id'], um['name']] for um in self.model.wc_unmapped()]
+                # cache wc_unmapped
+                self._current['wcunmapped'] = self.model.wc_unmapped()
+                options = [[um['id'], um['name']] for um in self._current['wcunmapped']]
         except Exception as e:
             msg = Message(self.form, Message.ERROR, self.messages[3], str(e))
             msg.show()
@@ -128,31 +134,29 @@ class ObjectView(object):
             conn.close()
 
     def add_all(self, subject):
-        conn = connection.get()
-        self.model.set_connection(conn)
-        try:
-            if subject == self.form.ID:
-                unmapped = self.model.unmapped()
-                adder = self.wc_adder
-            else:
-                unmapped = self.model.wc_unmapped()
-                adder = self.moein_adder
-        except Exception as e:
-            msg = Message(self.options_list, Message.ERROR, self.messages[5], str(e))
-            msg.show()
+        if subject == self.form.ID:
+            # use cached unmapped
+            unmapped = self._current['unmapped']
+            adder = self.wc_adder
         else:
-            if unmapped:
-                pd = Progress(self.options_list, self.messages[8], 0, len(unmapped))
-                pd.show()
-                worker = Worker(adder, unmapped)
-                worker.signals.progress.connect(pd.setValue)
-                worker.signals.error.connect(pd.close)
-                worker.signals.error.connect(self.add_all_error)
-                worker.signals.done.connect(self.add_all_done)
-                QThreadPool.globalInstance().start(worker)
-                self.options_list.btnAddAll.setDisabled(True)
-        finally:
-            conn.close()
+            # use cached wc_unmapped
+            unmapped = self._current['wcunmapped']
+            adder = self.moein_adder
+        # get checked-unmapped ids
+        checked = [int(row[0]) for row in self.options_list.getChecked()]
+        # filter unmapped by checked
+        unmapped = [um for um in unmapped if um['id'] in checked]
+        # check for unmapped
+        if unmapped:
+            pd = Progress(self.options_list, self.messages[8], 0, len(unmapped))
+            pd.show()
+            worker = Worker(adder, unmapped)
+            worker.signals.progress.connect(pd.setValue)
+            worker.signals.error.connect(pd.close)
+            worker.signals.error.connect(self.add_all_error)
+            worker.signals.done.connect(self.add_all_done)
+            QThreadPool.globalInstance().start(worker)
+            self.options_list.btnAddAll.setDisabled(True)
 
     def moein_adder(self, unmapped, progress_callback):
         error = None
