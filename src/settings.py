@@ -71,19 +71,26 @@ MOEIN_DB_PASSWORD = ''
 MOEIN_DB_NAME = ''
 
 
-# invoices settings
+# import/export settings
+IMPORT_EXPORT_SKU_HINT = False
+
+
+# orders settings
 now = datetime.now()
 after = now - timedelta(days=7)
 before = now + timedelta(days=365*20)
-INVOICES_AFTER = after.replace(microsecond=0).isoformat()
-INVOICES_BEFORE = before.replace(microsecond=0).isoformat()
-INVOICES_STATUS = ['processing', 'on-hold', 'completed']
-INVOICES_GUEST_CUSTOMER_ID = 1
+ORDERS_AFTER = after.replace(microsecond=0).isoformat()
+ORDERS_BEFORE = before.replace(microsecond=0).isoformat()
+ORDERS_STATUS = ['processing', 'on-hold', 'completed']
+
+
+# invoices settings
+INVOICES_TYPE = 0
 INVOICES_REPOSITORY = 1
 INVOICES_PRICE_LEVEL = 1
-INVOICES_TYPE = 0
 INVOICES_BUY_PRICE_TYPE = 1
 INVOICES_SELL_PRICE_TYPE = 2
+INVOICES_GUEST_CUSTOMER_ID = 1
 
 
 # engine settings
@@ -113,14 +120,19 @@ CUSTOMIZABLE_SETTINGS = {
         'password': MOEIN_DB_PASSWORD,
         'database': MOEIN_DB_NAME
     },
+    'import_export': {
+        'sku_hint': IMPORT_EXPORT_SKU_HINT
+    },
+    'orders': {
+        'status': ORDERS_STATUS,
+        'after': ORDERS_AFTER,
+        'before': ORDERS_BEFORE
+    },
     'invoices': {
-        'status': INVOICES_STATUS,
-        'after': INVOICES_AFTER,
-        'before': INVOICES_BEFORE,
-        'guest': INVOICES_GUEST_CUSTOMER_ID,
+        'type': INVOICES_TYPE,
         'repository': INVOICES_REPOSITORY,
         'price_level': INVOICES_PRICE_LEVEL,
-        'type': INVOICES_TYPE
+        'guest': INVOICES_GUEST_CUSTOMER_ID
     },
     'engine': {
         'auto_start': ENGINE_AUTO_START,

@@ -87,7 +87,7 @@ class Product(Mappable):
     @staticmethod
     def _int(value, default=0):
         try:
-            return int(value)
+            return int(float(value))
         except (ValueError, TypeError):
             return default
 
@@ -236,68 +236,84 @@ class Product(Mappable):
         })
 
     def import2moein(self, wc_product):
-        # check for category
-        try:
-            category = wc_product['categories'][0]
-        except IndexError:
-            raise Exception(_('Product {} does not have any category.').format(wc_product['name']))
-        category_map = self.category_map.get(wcid=category['id'])
-        # clean regular price and quantity
-        regular_price = int(float(wc_product['regular_price'])) if wc_product['regular_price'] else 0
-        quantity = wc_product['stock_quantity'] if wc_product['stock_quantity'] else 0
-        # - create product
-        self.product.create({
-            'Name': wc_product['name'],
-            'GroupID': category_map.id,
-            'SellPrice': regular_price,
-            'Code': self.product.max('Code') + 1,
-            'MenuOrder': self.product.max('MenuOrder') + 1,
-            'Unit2': 'عدد',
-            'BuyPrice': 0,
-            'SefareshPoint': 0,
-            'ShortCut': 0,
-            'Active': 1,
-            'Maliat': 1,
-            'UnitType': 0,
-            'Info': '',
-            'Weight': 0,
-            'IncPerc': 0,
-            'IncPrice': 0,
-            'ValueCalcType': 0
-        })
-        product_id = self.product.max('ID')
-        # - set price levels
-        for pl in self.price_level.all():
-            self.product_price.create({
-                'PriceID': pl.ID,
-                'KalaID': product_id,
-                'Type': s.INVOICES_BUY_PRICE_TYPE,
-                'Price': 0,
-                '[Percent]': 0,
-                'FinalPrice': 0,
-                'Takhfif': 0
+        product_id = None
+        # check for sku hint
+        if s.get('import_export')['sku_hint'] and wc_product['sku']:
+            try:
+                product = self.product.get('ID', Code=self._int(wc_product['sku']))
+            except DoesNotExists:
+                pass
+            else:
+                product_id = product.ID
+        # if cannot find product by sku hinting, create new one
+        if product_id is None:
+            # check for category_map
+            category_map = None
+            for category in wc_product['categories']:
+                try:
+                    category_map = self.category_map.get(wcid=category['id'])
+                    break
+                except DoesNotExists:
+                    continue
+            # if cannot find category_map, raise Exception
+            if category_map is None:
+                raise Exception(_('CategoryMap for product {} does not exists.').format(wc_product['name']))
+            # clean quantity and regualr_price value
+            quantity = self._int(wc_product['stock_quantity'])
+            regular_price = self._int(wc_product['regular_price'])
+            # - create product
+            self.product.create({
+                'Name': wc_product['name'],
+                'GroupID': category_map.id,
+                'SellPrice': regular_price,
+                'Code': self.product.max('Code') + 1,
+                'MenuOrder': self.product.max('MenuOrder') + 1,
+                'Unit2': 'عدد',
+                'BuyPrice': 0,
+                'SefareshPoint': 0,
+                'ShortCut': 0,
+                'Active': 1,
+                'Maliat': 1,
+                'UnitType': 0,
+                'Info': '',
+                'Weight': 0,
+                'IncPerc': 0,
+                'IncPrice': 0,
+                'ValueCalcType': 0
             })
-            self.product_price.create({
-                'PriceID': pl.ID,
-                'KalaID': product_id,
-                'Type': s.INVOICES_SELL_PRICE_TYPE,
-                'Price': regular_price,
-                '[Percent]': 0,
-                'FinalPrice': regular_price,
-                'Takhfif': 0
-            })
-        # - quantity
-        if quantity:
-            self.product_repository.create({
-                'IdKala': product_id,
-                'Tedad': quantity,
-                'SumPrice': regular_price * quantity,
-                'Price': regular_price,
-                'Anbar': s.get('invoices')['repository'],
-                'Tedad1': 0,
-                'Tedad2': 0
-            })
-        # - create map
+            product_id = self.product.max('ID')
+            # - set price levels
+            for pl in self.price_level.all():
+                self.product_price.create({
+                    'PriceID': pl.ID,
+                    'KalaID': product_id,
+                    'Type': s.INVOICES_BUY_PRICE_TYPE,
+                    'Price': 0,
+                    '[Percent]': 0,
+                    'FinalPrice': 0,
+                    'Takhfif': 0
+                })
+                self.product_price.create({
+                    'PriceID': pl.ID,
+                    'KalaID': product_id,
+                    'Type': s.INVOICES_SELL_PRICE_TYPE,
+                    'Price': regular_price,
+                    '[Percent]': 0,
+                    'FinalPrice': regular_price,
+                    'Takhfif': 0
+                })
+            # - quantity
+            if quantity:
+                self.product_repository.create({
+                    'IdKala': product_id,
+                    'Tedad': quantity,
+                    'SumPrice': regular_price * quantity,
+                    'Price': regular_price,
+                    'Anbar': s.get('invoices')['repository'],
+                    'Tedad1': 0,
+                    'Tedad2': 0
+                })
+        # create product map
         self.product_map.create({
             'id': product_id,
             'wcid': wc_product['id'],
@@ -605,7 +621,7 @@ class Invoice(Model):
         return discount
 
     def orders(self):
-        settings = s.get('invoices')
+        settings = s.get('orders')
         orders = self.woocommerce.all(
             exclude=','.join([str(im.wcid) for im in self.invoice_map.all()]),
             status=','.join(settings['status']),

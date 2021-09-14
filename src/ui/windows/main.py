@@ -295,11 +295,19 @@ class SettingsTab(BaseTab):
         # - timeout
         self.timeout = SMSpin()
         self.woocommerceForm.addRow(QLabel(_('Timeout')), self.timeout)
-        # invoice settings
-        self.invoices = GpBox(' {} '.format(_('Invoices')))
-        self.settingsLayout.addWidget(self.invoices)
-        self.invoicesForm = QFormLayout()
-        self.invoices.setLayout(self.invoicesForm)
+        # import/export settings
+        self.importExport = GpBox(' {} '.format(_('Import/Export')))
+        self.settingsLayout.addWidget(self.importExport)
+        self.importExportForm = QFormLayout()
+        self.importExport.setLayout(self.importExportForm)
+        # - sku hint
+        self.skuHint = QCheckBox(_('SKU'))
+        self.importExportForm.addRow(QLabel(_('Hints')), self.skuHint)
+        # orders settings
+        self.orders = GpBox(' {} '.format(_('Orders')))
+        self.settingsLayout.addWidget(self.orders)
+        self.ordersForm = QFormLayout()
+        self.orders.setLayout(self.ordersForm)
         # - status
         # -- options
         self.cbxPending = QCheckBox(_('Pending'))
@@ -343,13 +351,18 @@ class SettingsTab(BaseTab):
         statusOptions3Layout.addWidget(self.cbxRefunded)
         statusOptions3Layout.addWidget(self.cbxFailed)
         statusOptions3Layout.addWidget(self.cbxTrash)
-        self.invoicesForm.addRow(QLabel(_('Status')), statusOptionsLayout)
+        self.ordersForm.addRow(QLabel(_('Status')), statusOptionsLayout)
         # - after
         self.after = SMDateTimeEdit()
-        self.invoicesForm.addRow(QLabel(_('After')), self.after)
+        self.ordersForm.addRow(QLabel(_('After')), self.after)
         # - before
         self.before = SMDateTimeEdit()
-        self.invoicesForm.addRow(QLabel(_('Before')), self.before)
+        self.ordersForm.addRow(QLabel(_('Before')), self.before)
+        # invoice settings
+        self.invoices = GpBox(' {} '.format(_('Invoices')))
+        self.settingsLayout.addWidget(self.invoices)
+        self.invoicesForm = QFormLayout()
+        self.invoices.setLayout(self.invoicesForm)
         # - guest
         self.guest = SMSpin()
         self.invoicesForm.addRow(QLabel(_('Guest customer')), self.guest)
@@ -422,10 +435,15 @@ class SettingsTab(BaseTab):
                 'password': self.password.text(),
                 'database': self.database.text()
             },
-            'invoices': {
+            'import_export': {
+                'sku_hint': self.skuHint.isChecked()
+            },
+            'orders': {
                 'status': [option for option, cbx in self.statusOptions.items() if cbx.isChecked()],
                 'after': self.after.getDateTime(),
-                'before': self.before.getDateTime(),
+                'before': self.before.getDateTime()
+            },
+            'invoices': {
                 'guest': self.guest.value(),
                 'repository': self.repository.value(),
                 'price_level': self.priceLevel.value(),
@@ -456,12 +474,17 @@ class SettingsTab(BaseTab):
         self.username.setText(moein['username'])
         self.password.setText(moein['password'])
         self.database.setText(moein['database'])
+        # import/export
+        import_export = settings['import_export']
+        self.skuHint.setChecked(import_export['sku_hint'])
+        # orders
+        orders = settings['orders']
+        for option in orders['status']:
+            self.statusOptions[option].setChecked(True)
+        self.after.setDateTime(orders['after'])
+        self.before.setDateTime(orders['before'])
         # invoices
         invoices = settings['invoices']
-        for option in invoices['status']:
-            self.statusOptions[option].setChecked(True)
-        self.after.setDateTime(invoices['after'])
-        self.before.setDateTime(invoices['before'])
         self.guest.setValue(invoices['guest'])
         self.repository.setValue(invoices['repository'])
         self.priceLevel.setValue(invoices['price_level'])

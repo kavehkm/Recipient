@@ -1,3 +1,33 @@
+------------------------------
+-- GroupKala Delete Trigger --
+------------------------------
+CREATE TRIGGER RecipientTrgGroupkalaDelete
+ON Groupkala
+AFTER DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE
+    FROM CategoryMap
+    WHERE id IN (SELECT ID FROM deleted)
+END
+
+
+-----------------------------
+-- KalaList Delete Trigger --
+-----------------------------
+CREATE TRIGGER RecipientTrgKalaListDelete
+ON KalaList
+AFTER DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DELETE
+    FROM ProductMap
+    WHERE id IN (SELECT ID FROM deleted)
+END
+
+
 -----------------------
 -- GroupKala Trigger --
 -----------------------
