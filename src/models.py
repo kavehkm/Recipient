@@ -1,4 +1,5 @@
 # standard
+import re
 from datetime import datetime
 # internal
 from src import wc
@@ -91,13 +92,37 @@ class Product(Mappable):
         except (ValueError, TypeError):
             return default
 
+    @staticmethod
+    def getinfo(info):
+        info = info or ''
+        d = dict()
+        for item in re.findall(r'\[[\w\d]+ .+\]', info):
+            item = item.strip('[ ]').split(' ')
+            key = item[0]
+            try:
+                value = item[1]
+            except IndexError:
+                value = ''
+            d[key] = value
+        return d
+
+    @staticmethod
+    def setinfo(info, d):
+        for key, value in d.items():
+            pattern = r'\[{} .+\]'.format(key)
+            new = '[{} {}]'.format(key, value)
+            info, replaced = re.subn(pattern, new, info)
+            if not replaced:
+                info = '\n'.join([info, new])
+        return info.strip()
+
     def mapped(self, update_required=False):
         mapped = list()
         settings = s.get('invoices')
         params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
         sql = """
             SELECT
-                P.ID, P.Name, P.GroupID, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
+                P.ID, P.Name, P.GroupID, P.Info, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
             FROM
                 KalaList AS P
             INNER JOIN
@@ -131,7 +156,7 @@ class Product(Mappable):
         params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
         sql = """
             SELECT
-                P.ID, P.Name, P.GroupID, KP.FinalPrice, MA.Mojoodi
+                P.ID, P.Name, P.GroupID, P.Info, KP.FinalPrice, MA.Mojoodi
             FROM
                 KalaList AS P
             INNER JOIN
