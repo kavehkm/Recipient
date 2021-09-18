@@ -141,8 +141,9 @@ class Product(Mappable):
             mapped.append({
                 'id': row.ID,
                 'name': row.Name,
-                'quantity': self._int(row.Mojoodi),
+                'info': row.Info,
                 'price': self._int(row.FinalPrice),
+                'quantity': self._int(row.Mojoodi),
                 'category_id': row.GroupID,
                 'wcid': row.wcid,
                 'last_update': row.last_update,
@@ -174,6 +175,7 @@ class Product(Mappable):
             unmapped.append({
                 'id': row.ID,
                 'name': row.Name,
+                'info': row.Info,
                 'price': self._int(row.FinalPrice),
                 'quantity': self._int(row.Mojoodi),
                 'category_id': row.GroupID,
@@ -236,6 +238,11 @@ class Product(Mappable):
             'regular_price': str(mapped['price']),
             'stock_quantity': mapped['quantity']
         }
+        # check for additionals data
+        info = self.getinfo(mapped['info'])
+        sku = info.get('sku')
+        if sku:
+            data['sku'] = sku
         # update woocommerce product
         self.woocommerce.update(mapped['wcid'], data)
         # update product map
@@ -251,6 +258,11 @@ class Product(Mappable):
             'manage_stock': True,
             'status': 'publish' if product['quantity'] else 'draft'
         }
+        # check for additionals data
+        info = self.getinfo(product['info'])
+        sku = info.get('sku')
+        if sku:
+            data['sku'] = sku
         # create woocommerce product
         wc_product = self.woocommerce.create(data)
         # create product map
@@ -262,14 +274,21 @@ class Product(Mappable):
 
     def import2moein(self, wc_product):
         product_id = None
+        # get info
+        info = dict()
+        # - sku
+        if wc_product['sku']:
+            info['sku'] = wc_product['sku']
         # check for sku hint
         if s.get('import_export')['sku_hint'] and wc_product['sku']:
             try:
-                product = self.product.get('ID', Code=self._int(wc_product['sku']))
+                product = self.product.get('ID', 'Info', Code=self._int(wc_product['sku']))
             except DoesNotExists:
                 pass
             else:
                 product_id = product.ID
+                # check for additional data
+                self.product.update({'Info': self.setinfo(product.Info, info)}, ID=product_id)
         # if cannot find product by sku hinting, create new one
         if product_id is None:
             # check for category_map
@@ -293,6 +312,7 @@ class Product(Mappable):
                 'SellPrice': regular_price,
                 'Code': self.product.max('Code') + 1,
                 'MenuOrder': self.product.max('MenuOrder') + 1,
+                'Info': self.setinfo('', info),
                 'Unit2': 'عدد',
                 'BuyPrice': 0,
                 'SefareshPoint': 0,
@@ -300,7 +320,6 @@ class Product(Mappable):
                 'Active': 1,
                 'Maliat': 1,
                 'UnitType': 0,
-                'Info': '',
                 'Weight': 0,
                 'IncPerc': 0,
                 'IncPrice': 0,
