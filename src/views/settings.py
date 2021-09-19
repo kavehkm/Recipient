@@ -19,6 +19,8 @@ class Settings(object):
             'general': s.get('general'),
             'wc': s.get('wc'),
             'moein': s.get('moein'),
+            'import_export': s.get('import_export'),
+            'orders': s.get('orders'),
             'invoices': s.get('invoices'),
             'engine': s.get('engine')
         })
@@ -30,6 +32,8 @@ class Settings(object):
             s.set('general', settings['general'])
             s.set('wc', settings['wc'])
             s.set('moein', settings['moein'])
+            s.set('import_export', settings['import_export'])
+            s.set('orders', settings['orders'])
             s.set('invoices', settings['invoices'])
             s.set('engine', settings['engine'])
             s.save()

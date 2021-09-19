@@ -1,13 +1,14 @@
 # pyqt
-from PyQt5 import Qt
+from PyQt5 import Qt, QtCore
 from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem
 
 
 class Table(QTableWidget):
     """Base Table"""
-    def __init__(self, columns, sizes=None, parent=None):
+    def __init__(self, columns, sizes=None, checkable=False, parent=None):
         super().__init__(parent)
         self.columns = columns
+        self.checkable = checkable
         # if sizes not specify, set all column size equal
         if sizes is None:
             sizes = [1 for _ in columns]
@@ -65,7 +66,11 @@ class Table(QTableWidget):
 
     def _fillRow(self, rowIndex, items):
         for colIndex, item in enumerate(items, 0):
-            self.setItem(rowIndex, colIndex, QTableWidgetItem(str(item)))
+            widget = QTableWidgetItem(str(item))
+            if colIndex == 0 and self.checkable:
+                widget.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+                widget.setCheckState(QtCore.Qt.Unchecked)
+            self.setItem(rowIndex, colIndex, widget)
 
     def addRecord(self, record, recordIndex=0):
         self.insertRow(recordIndex)
@@ -93,3 +98,16 @@ class Table(QTableWidget):
     def highlightRecord(self, recordIndex, qColor):
         for colIndex in range(len(self.columns)):
             self.item(recordIndex, colIndex).setBackground(qColor)
+
+    def getCheckedRecords(self):
+        checked = list()
+        for rowIndex in range(self.rowCount()):
+            item = self.item(rowIndex, 0)
+            if item.checkState() == QtCore.Qt.Checked:
+                checked.append(self.getRecord(rowIndex))
+        return checked
+
+    def checkAll(self, state=True):
+        state = QtCore.Qt.Checked if state else QtCore.Qt.Unchecked
+        for rowIndex in range(self.rowCount()):
+            self.item(rowIndex, 0).setCheckState(state)

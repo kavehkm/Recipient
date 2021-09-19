@@ -1,4 +1,5 @@
 # standard
+import re
 from datetime import datetime
 # internal
 from src import wc
@@ -87,9 +88,33 @@ class Product(Mappable):
     @staticmethod
     def _int(value, default=0):
         try:
-            return int(value)
+            return int(float(value))
         except (ValueError, TypeError):
             return default
+
+    @staticmethod
+    def getinfo(info):
+        info = info or ''
+        d = dict()
+        for item in re.findall(r'\[[\w\d]+ .+\]', info):
+            item = item.strip('[ ]').split(' ')
+            key = item[0]
+            try:
+                value = item[1]
+            except IndexError:
+                value = ''
+            d[key] = value
+        return d
+
+    @staticmethod
+    def setinfo(info, d):
+        for key, value in d.items():
+            pattern = r'\[{} .+\]'.format(key)
+            new = '[{} {}]'.format(key, value)
+            info, replaced = re.subn(pattern, new, info)
+            if not replaced:
+                info = '\n'.join([info, new])
+        return info.strip()
 
     def mapped(self, update_required=False):
         mapped = list()
@@ -97,7 +122,7 @@ class Product(Mappable):
         params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
         sql = """
             SELECT
-                P.ID, P.Name, P.GroupID, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
+                P.ID, P.Name, P.GroupID, P.Info, PM.wcid, PM.last_update, PM.update_required, KP.FinalPrice, MA.Mojoodi
             FROM
                 KalaList AS P
             INNER JOIN
@@ -116,8 +141,9 @@ class Product(Mappable):
             mapped.append({
                 'id': row.ID,
                 'name': row.Name,
-                'quantity': self._int(row.Mojoodi),
+                'info': row.Info,
                 'price': self._int(row.FinalPrice),
+                'quantity': self._int(row.Mojoodi),
                 'category_id': row.GroupID,
                 'wcid': row.wcid,
                 'last_update': row.last_update,
@@ -131,9 +157,11 @@ class Product(Mappable):
         params = [settings['repository'], s.INVOICES_SELL_PRICE_TYPE, settings['price_level']]
         sql = """
             SELECT
-                P.ID, P.Name, P.GroupID, KP.FinalPrice, MA.Mojoodi
+                P.ID, P.Name, P.GroupID, P.Info, KP.FinalPrice, MA.Mojoodi
             FROM
                 KalaList AS P
+            INNER JOIN
+                CategoryMap AS CM ON P.GroupID = CM.id
             LEFT JOIN
                 ProductMap AS PM ON P.ID = PM.id
             INNER JOIN
@@ -147,6 +175,7 @@ class Product(Mappable):
             unmapped.append({
                 'id': row.ID,
                 'name': row.Name,
+                'info': row.Info,
                 'price': self._int(row.FinalPrice),
                 'quantity': self._int(row.Mojoodi),
                 'category_id': row.GroupID,
@@ -160,8 +189,9 @@ class Product(Mappable):
         ]
 
     def wc_unmapped(self):
-        ids = ','.join([str(pm.wcid) for pm in self.product_map.all('wcid')])
-        return self.woocommerce.all(exclude=ids, status='publish')
+        exclude = ','.join([str(pm.wcid) for pm in self.product_map.all('wcid')])
+        category = ','.join([str(cm.wcid) for cm in self.category_map.all('wcid')])
+        return self.woocommerce.all(exclude=exclude, category=category, status='publish')
 
     def add_map(self, moeinid, wcid):
         # check product
@@ -208,6 +238,11 @@ class Product(Mappable):
             'regular_price': str(mapped['price']),
             'stock_quantity': mapped['quantity']
         }
+        # check for additionals data
+        info = self.getinfo(mapped['info'])
+        sku = info.get('sku')
+        if sku:
+            data['sku'] = sku
         # update woocommerce product
         self.woocommerce.update(mapped['wcid'], data)
         # update product map
@@ -223,6 +258,11 @@ class Product(Mappable):
             'manage_stock': True,
             'status': 'publish' if product['quantity'] else 'draft'
         }
+        # check for additionals data
+        info = self.getinfo(product['info'])
+        sku = info.get('sku')
+        if sku:
+            data['sku'] = sku
         # create woocommerce product
         wc_product = self.woocommerce.create(data)
         # create product map
@@ -233,68 +273,91 @@ class Product(Mappable):
         })
 
     def import2moein(self, wc_product):
-        # check for category
-        try:
-            category = wc_product['categories'][0]
-        except IndexError:
-            raise Exception(_('Product {} does not have any category.').format(wc_product['name']))
-        category_map = self.category_map.get(wcid=category['id'])
-        # clean regular price and quantity
-        regular_price = int(float(wc_product['regular_price'])) if wc_product['regular_price'] else 0
-        quantity = wc_product['stock_quantity'] if wc_product['stock_quantity'] else 0
-        # - create product
-        self.product.create({
-            'Name': wc_product['name'],
-            'GroupID': category_map.id,
-            'SellPrice': regular_price,
-            'Code': self.product.max('Code') + 1,
-            'MenuOrder': self.product.max('MenuOrder') + 1,
-            'Unit2': 'عدد',
-            'BuyPrice': 0,
-            'SefareshPoint': 0,
-            'ShortCut': 0,
-            'Active': 1,
-            'Maliat': 1,
-            'UnitType': 0,
-            'Info': '',
-            'Weight': 0,
-            'IncPerc': 0,
-            'IncPrice': 0,
-            'ValueCalcType': 0
-        })
-        product_id = self.product.max('ID')
-        # - set price levels
-        for pl in self.price_level.all():
-            self.product_price.create({
-                'PriceID': pl.ID,
-                'KalaID': product_id,
-                'Type': s.INVOICES_BUY_PRICE_TYPE,
-                'Price': 0,
-                '[Percent]': 0,
-                'FinalPrice': 0,
-                'Takhfif': 0
+        product_id = None
+        # get info
+        info = dict()
+        # - sku
+        if wc_product['sku']:
+            info['sku'] = wc_product['sku']
+        # check for sku hint
+        if s.get('import_export')['sku_hint'] and wc_product['sku']:
+            try:
+                product = self.product.get('ID', 'Info', Code=self._int(wc_product['sku']))
+            except DoesNotExists:
+                pass
+            else:
+                product_id = product.ID
+                # check for additional data
+                self.product.update({'Info': self.setinfo(product.Info, info)}, ID=product_id)
+        # if cannot find product by sku hinting, create new one
+        if product_id is None:
+            # check for category_map
+            category_map = None
+            for category in wc_product['categories']:
+                try:
+                    category_map = self.category_map.get(wcid=category['id'])
+                    break
+                except DoesNotExists:
+                    continue
+            # if cannot find category_map, raise Exception
+            if category_map is None:
+                raise Exception(_('CategoryMap for product {} does not exists.').format(wc_product['name']))
+            # clean quantity and regualr_price value
+            quantity = self._int(wc_product['stock_quantity'])
+            regular_price = self._int(wc_product['regular_price'])
+            # - create product
+            self.product.create({
+                'Name': wc_product['name'],
+                'GroupID': category_map.id,
+                'SellPrice': regular_price,
+                'Code': self.product.max('Code') + 1,
+                'MenuOrder': self.product.max('MenuOrder') + 1,
+                'Info': self.setinfo('', info),
+                'Unit2': 'عدد',
+                'BuyPrice': 0,
+                'SefareshPoint': 0,
+                'ShortCut': 0,
+                'Active': 1,
+                'Maliat': 1,
+                'UnitType': 0,
+                'Weight': 0,
+                'IncPerc': 0,
+                'IncPrice': 0,
+                'ValueCalcType': 0
             })
-            self.product_price.create({
-                'PriceID': pl.ID,
-                'KalaID': product_id,
-                'Type': s.INVOICES_SELL_PRICE_TYPE,
-                'Price': regular_price,
-                '[Percent]': 0,
-                'FinalPrice': regular_price,
-                'Takhfif': 0
-            })
-        # - quantity
-        if quantity:
-            self.product_repository.create({
-                'IdKala': product_id,
-                'Tedad': quantity,
-                'SumPrice': regular_price * quantity,
-                'Price': regular_price,
-                'Anbar': s.get('invoices')['repository'],
-                'Tedad1': 0,
-                'Tedad2': 0
-            })
-        # - create map
+            product_id = self.product.max('ID')
+            # - set price levels
+            for pl in self.price_level.all():
+                self.product_price.create({
+                    'PriceID': pl.ID,
+                    'KalaID': product_id,
+                    'Type': s.INVOICES_BUY_PRICE_TYPE,
+                    'Price': 0,
+                    '[Percent]': 0,
+                    'FinalPrice': 0,
+                    'Takhfif': 0
+                })
+                self.product_price.create({
+                    'PriceID': pl.ID,
+                    'KalaID': product_id,
+                    'Type': s.INVOICES_SELL_PRICE_TYPE,
+                    'Price': regular_price,
+                    '[Percent]': 0,
+                    'FinalPrice': regular_price,
+                    'Takhfif': 0
+                })
+            # - quantity
+            if quantity:
+                self.product_repository.create({
+                    'IdKala': product_id,
+                    'Tedad': quantity,
+                    'SumPrice': regular_price * quantity,
+                    'Price': regular_price,
+                    'Anbar': s.get('invoices')['repository'],
+                    'Tedad1': 0,
+                    'Tedad2': 0
+                })
+        # create product map
         self.product_map.create({
             'id': product_id,
             'wcid': wc_product['id'],
@@ -602,7 +665,7 @@ class Invoice(Model):
         return discount
 
     def orders(self):
-        settings = s.get('invoices')
+        settings = s.get('orders')
         orders = self.woocommerce.all(
             exclude=','.join([str(im.wcid) for im in self.invoice_map.all()]),
             status=','.join(settings['status']),
@@ -635,7 +698,7 @@ class Invoice(Model):
             INNER JOIN
                 AshkhasList as C ON C.ID = I.IDShakhs
             WHERE
-                I.Tmp = 0 AND Converted = 0
+                I.Tmp = 0 AND Converted = 0 AND Type = 0
         """
         for row in self.invoice.custom_sql(sql, method='fetchall'):
             saved.append({
