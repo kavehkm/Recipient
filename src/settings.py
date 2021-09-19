@@ -27,7 +27,7 @@ SETTINGS_FILE_PATH = os.path.join(
 
 # apllication info
 APP_NAME = 'recipient'
-APP_VERSION = 1.0
+APP_VERSION = 1.1
 APP_AUTHOR = 'Kaveh Mehrbanian'
 APP_CONTRIBUTORS = [
     'Amin Eidgahian'
